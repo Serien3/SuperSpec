@@ -1,3 +1,0 @@
-{"ts": "2026-03-02T08:29:34.175445+00:00", "event": "state.initialized", "planId": "main"}
-{"ts": "2026-03-02T08:30:47.659560+00:00", "event": "action.leased", "actionId": "a1", "leaseId": "lease_a1_c1120e9af8c0", "owner": "demo-agent"}
-{"ts": "2026-03-02T08:33:06.907189+00:00", "event": "action.completed", "actionId": "a1"}

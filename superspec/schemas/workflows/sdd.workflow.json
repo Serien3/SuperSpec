@@ -1,0 +1,59 @@
+{
+  "workflowId": "sdd",
+  "version": "1.0.0",
+  "description": "Default spec-driven development workflow",
+  "title": "Main delivery plan",
+  "goal": "Execute this change in a single-agent serial loop",
+  "defaults": {
+    "executor": "skill",
+    "onFail": "stop"
+  },
+  "actions": [
+    {
+      "id": "a1",
+      "type": "using-worktree",
+      "executor": "script",
+      "script": "python3 -m superspec.scripts.worktree_create --slug \"${context.changeName}\""
+    },
+    {
+      "id": "a2",
+      "type": "openspec.proposal",
+      "dependsOn": [
+        "a1"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a3",
+      "type": "openspec.specs",
+      "dependsOn": [
+        "a2"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a4",
+      "type": "openspec.design",
+      "dependsOn": [
+        "a3"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a5",
+      "type": "openspec.tasks",
+      "dependsOn": [
+        "a4"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a6",
+      "type": "openspec.apply",
+      "dependsOn": [
+        "a5"
+      ],
+      "skill": "openspec-apply-change"
+    }
+  ]
+}

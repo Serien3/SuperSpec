@@ -1,0 +1,2 @@
+[console_scripts]
+superspec = superspec.cli:main

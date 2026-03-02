@@ -1,0 +1,5 @@
+{"ts": "2026-03-02T14:31:45.778886+00:00", "event": "state.initialized", "planId": "main"}
+{"ts": "2026-03-02T14:31:45.779230+00:00", "event": "action.started", "actionId": "a1", "owner": "agent"}
+{"ts": "2026-03-02T14:34:30.347501+00:00", "event": "action.completed", "actionId": "a1"}
+{"ts": "2026-03-02T14:34:40.488453+00:00", "event": "action.started", "actionId": "a2", "owner": "agent"}
+{"ts": "2026-03-02T14:35:09.592270+00:00", "event": "action.completed", "actionId": "a2"}

@@ -82,6 +82,11 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **THEN** the execution protocol returns a script action payload containing `scriptName` and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
+#### Scenario: Inherit executor from plan defaults
+- **WHEN** an action omits explicit `executor`, `script`, and `skill` fields
+- **THEN** the execution protocol resolves executor type from effective plan defaults
+- **AND** returns a payload shape consistent with the resolved executor type
+
 ### Requirement: OpenSpec workflow action support
 The system MUST support the action types `openspec.proposal`, `openspec.specs`, `openspec.design`, `openspec.tasks`, and `openspec.apply` in plan execution.
 
@@ -115,4 +120,3 @@ The system MUST limit action failure policy values to the supported runtime sema
 #### Scenario: Reject unsupported skip-dependent policy
 - **WHEN** plan defaults or action overrides specify `onFail` as `skip_dependents`
 - **THEN** plan validation fails with a clear enum validation error
-

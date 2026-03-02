@@ -47,8 +47,9 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
     return resolve_value(action, expr_context)
 
 
-def _build_action_payload(action: dict, resolved_action: dict, debug: bool):
-    executor = _resolve_executor(resolved_action, {**DEFAULTS, **action.get("defaults", {})})
+def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defaults: dict):
+    action_defaults = action.get("defaults") if isinstance(action.get("defaults"), dict) else {}
+    executor = _resolve_executor(resolved_action, {**DEFAULTS, **defaults, **action_defaults})
     payload = {
         "actionId": action["id"],
         "executor": executor,
@@ -226,7 +227,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         action_state["status"] = "RUNNING"
         action_state["startedAt"] = _now_iso()
 
-        payload = _build_action_payload(action, resolved_action, debug)
+        payload = _build_action_payload(action, resolved_action, debug, state.get("defaults", {}))
         append_event(
             change_dir,
             {

@@ -219,6 +219,21 @@ class IntegrationTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_plan(plan_action_invalid)
 
+    def test_next_uses_plan_default_executor_when_action_has_no_explicit_executor(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal"}],
+        )
+        validate_plan(plan)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            next_action(plan, str(change_dir), owner="agent-a")
+
+        self.assertEqual(ctx.exception.code, "invalid_action_payload")
+        self.assertIn("script executor requires script field", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

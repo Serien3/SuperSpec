@@ -63,7 +63,7 @@
         },
         "lastFailure": "object | null",
         "actions": "array",
-        "actionStatusValues": "PENDING | RUNNING | SUCCESS | FAILED",
+        "actionStatusValues": "PENDING | READY | RUNNING | SUCCESS | FAILED",
         "contracts": "object (only when debug=true)"
       }
     }

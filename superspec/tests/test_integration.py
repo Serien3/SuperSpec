@@ -128,6 +128,26 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "a2")
 
+    def test_complete_refreshes_ready_dependents(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+            ],
+        )
+        validate_plan(plan)
+
+        first = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["action"]["actionId"], "a1")
+
+        after_complete = complete_action(plan, str(change_dir), "a1", {"ok": True})
+        by_id = {action["id"]: action for action in after_complete["actions"]}
+        self.assertEqual(by_id["a2"]["status"], "READY")
+
     def test_fail_retry_without_leases(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
@@ -148,7 +168,7 @@ class IntegrationTest(unittest.TestCase):
         _ = next_action(plan, str(change_dir), owner="agent-a")
         status_after_first_fail = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "fail once"})
         a1 = next(action for action in status_after_first_fail["actions"] if action["id"] == "a1")
-        self.assertEqual(a1["status"], "PENDING")
+        self.assertEqual(a1["status"], "READY")
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -180,7 +200,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(by_id["a1"]["status"], "FAILED")
         self.assertEqual(by_id["a2"]["status"], "FAILED")
         self.assertEqual(by_id["a3"]["status"], "FAILED")
-        self.assertEqual(by_id["b1"]["status"], "PENDING")
+        self.assertEqual(by_id["b1"]["status"], "READY")
         self.assertEqual(by_id["a2"]["error"]["code"], "dependency_failed")
         self.assertEqual(by_id["a3"]["error"]["code"], "dependency_failed")
         self.assertEqual(after_fail["progress"]["done"], 0)

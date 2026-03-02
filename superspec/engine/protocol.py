@@ -129,16 +129,28 @@ def _completed_ids(state: dict):
     }
 
 
-def _is_ready(action_state: dict, completed: set[str]):
-    if action_state["status"] != "PENDING":
-        return False
-    if action_state.get("nextEligibleAt"):
-        if _now() < _parse_iso(action_state["nextEligibleAt"]):
-            return False
+def _dependencies_satisfied(action_state: dict, completed: set[str]):
     for dep in action_state.get("dependsOn", []):
         if dep not in completed:
             return False
     return True
+
+
+def _refresh_ready_actions(state: dict):
+    completed = _completed_ids(state)
+    for action_state in state["actions"]:
+        if action_state["status"] not in {"PENDING", "READY"}:
+            continue
+
+        if action_state.get("nextEligibleAt"):
+            if _now() < _parse_iso(action_state["nextEligibleAt"]):
+                action_state["status"] = "PENDING"
+                continue
+
+        if _dependencies_satisfied(action_state, completed):
+            action_state["status"] = "READY"
+        else:
+            action_state["status"] = "PENDING"
 
 
 def _action_by_id(plan: dict, action_id: str):
@@ -160,7 +172,7 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
     while True:
         transitioned = False
         for action_state in state["actions"]:
-            if action_state["status"] != "PENDING":
+            if action_state["status"] not in {"PENDING", "READY"}:
                 continue
 
             failed_dep = None
@@ -196,7 +208,7 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
 
 
 def _terminalize_if_done(change_dir: str, state: dict):
-    remaining = [a for a in state["actions"] if a["status"] in {"PENDING", "RUNNING"}]
+    remaining = [a for a in state["actions"] if a["status"] in {"PENDING", "READY", "RUNNING"}]
     if not remaining:
         has_failed = any(a["status"] == "FAILED" for a in state["actions"])
         state["status"] = "failed" if has_failed else "success"
@@ -206,6 +218,7 @@ def _terminalize_if_done(change_dir: str, state: dict):
 
 def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool = False):
     state = ensure_protocol_state(plan, change_dir)
+    _refresh_ready_actions(state)
 
     if state["status"] in {"success", "failed"}:
         _persist(change_dir, state)
@@ -215,9 +228,8 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
             "action": None,
         }
 
-    completed = _completed_ids(state)
     for action_state in state["actions"]:
-        if not _is_ready(action_state, completed):
+        if action_state["status"] != "READY":
             continue
         action = _action_by_id(plan, action_state["id"])
         if not action:
@@ -280,6 +292,7 @@ def complete_action(plan: dict, change_dir: str, action_id: str, result_payload:
     action_state["finishedAt"] = _now_iso()
 
     append_event(change_dir, {"event": "action.completed", "actionId": action_id})
+    _refresh_ready_actions(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
     return status_snapshot(plan, change_dir)
@@ -311,6 +324,7 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
             backoff *= max(1, 2 ** (action_state["attempts"] - 1))
         action_state["status"] = "PENDING"
         action_state["nextEligibleAt"] = (_now() + timedelta(seconds=backoff)).isoformat() if backoff > 0 else None
+        _refresh_ready_actions(state)
         append_event(change_dir, {"event": "action.retry_scheduled", "actionId": action_id, "attempt": action_state["attempts"]})
         _persist(change_dir, state)
         return status_snapshot(plan, change_dir)
@@ -326,6 +340,7 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
 
     append_event(change_dir, {"event": "action.failed", "actionId": action_id, "onFail": on_fail})
     _propagate_dependency_failures(change_dir, state)
+    _refresh_ready_actions(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
     return status_snapshot(plan, change_dir)
@@ -347,7 +362,7 @@ def _contracts_payload():
         },
         "status": {
             "fields": ["status", "progress", "lastFailure", "actions"],
-            "actionStates": ["PENDING", "RUNNING", "SUCCESS", "FAILED"],
+            "actionStates": ["PENDING", "READY", "RUNNING", "SUCCESS", "FAILED"],
             "debugFields": ["contracts"],
         },
         "actionPayload": {

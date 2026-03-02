@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the protocol-driven, agent-executed action flow for SuperSpec v0.3, including pull-based action retrieval, serial reporting, and executor-specific payload contracts.
+Define the protocol-driven, agent-executed action flow for SuperSpec v0.5.0, including pull-based action retrieval, serial reporting, and executor-specific payload contracts.
 ## Requirements
 ### Requirement: Next-action retrieval command
 The system MUST provide a command to retrieve exactly one executable action for a change in structured JSON form.
@@ -30,6 +30,7 @@ The system MUST provide a command for clients to report action failure with stru
 - **WHEN** a client reports failure for an action that has remaining retry attempts
 - **THEN** the system records the failure attempt
 - **AND** keeps the action eligible for retry according to configured backoff
+- **AND** transitions the action to `READY` immediately when backoff is zero, otherwise to `PENDING` until eligible
 
 #### Scenario: Fail action without remaining retries
 - **WHEN** a client reports failure for an action with no remaining retry attempts
@@ -94,7 +95,7 @@ The system MUST represent action terminal outcomes using only `SUCCESS` and `FAI
 
 #### Scenario: Report action status snapshot
 - **WHEN** a client requests status during or after execution
-- **THEN** each action status is one of `PENDING`, `RUNNING`, `SUCCESS`, or `FAILED`
+- **THEN** each action status is one of `PENDING`, `READY`, `RUNNING`, `SUCCESS`, or `FAILED`
 - **AND** no action is reported as `SKIPPED`
 
 ### Requirement: Progress accounting without skipped work
@@ -104,4 +105,3 @@ The system MUST compute progress fields without counting skipped outcomes.
 - **WHEN** status is computed for a change
 - **THEN** `progress.done` counts only actions in `SUCCESS`
 - **AND** `progress.failed` counts actions in `FAILED`
-

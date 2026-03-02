@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the change-scoped plan orchestration behavior for SuperSpec v0.3, including plan validation, protocol-driven action execution, and execution state tracking.
+Define the change-scoped plan orchestration behavior for SuperSpec v0.5.0, including plan validation, protocol-driven action execution, and execution state tracking.
 ## Requirements
 ### Requirement: Change-scoped plan definition
 The system MUST support a change-scoped `plan.json` located at `openspec/changes/<change-name>/plan.json` as the authoritative execution definition for that change.
@@ -58,7 +58,7 @@ The system MUST execute actions in dependency-safe order and reject invalid depe
 #### Scenario: Execute only ready actions
 - **WHEN** an action has unresolved dependencies
 - **THEN** the action is not executed
-- **AND** it remains pending until dependencies succeed
+- **AND** it remains non-runnable until dependencies succeed and then transitions to `READY`
 
 #### Scenario: Reject cyclic dependencies
 - **WHEN** the action graph contains a cycle

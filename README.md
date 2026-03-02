@@ -1,4 +1,4 @@
-# SuperSpec (v0.4.0, Protocol-Driven v0.3)
+# SuperSpec (v0.5.0, Protocol-Driven v0.3)
 
 SuperSpec is a change-scoped orchestration layer for spec-driven development.
 
@@ -8,7 +8,7 @@ SuperSpec is a change-scoped orchestration layer for spec-driven development.
 - Going forward, new SuperSpec engine/CLI features should be implemented in Python first.
 - JS/TS implementations are not the default path unless explicitly requested.
 
-## Plan Generation (v0.4.0)
+## Plan Generation (v0.5.0)
 
 Plan initialization is now schema/workflow-driven:
 
@@ -51,6 +51,7 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 - `plan next` response contains only: `state`, `changeName`, `action`.
 - Script actions return: `actionId`, `executor`, `scriptName`, `prompt`.
 - Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
+- Action statuses are: `PENDING`, `READY`, `RUNNING`, `SUCCESS`, `FAILED`.
 - Debug rendered prompt is only included in debug mode (`--debug`).
 - `plan status` omits `contracts` by default; `contracts` are returned only when `status --debug` is set.
 

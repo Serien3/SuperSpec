@@ -79,7 +79,7 @@ The system MUST support both `skill` and `script` executors using a shared actio
 
 #### Scenario: Script executor action
 - **WHEN** an action declares `executor: script`
-- **THEN** the execution protocol returns a script action payload containing `scriptName` and `prompt`
+- **THEN** the execution protocol returns a script action payload containing `script_command` and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
 #### Scenario: Inherit executor from plan defaults

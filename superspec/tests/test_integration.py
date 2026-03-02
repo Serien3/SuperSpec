@@ -266,7 +266,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "a1")
         self.assertEqual(nxt["action"]["executor"], "script")
-        self.assertEqual(nxt["action"]["scriptName"], "echo one")
+        self.assertEqual(nxt["action"]["script_command"], "echo one")
 
     def test_next_ignores_unresolved_expressions_outside_runtime_fields(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -288,7 +288,7 @@ class IntegrationTest(unittest.TestCase):
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "a1")
-        self.assertEqual(nxt["action"]["scriptName"], "echo one")
+        self.assertEqual(nxt["action"]["script_command"], "echo one")
 
 
 if __name__ == "__main__":

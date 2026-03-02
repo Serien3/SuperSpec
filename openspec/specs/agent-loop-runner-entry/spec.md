@@ -17,7 +17,7 @@ The agent guidance MUST define dispatch behavior by executor type and report out
 
 #### Scenario: Execute script action from guidance
 - **WHEN** `next` returns an action with `executor=script`
-- **THEN** the guided agent executes `action.scriptName`
+- **THEN** the guided agent executes `action.script_command`
 - **AND** reports `complete` or `fail` with the returned action identifier
 
 #### Scenario: Execute skill action from guidance

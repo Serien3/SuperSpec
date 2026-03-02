@@ -61,8 +61,8 @@ This skill is the execution playbook for:
      - `done`: stop loop and report final status
 
 5. **Dispatch by executor for `ready`**
-   - If `action.executor == "script"`:
-     - Run `action.scriptName`
+  - If `action.executor == "script"`:
+    - Run `action.script_command`
      - On success:
        ```bash
        superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"script","actionId":"<actionId>","exitCode":0}'

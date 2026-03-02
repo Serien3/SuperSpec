@@ -54,7 +54,7 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 ### Action Payload Contract
 
 - `plan next` response contains only: `state`, `changeName`, `action`.
-- Script actions return: `actionId`, `executor`, `scriptName`, `prompt`.
+- Script actions return: `actionId`, `executor`, `script_command`, `prompt`.
 - Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
 - Runtime expression resolution for `next` payload is limited to: `executor`, `script`, `skill`, and `inputs.prompt`.
 - Action statuses are: `PENDING`, `READY`, `RUNNING`, `SUCCESS`, `FAILED`.

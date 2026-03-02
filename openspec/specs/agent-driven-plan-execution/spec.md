@@ -47,7 +47,7 @@ The system MUST return normalized execution payloads that distinguish script and
 
 #### Scenario: Script action payload
 - **WHEN** the next action uses `executor=script`
-- **THEN** the payload includes `scriptName` and `prompt`
+- **THEN** the payload includes `script_command` and `prompt`
 
 #### Scenario: Skill action payload
 - **WHEN** the next action uses `executor=skill`

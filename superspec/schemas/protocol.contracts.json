@@ -71,7 +71,7 @@
   "actionPayload": {
     "script": {
       "executor": "script",
-      "scriptName": "string",
+      "script_command": "string",
       "prompt": "string"
     },
     "skill": {

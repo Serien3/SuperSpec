@@ -62,7 +62,7 @@ def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defa
                 f"Action {action['id']} script executor requires script field",
                 code="invalid_action_payload",
             )
-        payload["scriptName"] = command
+        payload["script_command"] = command
         payload["prompt"] = f"Run script command for action {action['id']}"
         return payload
 
@@ -366,7 +366,7 @@ def _contracts_payload():
             "debugFields": ["contracts"],
         },
         "actionPayload": {
-            "script": ["actionId", "executor", "scriptName", "prompt"],
+            "script": ["actionId", "executor", "script_command", "prompt"],
             "skill": ["actionId", "executor", "skillName", "prompt"],
             "debug": "renderedPrompt returned only when debug=true",
         },

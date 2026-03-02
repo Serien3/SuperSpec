@@ -45,22 +45,17 @@ This skill is the execution playbook for:
      superspec plan init "<name>" --schema sdd --title "<title>" --goal "<goal>"
      ```
 
-3. **Validate plan**
-   ```bash
-   superspec plan validate "<name>"
-   ```
-
-4. **Loop until terminal state**
+3. **Loop until terminal state**
    - Repeatedly call:
      ```bash
      superspec plan next "<name>" --owner "<owner>" --json
      ```
    - Handle by `state`:
-     - `ready`: execute action, then report `complete` or `fail`
+     - `ready`: goto **step4**
      - `blocked`: wait/poll with backoff, then call `next` again
      - `done`: stop loop and report final status
 
-5. **Dispatch by executor for `ready`**
+4. **Dispatch by executor for `ready`**
   - If `action.executor == "script"`:
     - Run `action.script_command`
      - On success:
@@ -72,10 +67,16 @@ This skill is the execution playbook for:
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"script_failed","message":"...","executor":"script"}'
        ```
    - If `action.executor == "skill"`:
-     - Invoke the named skill in `action.skillName`
-     - Use `action.prompt` as the execution guidance text
-     - On success, report `complete`
-     - On failure, report `fail`
+    - Invoke the named skill in `action.skillName`
+    - Use `action.prompt` as the execution guidance text
+     - On success:
+       ```bash
+       superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"skill","actionId":"<actionId>","exitCode":0}'
+       ```
+     - On failure:
+       ```bash
+       superspec plan fail "<name>" "<actionId>" --error-json '{"code":"skill_failed","message":"...","executor":"script"}'
+       ```
 
 6. **Use `status` for progress and terminal detail**
    ```bash

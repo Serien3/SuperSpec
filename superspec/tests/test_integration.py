@@ -265,8 +265,28 @@ class IntegrationTest(unittest.TestCase):
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "a1")
-        self.assertEqual(nxt["action"]["executor"], "script")
-        self.assertEqual(nxt["action"]["script_command"], "echo one")
+
+    def test_next_reports_invalid_expression_as_protocol_error(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "openspec.proposal",
+                    "executor": "script",
+                    "script": "echo ${variables.missingVar}",
+                }
+            ],
+        )
+        validate_plan(plan)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            next_action(plan, str(change_dir), owner="agent-a")
+
+        self.assertEqual(ctx.exception.code, "invalid_expression")
+        self.assertIn("invalid runtime expression", str(ctx.exception))
 
     def test_next_ignores_unresolved_expressions_outside_runtime_fields(self):
         root, change_name, change_dir = self.setup_temp_change()

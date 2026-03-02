@@ -134,6 +134,32 @@ class PlanLifecycleTest(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", debug=False)
 
+    def test_plan_init_rejects_invalid_change_name(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+        args = SimpleNamespace(change="../escape", schema="sdd", title=None, goal=None)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            command_plan_init(root, args)
+
+        self.assertEqual(ctx.exception.code, "invalid_change_name")
+
+    def test_protocol_actions_reject_context_changedir_outside_changes_root(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+        init_args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+        command_plan_init(root, init_args)
+
+        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        plan["context"]["changeDir"] = "../../../tmp/outside"
+        plan_path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
+
+        with self.assertRaises(ProtocolError) as ctx:
+            run_protocol_action_from_cli(root, "demo-change", "status", debug=False)
+
+        self.assertEqual(ctx.exception.code, "invalid_path")
+
     def test_custom_workflow_generated_plan_can_validate_and_run_protocol(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)

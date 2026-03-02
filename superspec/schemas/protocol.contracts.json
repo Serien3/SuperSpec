@@ -11,7 +11,8 @@
         "state": "ready | blocked | done",
         "changeName": "string",
         "action": "object | null"
-      }
+      },
+      "errors": ["invalid_expression", "invalid_action_payload"]
     },
     "complete": {
       "request": {

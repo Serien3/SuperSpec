@@ -54,10 +54,12 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 ### Action Payload Contract
 
 - `plan next` response contains only: `state`, `changeName`, `action`.
+- Protocol command failures return structured `ProtocolError` JSON payloads (with `error.code`, `error.message`, `error.details`) instead of unstructured generic errors.
 - Script actions return: `actionId`, `executor`, `script_command`, `prompt`.
 - Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
 - Runtime expression resolution for `next` payload is limited to: `executor`, `script`, `skill`, and `inputs.prompt`.
 - There is no generic deep resolver for arbitrary action fields at runtime; only the fields above are expanded.
+- Runtime expression resolution failures are surfaced as `invalid_expression` protocol errors.
 - Action statuses are: `PENDING`, `READY`, `RUNNING`, `SUCCESS`, `FAILED`.
 - Debug rendered prompt is only included in debug mode (`--debug`).
 - `plan status` omits `contracts` by default; `contracts` are returned only when `status --debug` is set.

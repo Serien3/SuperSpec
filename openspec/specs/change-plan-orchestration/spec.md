@@ -93,6 +93,11 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **AND** other action fields do not participate in runtime payload expression expansion
 - **AND** the runtime implementation does not provide a generic recursive resolver for arbitrary action objects
 
+#### Scenario: Surface runtime expression resolution errors as protocol errors
+- **WHEN** runtime expression resolution fails during next-action payload generation
+- **THEN** execution does not fall back to an unstructured generic exception
+- **AND** the engine raises a structured protocol error with code `invalid_expression`
+
 ### Requirement: OpenSpec workflow action support
 The system MUST support the action types `openspec.proposal`, `openspec.specs`, `openspec.design`, `openspec.tasks`, and `openspec.apply` in plan execution.
 

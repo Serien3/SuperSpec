@@ -44,7 +44,14 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
         "actions": _action_runtime_outputs(state),
         "env": dict(os.environ),
     }
-    return resolve_runtime_action_fields(action, expr_context)
+    try:
+        return resolve_runtime_action_fields(action, expr_context)
+    except ValueError as exc:
+        raise ProtocolError(
+            f"Action {action['id']} has invalid runtime expression: {exc}",
+            code="invalid_expression",
+            details={"actionId": action["id"]},
+        ) from exc
 
 
 def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defaults: dict):
@@ -351,6 +358,7 @@ def _contracts_payload():
         "next": {
             "states": ["ready", "blocked", "done"],
             "fields": ["state", "changeName", "action"],
+            "errors": ["invalid_expression", "invalid_action_payload"],
         },
         "complete": {
             "request": ["change", "action-id", "result-json"],

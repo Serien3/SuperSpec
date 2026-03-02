@@ -10,6 +10,11 @@ The system MUST provide a command to retrieve exactly one executable action for 
 - **THEN** the system returns state `ready`
 - **AND** returns only top-level fields `state`, `changeName`, and `action`
 
+#### Scenario: Next-action expression resolution failure returns protocol error
+- **WHEN** the next runnable action contains an unresolved runtime expression
+- **THEN** next-action retrieval fails with a structured protocol error payload
+- **AND** the error code is `invalid_expression`
+
 #### Scenario: No remaining actions
 - **WHEN** all actions are in terminal states according to execution policy
 - **THEN** the system returns state `done`

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "superspec.plan/v0.3",
   "planId": "main",
-  "changeName": "demo-stepwise-flow-20260302",
+  "changeName": "demo-agent-loop",
   "status": "running",
-  "startedAt": "2026-03-02T12:15:31.119859+00:00",
-  "updatedAt": "2026-03-02T12:31:11.387484+00:00",
+  "startedAt": "2026-03-02T13:15:02.640116+00:00",
+  "updatedAt": "2026-03-02T13:15:27.680904+00:00",
   "defaults": {
     "executor": "skill",
     "timeoutSec": 900,
@@ -24,26 +24,24 @@
       "dependsOn": [],
       "attempts": 0,
       "nextEligibleAt": null,
-      "startedAt": "2026-03-02T12:17:30.321546+00:00",
-      "finishedAt": "2026-03-02T12:20:15.897599+00:00",
+      "startedAt": "2026-03-02T13:15:02.641627+00:00",
+      "finishedAt": "2026-03-02T13:15:27.680463+00:00",
       "error": null,
       "output": {
         "ok": true,
-        "executor": "skill",
-        "actionId": "a1",
-        "summary": "proposal instruction generated"
+        "note": "simulated skill execution"
       }
     },
     {
       "id": "a2",
       "type": "openspec.specs",
-      "status": "RUNNING",
+      "status": "PENDING",
       "dependsOn": [
         "a1"
       ],
       "attempts": 0,
       "nextEligibleAt": null,
-      "startedAt": "2026-03-02T12:20:36.431786+00:00",
+      "startedAt": null,
       "finishedAt": null,
       "error": null,
       "output": null

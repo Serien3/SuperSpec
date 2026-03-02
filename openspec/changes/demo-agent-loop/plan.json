@@ -4,8 +4,8 @@
   "title": "Main delivery plan",
   "goal": "Execute this change in a single-agent serial loop",
   "context": {
-    "changeName": "demo-stepwise-flow-20260302",
-    "changeDir": "openspec/changes/demo-stepwise-flow-20260302",
+    "changeName": "demo-agent-loop",
+    "changeDir": "openspec/changes/demo-agent-loop",
     "repoRoot": ".",
     "specRoot": "openspec"
   },

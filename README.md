@@ -55,6 +55,23 @@ See: `superspec/schemas/protocol.contracts.json`
 - No cross-change orchestration
 - Skill execution still depends on external agent/runtime wiring
 
+## Agent Guidance Skill
+
+Use the `superspec-agent-driven-loop` skill as the standard playbook for external agents:
+
+- `output/skills/superspec-agent-driven-loop/SKILL.md`
+
+Skill output location policy:
+- All newly produced SuperSpec skills MUST be written under `output/`.
+- Do not place newly produced SuperSpec skills under `.codex/` or `.github/`.
+
+Recommended flow:
+
+1. `superspec change new <change>`
+2. `superspec plan init <change> --mode sdd` (or `superspec plan init <change>` for compatibility)
+3. `superspec plan validate <change>`
+4. Loop on `superspec plan next <change> --json` and report with `plan complete` / `plan fail` until `done`
+
 ## Tests
 
 ```bash

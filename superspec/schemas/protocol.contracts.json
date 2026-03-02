@@ -21,7 +21,16 @@
         "change": "string",
         "actionId": "string",
         "lease": "string",
-        "resultJson": "object"
+        "resultJson": {
+          "type": "object",
+          "recommendedFields": {
+            "ok": "boolean",
+            "executor": "script | skill",
+            "actionId": "string",
+            "summary": "string (optional)",
+            "outputs": "object (optional)"
+          }
+        }
       },
       "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"]
     },
@@ -30,7 +39,16 @@
         "change": "string",
         "actionId": "string",
         "lease": "string",
-        "errorJson": "object"
+        "errorJson": {
+          "type": "object",
+          "recommendedFields": {
+            "code": "string",
+            "message": "string",
+            "executor": "script | skill",
+            "retryable": "boolean (optional)",
+            "details": "object (optional)"
+          }
+        }
       },
       "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"]
     },

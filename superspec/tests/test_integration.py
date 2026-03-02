@@ -106,6 +106,33 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue((change_dir / "execution" / "leases.json").exists())
         self.assertTrue((change_dir / "execution" / "events.log").exists())
 
+    def test_blocked_polling_preserves_active_lease(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+            ],
+        )
+        validate_plan(plan)
+
+        first = next_action(plan, str(change_dir), owner="agent-a", lease_ttl_sec=30)
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["action"]["actionId"], "a1")
+
+        blocked = next_action(plan, str(change_dir), owner="agent-b", lease_ttl_sec=30)
+        self.assertEqual(blocked["state"], "blocked")
+
+        status = status_snapshot(plan, str(change_dir))
+        self.assertEqual(status["leases"]["a1"]["leaseId"], first["leaseId"])
+
+        complete_action(plan, str(change_dir), "a1", first["leaseId"], {"ok": True})
+        nxt = next_action(plan, str(change_dir), owner="agent-b", lease_ttl_sec=30)
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["actionId"], "a2")
+
 
 if __name__ == "__main__":
     unittest.main()

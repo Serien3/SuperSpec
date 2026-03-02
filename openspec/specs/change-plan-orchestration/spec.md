@@ -1,9 +1,7 @@
 ## Purpose
 
 Define the change-scoped plan orchestration behavior for SuperSpec v0.3, including plan validation, protocol-driven action execution, and execution state tracking.
-
 ## Requirements
-
 ### Requirement: Change-scoped plan definition
 The system MUST support a change-scoped `plan.json` located at `openspec/changes/<change-name>/plan.json` as the authoritative execution definition for that change.
 
@@ -66,6 +64,11 @@ The system MUST execute actions in dependency-safe order and reject invalid depe
 - **WHEN** the action graph contains a cycle
 - **THEN** validation fails before execution starts
 
+#### Scenario: Resolve downstream actions after dependency failure
+- **WHEN** an upstream dependency reaches terminal `FAILED`
+- **THEN** downstream dependents are transitioned to terminal `FAILED` with dependency-failure context
+- **AND** the run does not leave those dependents indefinitely pending
+
 ### Requirement: Unified action execution contract
 The system MUST support both `skill` and `script` executors using a shared action contract with normalized outputs under serial single-agent execution.
 
@@ -101,3 +104,15 @@ The system MUST write per-action execution history for troubleshooting and audit
 - **WHEN** an action fails during execution
 - **THEN** a corresponding execution event record exists in protocol execution storage
 - **AND** includes error details sufficient for troubleshooting
+
+### Requirement: Failure policy enum constraints
+The system MUST limit action failure policy values to the supported runtime semantics.
+
+#### Scenario: Accept supported failure policies
+- **WHEN** plan defaults or action overrides specify `onFail` as `stop` or `continue`
+- **THEN** plan validation succeeds for that field
+
+#### Scenario: Reject unsupported skip-dependent policy
+- **WHEN** plan defaults or action overrides specify `onFail` as `skip_dependents`
+- **THEN** plan validation fails with a clear enum validation error
+

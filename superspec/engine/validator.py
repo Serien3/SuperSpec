@@ -61,6 +61,10 @@ def validate_plan(plan):
     context = plan.get("context")
     _assert(isinstance(context, dict), "context is required")
     _assert(isinstance(context.get("changeName"), str) and context["changeName"], "context.changeName is required")
+    allowed_on_fail = {"stop", "continue"}
+    defaults = plan.get("defaults") or {}
+    if "onFail" in defaults:
+        _assert(defaults["onFail"] in allowed_on_fail, f"Unsupported onFail policy in defaults: {defaults['onFail']}")
 
     actions = plan.get("actions")
     _assert(isinstance(actions, list) and len(actions) > 0, "actions must be a non-empty array")
@@ -82,6 +86,8 @@ def validate_plan(plan):
             _assert(isinstance(action.get("skill"), str) and action["skill"], f"Action {aid} must set skill for skill executor")
         if action.get("executor") == "script":
             _assert(isinstance(action.get("script"), str) and action["script"], f"Action {aid} must set script for script executor")
+        if "onFail" in action:
+            _assert(action["onFail"] in allowed_on_fail, f"Unsupported onFail policy in action {aid}: {action['onFail']}")
 
         exprs = []
         _scan_exprs(action, exprs)

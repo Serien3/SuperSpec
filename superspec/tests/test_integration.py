@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from superspec.engine.errors import ProtocolError
+from superspec.engine.errors import ProtocolError, ValidationError
 from superspec.engine.protocol import complete_action, fail_action, next_action, status_snapshot
 from superspec.engine.validator import validate_plan
 
@@ -155,6 +155,69 @@ class IntegrationTest(unittest.TestCase):
         complete_action(plan, str(change_dir), "a1", {"ok": True})
         terminal = status_snapshot(plan, str(change_dir))
         self.assertEqual(terminal["status"], "success")
+
+    def test_dependency_failure_propagates_and_never_emits_skipped(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+                {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+                {"id": "b1", "type": "openspec.tasks", "executor": "script", "script": "echo independent"},
+            ],
+        )
+        plan["defaults"]["onFail"] = "continue"
+        validate_plan(plan)
+
+        first = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["action"]["actionId"], "a1")
+
+        after_fail = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "root failure"})
+        by_id = {action["id"]: action for action in after_fail["actions"]}
+        self.assertEqual(by_id["a1"]["status"], "FAILED")
+        self.assertEqual(by_id["a2"]["status"], "FAILED")
+        self.assertEqual(by_id["a3"]["status"], "FAILED")
+        self.assertEqual(by_id["b1"]["status"], "PENDING")
+        self.assertEqual(by_id["a2"]["error"]["code"], "dependency_failed")
+        self.assertEqual(by_id["a3"]["error"]["code"], "dependency_failed")
+        self.assertEqual(after_fail["progress"]["done"], 0)
+        self.assertEqual(after_fail["progress"]["failed"], 3)
+        self.assertEqual(after_fail["progress"]["remaining"], 1)
+        self.assertTrue(all(action["status"] != "SKIPPED" for action in after_fail["actions"]))
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["actionId"], "b1")
+        complete_action(plan, str(change_dir), "b1", {"ok": True})
+
+        terminal = status_snapshot(plan, str(change_dir))
+        self.assertEqual(terminal["status"], "failed")
+        self.assertEqual(terminal["progress"]["done"], 1)
+        self.assertEqual(terminal["progress"]["failed"], 3)
+        self.assertEqual(terminal["progress"]["remaining"], 0)
+        self.assertTrue(all(action["status"] != "SKIPPED" for action in terminal["actions"]))
+
+    def test_validate_rejects_skip_dependents_on_fail(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan_defaults_invalid = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
+        )
+        plan_defaults_invalid["defaults"]["onFail"] = "skip_dependents"
+        with self.assertRaises(ValidationError):
+            validate_plan(plan_defaults_invalid)
+
+        plan_action_invalid = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one", "onFail": "skip_dependents"}],
+        )
+        with self.assertRaises(ValidationError):
+            validate_plan(plan_action_invalid)
 
 
 if __name__ == "__main__":

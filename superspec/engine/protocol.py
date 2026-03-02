@@ -124,7 +124,7 @@ def _completed_ids(state: dict):
     return {
         a["id"]
         for a in state["actions"]
-        if a["status"] in {"SUCCESS", "SKIPPED"}
+        if a["status"] == "SUCCESS"
     }
 
 
@@ -145,6 +145,53 @@ def _action_by_id(plan: dict, action_id: str):
         if action["id"] == action_id:
             return action
     return None
+
+
+def _action_state_by_id(state: dict, action_id: str):
+    for action in state["actions"]:
+        if action["id"] == action_id:
+            return action
+    return None
+
+
+def _propagate_dependency_failures(change_dir: str, state: dict):
+    # Repeatedly collapse blocked dependents into FAILED for deterministic termination.
+    while True:
+        transitioned = False
+        for action_state in state["actions"]:
+            if action_state["status"] != "PENDING":
+                continue
+
+            failed_dep = None
+            for dep in action_state.get("dependsOn", []):
+                dep_state = _action_state_by_id(state, dep)
+                if dep_state and dep_state["status"] == "FAILED":
+                    failed_dep = dep
+                    break
+            if not failed_dep:
+                continue
+
+            action_state["status"] = "FAILED"
+            action_state["nextEligibleAt"] = None
+            action_state["finishedAt"] = _now_iso()
+            action_state["error"] = {
+                "code": "dependency_failed",
+                "message": f"Blocked by failed dependency: {failed_dep}",
+                "dependency": failed_dep,
+            }
+            append_event(
+                change_dir,
+                {
+                    "event": "action.failed",
+                    "actionId": action_state["id"],
+                    "onFail": "dependency_failed",
+                    "dependency": failed_dep,
+                },
+            )
+            transitioned = True
+
+        if not transitioned:
+            return
 
 
 def _terminalize_if_done(change_dir: str, state: dict):
@@ -268,16 +315,16 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
         return status_snapshot(plan, change_dir)
 
     on_fail = action_def.get("onFail") or defaults.get("onFail", "stop")
-    if on_fail == "continue":
-        action_state["status"] = "FAILED"
-    elif on_fail == "skip_dependents":
-        action_state["status"] = "SKIPPED"
-    else:
-        action_state["status"] = "FAILED"
+    action_state["status"] = "FAILED"
+    action_state["nextEligibleAt"] = None
+    if on_fail == "stop":
         state["status"] = "failed"
         state["finishedAt"] = _now_iso()
+    elif on_fail != "continue":
+        raise ProtocolError(f"Unsupported onFail policy: {on_fail}", code="invalid_policy")
 
     append_event(change_dir, {"event": "action.failed", "actionId": action_id, "onFail": on_fail})
+    _propagate_dependency_failures(change_dir, state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
     return status_snapshot(plan, change_dir)
@@ -299,6 +346,7 @@ def _contracts_payload():
         },
         "status": {
             "fields": ["status", "progress", "lastFailure", "actions"],
+            "actionStates": ["PENDING", "RUNNING", "SUCCESS", "FAILED"],
             "debugFields": ["contracts"],
         },
         "actionPayload": {
@@ -311,7 +359,7 @@ def _contracts_payload():
 
 def status_snapshot(plan: dict, change_dir: str, debug: bool = False):
     state = ensure_protocol_state(plan, change_dir)
-    done = len([a for a in state["actions"] if a["status"] in {"SUCCESS", "SKIPPED"}])
+    done = len([a for a in state["actions"] if a["status"] == "SUCCESS"])
     failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
     running = len([a for a in state["actions"] if a["status"] == "RUNNING"])
 
@@ -339,4 +387,3 @@ def status_snapshot(plan: dict, change_dir: str, debug: bool = False):
     if debug:
         payload["contracts"] = _contracts_payload()
     return payload
-

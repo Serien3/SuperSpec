@@ -26,7 +26,7 @@
       "properties": {
         "executor": { "enum": ["skill", "script"] },
         "timeoutSec": { "type": "integer", "minimum": 1 },
-        "onFail": { "enum": ["stop", "continue", "skip_dependents"] },
+        "onFail": { "enum": ["stop", "continue"] },
         "ifExists": { "enum": ["fail", "skip", "overwrite"] },
         "retry": {
           "type": "object",
@@ -72,7 +72,7 @@
             },
             "additionalProperties": false
           },
-          "onFail": { "enum": ["stop", "continue", "skip_dependents"] },
+          "onFail": { "enum": ["stop", "continue"] },
           "ifExists": { "enum": ["fail", "skip", "overwrite"] },
           "approval": {
             "type": "object",

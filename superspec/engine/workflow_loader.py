@@ -6,6 +6,10 @@ from jsonschema import Draft202012Validator
 from superspec.engine.errors import ProtocolError
 
 
+def _package_root():
+    return Path(__file__).resolve().parents[1]
+
+
 def _load_json(path: Path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -33,22 +37,27 @@ def _resolve_workflow_name(workflow: str | None):
 
 
 def _load_workflow_schema(repo_root: Path):
-    return _load_json(repo_root / "superspec" / "schemas" / "workflow.schema.json")
+    return _load_json(_package_root() / "schemas" / "workflow.schema.json")
 
 
 def _load_base_template(repo_root: Path):
-    return _load_json(repo_root / "superspec" / "templates" / "plan.base.json")
+    return _load_json(_package_root() / "templates" / "plan.base.json")
 
 
 def _load_workflow(repo_root: Path, workflow_name: str):
-    path = repo_root / "superspec" / "schemas" / "workflows" / f"{workflow_name}.workflow.json"
-    if not path.exists():
-        raise ProtocolError(
-            f"Unknown plan schema '{workflow_name}'. Expected file: {path}",
-            code="invalid_plan_schema",
-            details={"schema": workflow_name, "path": str(path)},
-        )
-    return _load_json(path), path
+    local_path = repo_root / "superspec" / "schemas" / "workflows" / f"{workflow_name}.workflow.json"
+    package_path = _package_root() / "schemas" / "workflows" / f"{workflow_name}.workflow.json"
+
+    if local_path.exists():
+        return _load_json(local_path), local_path
+    if package_path.exists():
+        return _load_json(package_path), package_path
+
+    raise ProtocolError(
+        f"Unknown plan schema '{workflow_name}'. Expected workflow at {local_path} or {package_path}",
+        code="invalid_plan_schema",
+        details={"schema": workflow_name, "localPath": str(local_path), "defaultPath": str(package_path)},
+    )
 
 
 def _validate_workflow(repo_root: Path, workflow: dict, workflow_name: str):

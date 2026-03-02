@@ -12,6 +12,14 @@ The system MUST support workflow-based plan generation when initializing a chang
 - **THEN** the system resolves the selected workflow definition and writes a change-scoped `plan.json` generated from base template plus workflow content
 - **AND** records context values for that change without placeholder leakage
 
+### Requirement: Init-time generated plan validation
+The system MUST validate generated plan structure during `plan init` before persisting `plan.json`.
+
+#### Scenario: Reject invalid generated plan during init
+- **WHEN** workflow content plus init-time overrides produce an invalid plan
+- **THEN** plan initialization fails with a validation error
+- **AND** `plan.json` is not written or modified
+
 ### Requirement: Plan schema selector validation
 The system MUST validate requested schema selector values before writing a plan.
 

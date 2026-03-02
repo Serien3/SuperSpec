@@ -41,6 +41,32 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertEqual(plan["context"]["changeName"], "demo-change")
         self.assertEqual(plan["metadata"]["schema"]["id"], "sdd")
 
+    def test_plan_init_falls_back_to_packaged_default_workflow(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        # No local superspec/schemas/workflows assets are created.
+        args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+
+        command_plan_init(root, args)
+
+        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        self.assertTrue(plan_path.exists())
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        self.assertEqual(plan["metadata"]["schema"]["id"], "sdd")
+
+    def test_plan_init_ignores_local_plan_base_template(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+        # If local base template were used, init would fail validation.
+        local_base = root / "superspec" / "templates" / "plan.base.json"
+        local_base.write_text(json.dumps({"schemaVersion": "broken"}, indent=2), encoding="utf-8")
+
+        args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+        command_plan_init(root, args)
+
+        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        self.assertEqual(plan["schemaVersion"], "superspec.plan/v0.3")
+
     def test_plan_init_supports_explicit_schema_selection(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)

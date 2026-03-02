@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: superspec
+Version: 0.5.0
+Summary: SuperSpec protocol-driven orchestrator
+Requires-Python: >=3.10
+Requires-Dist: jsonschema>=4.0

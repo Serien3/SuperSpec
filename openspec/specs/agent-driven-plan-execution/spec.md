@@ -78,7 +78,7 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 - **AND** eventually returns `done` when the plan reaches terminal state
 
 #### Scenario: Blocked loop behavior
-- **WHEN** `next` returns `blocked` due to dependencies or retry backoff
+- **WHEN** `next` returns `blocked` because no action is currently runnable (for example due to unresolved dependencies, retry backoff, or an in-flight `RUNNING` action awaiting report-back)
 - **THEN** the agent can continue polling without invalidating state
 - **AND** serial action ordering remains intact across repeated polling
 

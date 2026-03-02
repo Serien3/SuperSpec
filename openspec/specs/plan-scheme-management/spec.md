@@ -13,6 +13,11 @@ The system MUST support declarative workflow files that define workflow metadata
 - **THEN** the system loads that workflow definition
 - **AND** uses its metadata, defaults, and actions as generation input
 
+#### Scenario: Discover workflow in default filesystem location
+- **WHEN** a user adds a valid workflow file under `superspec/schemas/workflows/` using the `<schema>.workflow.json` naming pattern
+- **THEN** the workflow is discoverable by `plan init --schema <schema>`
+- **AND** no SuperSpec source code changes are required
+
 ### Requirement: Workflow identity and metadata validation
 The system MUST validate required workflow metadata fields before using a workflow for generation.
 

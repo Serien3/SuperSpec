@@ -11,12 +11,13 @@
   "actions": [
     {
       "id": "a1",
-      "type": "openspec.proposal",
-      "skill": "openspec-continue-change"
+      "type": "using-worktree",
+      "executor": "script",
+      "script": "python3 -m superspec.scripts.worktree_create --slug \"${context.changeName}\""
     },
     {
       "id": "a2",
-      "type": "openspec.specs",
+      "type": "openspec.proposal",
       "dependsOn": [
         "a1"
       ],
@@ -24,7 +25,7 @@
     },
     {
       "id": "a3",
-      "type": "openspec.design",
+      "type": "openspec.specs",
       "dependsOn": [
         "a2"
       ],
@@ -32,7 +33,7 @@
     },
     {
       "id": "a4",
-      "type": "openspec.tasks",
+      "type": "openspec.design",
       "dependsOn": [
         "a3"
       ],
@@ -40,12 +41,11 @@
     },
     {
       "id": "a5",
-      "type": "using-worktree",
+      "type": "openspec.tasks",
       "dependsOn": [
         "a4"
       ],
-      "executor": "script",
-      "script": "git worktree list"
+      "skill": "openspec-continue-change"
     },
     {
       "id": "a6",

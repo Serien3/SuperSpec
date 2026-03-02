@@ -32,14 +32,6 @@ def resolve_template_string(value, context):
     return re.sub(r"\$\{([^}]+)}", replace, value)
 
 
-def resolve_value(value, context):
-    if isinstance(value, list):
-        return [resolve_value(item, context) for item in value]
-    if isinstance(value, dict):
-        return {k: resolve_value(v, context) for k, v in value.items()}
-    return resolve_template_string(value, context)
-
-
 def resolve_runtime_action_fields(action: dict, context: dict):
     resolved = {}
     for field in ("executor", "script", "skill"):

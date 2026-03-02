@@ -91,6 +91,7 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **WHEN** an action includes template expressions
 - **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, and `inputs.prompt`
 - **AND** other action fields do not participate in runtime payload expression expansion
+- **AND** the runtime implementation does not provide a generic recursive resolver for arbitrary action objects
 
 ### Requirement: OpenSpec workflow action support
 The system MUST support the action types `openspec.proposal`, `openspec.specs`, `openspec.design`, `openspec.tasks`, and `openspec.apply` in plan execution.

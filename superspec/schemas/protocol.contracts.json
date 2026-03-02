@@ -87,6 +87,10 @@
       "script",
       "skill",
       "inputs.prompt"
+    ],
+    "runtimeExpressionNotes": [
+      "No generic recursive runtime resolver for arbitrary action fields",
+      "Only the listed fields are expanded in next-action payload generation"
     ]
   },
   "removed": [

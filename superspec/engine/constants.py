@@ -1,4 +1,5 @@
-SUPPORTED_SCHEMA_VERSION = "superspec.plan/v0.1"
+SUPPORTED_SCHEMA_VERSION = "superspec.plan/v0.2"
+SUPPORTED_PROTOCOL_VERSION = "superspec.protocol/v0.2"
 
 SUPPORTED_ACTION_TYPES = {
     "openspec.proposal",
@@ -19,3 +20,6 @@ DEFAULTS = {
         "strategy": "fixed",
     },
 }
+
+DEFAULT_LEASE_TTL_SEC = 300
+ACTION_STATUSES = {"PENDING", "LEASED", "RUNNING", "SUCCESS", "FAILED", "SKIPPED"}

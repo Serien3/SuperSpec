@@ -3,9 +3,9 @@ import json
 import subprocess
 from pathlib import Path
 
-from superspec.engine.orchestrator import run_plan
+from superspec.engine.errors import ProtocolError
+from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import load_plan_from_change, resolve_change_dir
-from superspec.engine.state_store import load_latest_run_state
 from superspec.engine.validator import validate_plan
 
 
@@ -22,6 +22,16 @@ def _run_openspec_new_change(repo_root: Path, change_name: str, summary: str | N
     if result.returncode != 0:
         raise RuntimeError(result.stderr or result.stdout or "openspec new change failed")
     print(result.stdout, end="")
+
+
+def _parse_object_json(raw: str, field: str):
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ProtocolError(f"{field} must be valid JSON", code="invalid_payload") from exc
+    if not isinstance(parsed, dict):
+        raise ProtocolError(f"{field} must be a JSON object", code="invalid_payload")
+    return parsed
 
 
 def command_change_new(repo_root: Path, args):
@@ -47,34 +57,65 @@ def command_plan_validate(repo_root: Path, args):
     print(f"Plan is valid: {plan_path}")
 
 
-def command_plan_run(repo_root: Path, args):
-    plan, _ = load_plan_from_change(str(repo_root), args.change)
-    state = run_plan(
-        plan,
-        {
-            "resume": args.resume,
-            "fromAction": args.from_action,
-        },
+def command_plan_next(repo_root: Path, args):
+    payload = run_protocol_action_from_cli(
+        repo_root,
+        args.change,
+        "next",
+        owner=args.owner,
+        lease_ttl_sec=args.lease_ttl_sec,
+        debug=bool(args.debug),
     )
-    done = sum(1 for a in state["actions"] if a["status"] == "SUCCESS")
-    failed = sum(1 for a in state["actions"] if a["status"] == "FAILED")
-    print(f"Run {state['runId']}: {done}/{len(state['actions'])} successful, {failed} failed, status={state['status']}")
+    if args.json:
+        print(to_json(payload))
+    else:
+        print(payload.get("instruction", ""))
+
+
+def command_plan_complete(repo_root: Path, args):
+    result_payload = _parse_object_json(args.result_json, "result-json")
+    payload = run_protocol_action_from_cli(
+        repo_root,
+        args.change,
+        "complete",
+        action_id=args.action_id,
+        lease_id=args.lease,
+        result_payload=result_payload,
+    )
+    if args.json:
+        print(to_json(payload))
+    else:
+        print(f"Action {args.action_id} marked complete.")
+
+
+def command_plan_fail(repo_root: Path, args):
+    error_payload = _parse_object_json(args.error_json, "error-json")
+    payload = run_protocol_action_from_cli(
+        repo_root,
+        args.change,
+        "fail",
+        action_id=args.action_id,
+        lease_id=args.lease,
+        error_payload=error_payload,
+    )
+    if args.json:
+        print(to_json(payload))
+    else:
+        print(f"Action {args.action_id} marked failed.")
 
 
 def command_plan_status(repo_root: Path, args):
-    change_dir = resolve_change_dir(str(repo_root), args.change)
-    state = load_latest_run_state(str(change_dir))
-    if not state:
-        print("No run-state found.")
+    payload = run_protocol_action_from_cli(repo_root, args.change, "status")
+    if args.json:
+        print(to_json(payload))
         return
 
-    done = sum(1 for a in state["actions"] if a["status"] == "SUCCESS")
     print(f"Change: {args.change}")
-    print(f"Run: {state['runId']}")
-    print(f"Status: {state['status']}")
-    print(f"Progress: {done}/{len(state['actions'])}")
-    for action in state["actions"]:
-        suffix = f" ({action['error']['message']})" if action.get("error") else ""
+    print(f"Status: {payload['status']}")
+    progress = payload["progress"]
+    print(f"Progress: {progress['done']}/{progress['total']} (failed={progress['failed']}, running={progress['running']})")
+    for action in payload["actions"]:
+        suffix = f" ({action['error']['message']})" if action.get("error") and action["error"].get("message") else ""
         print(f"- {action['id']} [{action['status']}]{suffix}")
 
 
@@ -97,13 +138,30 @@ def build_parser():
     plan_validate = plan_sub.add_parser("validate")
     plan_validate.add_argument("change")
 
-    plan_run = plan_sub.add_parser("run")
-    plan_run.add_argument("change")
-    plan_run.add_argument("--resume", action="store_true")
-    plan_run.add_argument("--from", dest="from_action")
+    plan_next = plan_sub.add_parser("next")
+    plan_next.add_argument("change")
+    plan_next.add_argument("--owner", default="agent")
+    plan_next.add_argument("--lease-ttl-sec", type=int)
+    plan_next.add_argument("--debug", action="store_true")
+    plan_next.add_argument("--json", action="store_true")
+
+    plan_complete = plan_sub.add_parser("complete")
+    plan_complete.add_argument("change")
+    plan_complete.add_argument("action_id")
+    plan_complete.add_argument("--lease", required=True)
+    plan_complete.add_argument("--result-json", required=True)
+    plan_complete.add_argument("--json", action="store_true")
+
+    plan_fail = plan_sub.add_parser("fail")
+    plan_fail.add_argument("change")
+    plan_fail.add_argument("action_id")
+    plan_fail.add_argument("--lease", required=True)
+    plan_fail.add_argument("--error-json", required=True)
+    plan_fail.add_argument("--json", action="store_true")
 
     plan_status = plan_sub.add_parser("status")
     plan_status.add_argument("change")
+    plan_status.add_argument("--json", action="store_true")
 
     return parser
 
@@ -123,8 +181,14 @@ def main():
         if args.group == "plan" and args.sub == "validate":
             command_plan_validate(repo_root, args)
             return
-        if args.group == "plan" and args.sub == "run":
-            command_plan_run(repo_root, args)
+        if args.group == "plan" and args.sub == "next":
+            command_plan_next(repo_root, args)
+            return
+        if args.group == "plan" and args.sub == "complete":
+            command_plan_complete(repo_root, args)
+            return
+        if args.group == "plan" and args.sub == "fail":
+            command_plan_fail(repo_root, args)
             return
         if args.group == "plan" and args.sub == "status":
             command_plan_status(repo_root, args)
@@ -132,6 +196,10 @@ def main():
 
         parser.print_help()
         raise SystemExit(1)
+    except ProtocolError as exc:
+        payload = {"error": {"code": exc.code, "message": str(exc), "details": exc.details}}
+        print(to_json(payload))
+        raise SystemExit(1) from exc
     except Exception as exc:  # noqa: BLE001
         print(f"Error: {exc}")
         raise SystemExit(1) from exc

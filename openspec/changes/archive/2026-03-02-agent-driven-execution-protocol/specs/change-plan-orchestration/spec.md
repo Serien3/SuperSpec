@@ -1,8 +1,4 @@
-## Purpose
-
-Define the change-scoped plan orchestration behavior for SuperSpec v0.2, including plan validation, protocol-driven action execution, and execution state tracking.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Change-scoped plan definition
 The system MUST support a change-scoped `plan.json` located at `openspec/changes/<change-name>/plan.json` as the authoritative execution definition for that change.
@@ -57,13 +53,13 @@ The system MUST persist execution state to allow interrupted runs to resume safe
 
 #### Scenario: Resume after failed action
 - **WHEN** a prior run failed after completing a subset of actions
-- **THEN** a resumed agent can continue by fetching the next runnable action via protocol commands
+- **THEN** a resume run continues from the next executable action
 - **AND** previously successful actions are not re-executed unless explicitly requested
 
 ### Requirement: Per-action execution logs
-The system MUST write per-action execution history for troubleshooting and auditability.
+The system MUST write per-action logs for each run under a run-specific directory.
 
-#### Scenario: Inspect action history after failure
+#### Scenario: Inspect action log after failure
 - **WHEN** an action fails during execution
-- **THEN** a corresponding execution event record exists in protocol execution storage
-- **AND** includes error details sufficient for troubleshooting
+- **THEN** a corresponding action log exists in the run log directory
+- **AND** includes command or skill execution details sufficient for troubleshooting

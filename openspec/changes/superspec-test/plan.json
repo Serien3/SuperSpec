@@ -4,8 +4,8 @@
   "title": "Main delivery plan",
   "goal": "Complete artifacts and apply implementation for this change",
   "context": {
-    "changeName": "${CHANGE_NAME}",
-    "changeDir": "openspec/changes/${CHANGE_NAME}",
+    "changeName": "superspec-test",
+    "changeDir": "openspec/changes/superspec-test",
     "repoRoot": ".",
     "specRoot": "openspec"
   },
@@ -56,3 +56,4 @@
     "stopOnValidationError": true
   }
 }
+

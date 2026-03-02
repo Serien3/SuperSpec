@@ -7,61 +7,54 @@ def _now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
-def create_run_layout(change_dir: str, run_id: str):
-    run_dir = Path(change_dir) / "runs" / run_id
-    logs_dir = run_dir / "logs"
-    logs_dir.mkdir(parents=True, exist_ok=True)
-    return run_dir, logs_dir
+def execution_dir(change_dir: str) -> Path:
+    return Path(change_dir) / "execution"
 
 
-def write_run_state(change_dir: str, run_id: str, state: dict):
-    run_dir, _ = create_run_layout(change_dir, run_id)
-    run_state_path = run_dir / "state.json"
-    run_state_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
-
-    latest_path = Path(change_dir) / "run-state.json"
-    latest_path.write_text(json.dumps(state, indent=2), encoding="utf-8")
-    return str(run_state_path), str(latest_path)
-
-
-def load_latest_run_state(change_dir: str):
-    latest_path = Path(change_dir) / "run-state.json"
-    if not latest_path.exists():
-        return None
-    return json.loads(latest_path.read_text(encoding="utf-8"))
-
-
-def create_initial_state(plan: dict, run_id: str):
-    now = _now_iso()
+def ensure_execution_layout(change_dir: str):
+    base = execution_dir(change_dir)
+    base.mkdir(parents=True, exist_ok=True)
     return {
-        "runId": run_id,
-        "planId": plan["planId"],
-        "changeName": plan["context"]["changeName"],
-        "schemaVersion": plan["schemaVersion"],
-        "status": "running",
-        "startedAt": now,
-        "updatedAt": now,
-        "actions": [
-            {
-                "id": action["id"],
-                "type": action["type"],
-                "status": "PENDING",
-                "attempts": 0,
-                "startedAt": None,
-                "finishedAt": None,
-                "error": None,
-                "output": None,
-            }
-            for action in plan["actions"]
-        ],
+        "dir": base,
+        "state": base / "state.json",
+        "leases": base / "leases.json",
+        "events": base / "events.log",
     }
 
 
-def patch_state_timestamps(state: dict):
-    state["updatedAt"] = _now_iso()
+def write_json(path: Path, payload: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def finalise_state(state: dict, status: str):
-    state["status"] = status
-    state["finishedAt"] = _now_iso()
-    patch_state_timestamps(state)
+def read_json(path: Path, default=None):
+    if not path.exists():
+        return default
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def append_event(change_dir: str, event: dict):
+    layout = ensure_execution_layout(change_dir)
+    event_line = {"ts": _now_iso(), **event}
+    with layout["events"].open("a", encoding="utf-8") as f:
+        f.write(json.dumps(event_line, ensure_ascii=True) + "\n")
+
+
+def write_execution_state(change_dir: str, payload: dict):
+    layout = ensure_execution_layout(change_dir)
+    write_json(layout["state"], payload)
+
+
+def read_execution_state(change_dir: str):
+    layout = ensure_execution_layout(change_dir)
+    return read_json(layout["state"])
+
+
+def write_execution_leases(change_dir: str, payload: dict):
+    layout = ensure_execution_layout(change_dir)
+    write_json(layout["leases"], payload)
+
+
+def read_execution_leases(change_dir: str):
+    layout = ensure_execution_layout(change_dir)
+    return read_json(layout["leases"], {"leases": {}})

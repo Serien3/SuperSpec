@@ -1,8 +1,10 @@
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
-from superspec.engine.orchestrator import run_plan
+from superspec.engine.errors import ProtocolError
+from superspec.engine.protocol import complete_action, next_action, status_snapshot
 from superspec.engine.validator import validate_plan
 
 
@@ -16,7 +18,7 @@ class IntegrationTest(unittest.TestCase):
 
     def build_plan(self, root: Path, change_name: str, actions):
         return {
-            "schemaVersion": "superspec.plan/v0.1",
+            "schemaVersion": "superspec.plan/v0.2",
             "planId": "main",
             "title": "Integration Plan",
             "goal": "Test plan execution",
@@ -39,60 +41,70 @@ class IntegrationTest(unittest.TestCase):
             "actions": actions,
         }
 
-    def test_full_plan_path_executes_sequentially(self):
+    def test_pull_loop_next_complete_until_done(self):
         root, change_name, change_dir = self.setup_temp_change()
-        actions = [
-            {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "printf proposal > proposal.txt"},
-            {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "printf specs > specs.txt"},
-            {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "printf design > design.txt"},
-            {"id": "a4", "type": "openspec.tasks", "dependsOn": ["a3"], "executor": "script", "script": "printf tasks > tasks.txt"},
-            {"id": "a5", "type": "openspec.apply", "dependsOn": ["a4"], "executor": "script", "script": "printf apply > apply.txt"},
-        ]
-        plan = self.build_plan(root, change_name, actions)
-
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "skill", "skill": "openspec-continue-change", "inputs": {"prompt": "draft specs"}},
+                {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+            ],
+        )
         validate_plan(plan)
-        state = run_plan(plan)
 
-        self.assertEqual(state["status"], "success")
-        self.assertEqual(len([a for a in state["actions"] if a["status"] == "SUCCESS"]), 5)
+        completed = 0
+        while True:
+            nxt = next_action(plan, str(change_dir), owner="tester")
+            if nxt["state"] == "done":
+                break
+            self.assertEqual(nxt["state"], "ready")
+            action_id = nxt["action"]["actionId"]
+            complete_action(plan, str(change_dir), action_id, nxt["leaseId"], {"ok": True, "actionId": action_id})
+            completed += 1
 
-        for file_name in ["proposal.txt", "specs.txt", "design.txt", "tasks.txt", "apply.txt"]:
-            self.assertTrue((root / file_name).exists())
+        self.assertEqual(completed, 3)
+        status = status_snapshot(plan, str(change_dir))
+        self.assertEqual(status["status"], "success")
+        self.assertEqual(status["progress"]["done"], 3)
 
-        self.assertTrue((change_dir / "run-state.json").exists())
-
-    def test_resume_continues_after_failed_action(self):
-        root, change_name, _ = self.setup_temp_change()
-
-        first_plan = self.build_plan(
+    def test_lease_conflict_and_expiry_reclaim(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
             root,
             change_name,
-            [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "printf done > a1.txt"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "exit 1"},
-                {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "printf done > a3.txt"},
-            ],
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
         )
+        validate_plan(plan)
 
-        failed = run_plan(first_plan)
-        self.assertEqual(failed["status"], "failed")
-        self.assertEqual(next(a for a in failed["actions"] if a["id"] == "a1")["status"], "SUCCESS")
-        self.assertEqual(next(a for a in failed["actions"] if a["id"] == "a2")["status"], "FAILED")
+        first = next_action(plan, str(change_dir), owner="agent-a", lease_ttl_sec=1)
+        self.assertEqual(first["state"], "ready")
 
-        second_plan = self.build_plan(
+        with self.assertRaises(ProtocolError):
+            complete_action(plan, str(change_dir), "a1", "invalid-lease", {"ok": True})
+
+        time.sleep(1.2)
+        second = next_action(plan, str(change_dir), owner="agent-b", lease_ttl_sec=10)
+        self.assertEqual(second["state"], "ready")
+        self.assertNotEqual(first["leaseId"], second["leaseId"])
+
+    def test_execution_storage_files_are_created(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
             root,
             change_name,
-            [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "printf done > a1.txt"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "printf recovered > a2.txt"},
-                {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "printf done > a3.txt"},
-            ],
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
         )
+        validate_plan(plan)
 
-        resumed = run_plan(second_plan, {"resume": True})
-        self.assertEqual(resumed["status"], "success")
-        self.assertTrue((root / "a2.txt").exists())
-        self.assertTrue((root / "a3.txt").exists())
+        nxt = next_action(plan, str(change_dir), owner="agent")
+        complete_action(plan, str(change_dir), "a1", nxt["leaseId"], {"ok": True})
+        _ = status_snapshot(plan, str(change_dir))
+
+        self.assertTrue((change_dir / "execution" / "state.json").exists())
+        self.assertTrue((change_dir / "execution" / "leases.json").exists())
+        self.assertTrue((change_dir / "execution" / "events.log").exists())
 
 
 if __name__ == "__main__":

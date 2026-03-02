@@ -1,14 +1,9 @@
 {
-  "schemaVersion": "superspec.plan/v0.3",
-  "planId": "main",
+  "schemeId": "sdd",
+  "version": "1.0.0",
+  "description": "Default spec-driven development flow",
   "title": "Main delivery plan",
   "goal": "Execute this change in a single-agent serial loop",
-  "context": {
-    "changeName": "${CHANGE_NAME}",
-    "changeDir": "openspec/changes/${CHANGE_NAME}",
-    "repoRoot": ".",
-    "specRoot": "openspec"
-  },
   "defaults": {
     "executor": "skill",
     "timeoutSec": 900,
@@ -23,25 +18,33 @@
     {
       "id": "a2",
       "type": "openspec.specs",
-      "dependsOn": ["a1"],
+      "dependsOn": [
+        "a1"
+      ],
       "skill": "openspec-continue-change"
     },
     {
       "id": "a3",
       "type": "openspec.design",
-      "dependsOn": ["a2"],
+      "dependsOn": [
+        "a2"
+      ],
       "skill": "openspec-continue-change"
     },
     {
       "id": "a4",
       "type": "openspec.tasks",
-      "dependsOn": ["a3"],
+      "dependsOn": [
+        "a3"
+      ],
       "skill": "openspec-continue-change"
     },
     {
       "id": "a5",
       "type": "openspec.apply",
-      "dependsOn": ["a4"],
+      "dependsOn": [
+        "a4"
+      ],
       "skill": "openspec-apply-change"
     }
   ]

@@ -4,9 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "superspec"
-version = "0.2.0"
+version = "0.4.0"
 description = "SuperSpec protocol-driven orchestrator"
 requires-python = ">=3.10"
+dependencies = ["jsonschema>=4.0"]
 
 [project.scripts]
 superspec = "superspec.cli:main"

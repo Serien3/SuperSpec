@@ -6,32 +6,28 @@ from pathlib import Path
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import load_plan_from_change, resolve_change_dir
+from superspec.engine.scheme_loader import build_plan_from_scheme
 from superspec.engine.validator import validate_plan
 
-PLAN_MODE_TEMPLATES = {
-    "sdd": "plan.template.json",
-}
-
-
-def _read_template(repo_root: Path, change_name: str, mode: str) -> str:
-    template_name = PLAN_MODE_TEMPLATES.get(mode)
-    if not template_name:
-        supported = ", ".join(sorted(PLAN_MODE_TEMPLATES.keys()))
-        raise ProtocolError(
-            f"Unsupported plan mode '{mode}'. Supported modes: {supported}",
-            code="invalid_plan_mode",
-            details={"mode": mode, "supportedModes": sorted(PLAN_MODE_TEMPLATES.keys())},
-        )
-    template_path = repo_root / "superspec" / "templates" / template_name
-    return template_path.read_text(encoding="utf-8").replace("${CHANGE_NAME}", change_name)
-
-
-def _write_plan(repo_root: Path, change_name: str, mode: str):
+def _write_plan(repo_root: Path, change_name: str, scheme: str | None, title: str | None, goal: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
     plan_path = change_dir / "plan.json"
-    plan_path.write_text(f"{_read_template(repo_root, change_name, mode)}\n", encoding="utf-8")
-    return plan_path
+    overrides = {}
+    if title:
+        overrides["title"] = title
+    if goal:
+        overrides["goal"] = goal
+
+    plan, selected_scheme, _ = build_plan_from_scheme(
+        repo_root,
+        change_name,
+        scheme=scheme,
+        overrides=overrides or None,
+    )
+    validate_plan(plan)
+    plan_path.write_text(f"{json.dumps(plan, indent=2, ensure_ascii=True)}\n", encoding="utf-8")
+    return plan_path, selected_scheme
 
 
 def _run_openspec_new_change(repo_root: Path, change_name: str, summary: str | None):
@@ -57,16 +53,16 @@ def _parse_object_json(raw: str, field: str):
 def command_change_new(repo_root: Path, args):
     _run_openspec_new_change(repo_root, args.change, args.summary)
     if args.init_plan:
-        plan_path = _write_plan(repo_root, args.change, args.plan_mode)
-        print(f"Initialized {plan_path} (mode={args.plan_mode})")
+        plan_path, selected_scheme = _write_plan(repo_root, args.change, args.plan_scheme, None, None)
+        print(f"Initialized {plan_path} (scheme={selected_scheme})")
         return
     print(f"Plan not initialized for change '{args.change}'.")
-    print(f"Run: superspec plan init {args.change} --mode sdd")
+    print(f"Run: superspec plan init {args.change} --scheme sdd")
 
 
 def command_plan_init(repo_root: Path, args):
-    plan_path = _write_plan(repo_root, args.change, args.mode)
-    print(f"Initialized {plan_path} (mode={args.mode})")
+    plan_path, selected_scheme = _write_plan(repo_root, args.change, args.scheme, args.title, args.goal)
+    print(f"Initialized {plan_path} (scheme={selected_scheme})")
 
 
 def command_plan_validate(repo_root: Path, args):
@@ -144,14 +140,16 @@ def build_parser():
     change_new.add_argument("change")
     change_new.add_argument("--summary")
     change_new.add_argument("--init-plan", action="store_true")
-    change_new.add_argument("--plan-mode", default="sdd")
+    change_new.add_argument("--plan-scheme", default="sdd")
 
     plan = sub.add_parser("plan")
     plan_sub = plan.add_subparsers(dest="sub")
 
     plan_init = plan_sub.add_parser("init")
     plan_init.add_argument("change")
-    plan_init.add_argument("--mode", default="sdd")
+    plan_init.add_argument("--scheme", default="sdd")
+    plan_init.add_argument("--title")
+    plan_init.add_argument("--goal")
 
     plan_validate = plan_sub.add_parser("validate")
     plan_validate.add_argument("change")

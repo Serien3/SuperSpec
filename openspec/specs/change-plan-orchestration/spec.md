@@ -1,9 +1,7 @@
 ## Purpose
 
 Define the change-scoped plan orchestration behavior for SuperSpec v0.3, including plan validation, protocol-driven action execution, and execution state tracking.
-
 ## Requirements
-
 ### Requirement: Change-scoped plan definition
 The system MUST support a change-scoped `plan.json` located at `openspec/changes/<change-name>/plan.json` as the authoritative execution definition for that change.
 
@@ -18,24 +16,24 @@ The system MUST support a change-scoped `plan.json` located at `openspec/changes
 - **AND** requires explicit plan initialization before plan validation or protocol execution can proceed
 
 ### Requirement: Plan initialization mode selection
-The system MUST provide a plan initialization option to select a named plan mode.
+The system MUST provide a plan initialization option to select a named plan scheme, with compatibility support for existing mode names.
 
-#### Scenario: Initialize plan with SDD mode
-- **WHEN** a user runs plan initialization with `--mode sdd`
-- **THEN** the system writes a valid SDD `plan.json` to the change directory
+#### Scenario: Initialize plan with default SDD compatibility key
+- **WHEN** a user runs plan initialization with `--mode sdd` or the equivalent scheme selector
+- **THEN** the system writes a valid generated `plan.json` to the change directory
 - **AND** the resulting plan is immediately eligible for plan validation
 
-#### Scenario: Reject unsupported plan mode at init time
-- **WHEN** a user runs plan initialization with an unsupported mode name
-- **THEN** initialization fails with a mode validation error
+#### Scenario: Reject unsupported initialization selector
+- **WHEN** a user runs plan initialization with an unsupported mode alias or scheme name
+- **THEN** initialization fails with a selector validation error
 - **AND** no plan file is created or overwritten
 
 ### Requirement: Mode-aware template resolution
-The system MUST resolve plan initialization content through a mode-keyed template registry.
+The system MUST resolve plan initialization content through base-template-plus-scheme composition rather than a single monolithic template file.
 
-#### Scenario: Resolve default template by mode key
-- **WHEN** initialization runs with a supported mode
-- **THEN** the engine resolves the corresponding mode template
+#### Scenario: Resolve generated plan content from scheme key
+- **WHEN** initialization runs with a supported selector
+- **THEN** the engine resolves the corresponding scheme and base template inputs
 - **AND** interpolates change-scoped fields before writing the plan
 
 ### Requirement: Simplified single-agent starter template
@@ -101,3 +99,4 @@ The system MUST write per-action execution history for troubleshooting and audit
 - **WHEN** an action fails during execution
 - **THEN** a corresponding execution event record exists in protocol execution storage
 - **AND** includes error details sufficient for troubleshooting
+

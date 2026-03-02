@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Define mode-aware plan initialization behavior for SuperSpec, starting with SDD mode and extensible template resolution.
-## Requirements
 ### Requirement: Mode-aware plan initialization
 The system MUST support scheme-based plan generation when initializing a change plan, while preserving compatibility with mode aliases.
 
@@ -25,4 +23,3 @@ The system MUST resolve plan generation inputs through an extensible scheme regi
 - **WHEN** plan initialization is requested for a supported mode alias or scheme key
 - **THEN** the system resolves that key to a concrete scheme source plus base template
 - **AND** applies the same interpolation and schema validation rules used for default plans
-

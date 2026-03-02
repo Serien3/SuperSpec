@@ -1,4 +1,4 @@
-# SuperSpec (Protocol-Driven v0.3)
+# SuperSpec (v0.4.0, Protocol-Driven v0.3)
 
 SuperSpec is a change-scoped orchestration layer for spec-driven development.
 
@@ -7,6 +7,32 @@ SuperSpec is a change-scoped orchestration layer for spec-driven development.
 - Primary language: **Python**.
 - Going forward, new SuperSpec engine/CLI features should be implemented in Python first.
 - JS/TS implementations are not the default path unless explicitly requested.
+
+## Plan Generation (v0.4.0)
+
+Plan initialization is now scheme-driven:
+
+- Base template: `superspec/templates/plan.base.json`
+- Built-in schemes: `superspec/schemes/*.scheme.json`
+- Scheme schema: `superspec/schemas/plan.scheme.schema.json`
+
+Initialization options:
+
+- `superspec plan init <change> --scheme <name>`
+- Optional init-time overrides: `--title`, `--goal`
+
+Merge precedence for generated `plan.json`:
+
+1. Base template
+2. Scheme payload
+3. Init-time overrides
+
+Protected fields always come from the active change context:
+
+- `context.changeName`
+- `context.changeDir`
+
+Runtime execution remains unchanged: protocol commands only consume rendered `openspec/changes/<change>/plan.json`.
 
 ## Protocol Mode (v0.3)
 
@@ -59,7 +85,7 @@ Skill output location policy:
 Recommended flow:
 
 1. `superspec change new <change>`
-2. `superspec plan init <change> --mode sdd` (or `superspec plan init <change>` for compatibility)
+2. `superspec plan init <change> --scheme sdd`
 3. `superspec plan validate <change>`
 4. Loop on `superspec plan next <change> --json` and report with `plan complete` / `plan fail` until `done`
 

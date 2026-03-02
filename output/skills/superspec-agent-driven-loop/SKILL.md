@@ -5,15 +5,15 @@ license: MIT
 compatibility: Requires superspec CLI and openspec CLI.
 metadata:
   author: superspec
-  version: "1.0"
+  version: "1.1"
 ---
 
-Run SuperSpec end-to-end in agent-driven mode.
+Run SuperSpec end-to-end in protocol mode.
 
 This skill is the execution playbook for:
 - creating or selecting a change
 - initializing and validating a plan
-- running `next -> execute -> complete|fail` in a loop
+- running `next -> execute -> complete|fail` in a pull loop
 - stopping only at terminal `done`
 
 **Input**: change name (recommended), optional change summary, optional owner label.
@@ -26,19 +26,23 @@ This skill is the execution playbook for:
      ```bash
      superspec change new "<name>" --summary "<summary>"
      ```
+   - Optional one-step create+init:
+     ```bash
+     superspec change new "<name>" --summary "<summary>" --init-plan --plan-schema sdd
+     ```
    - If no name is provided, list changes and ask user to choose:
      ```bash
      openspec list --json
      ```
 
 2. **Initialize plan**
-   - Preferred v0.3 flow:
+   - Current contract:
      ```bash
-     superspec plan init "<name>" --mode sdd
+     superspec plan init "<name>" --schema sdd
      ```
-   - Compatibility fallback (if `--mode` is unavailable):
+   - Optional init-time overrides:
      ```bash
-     superspec plan init "<name>"
+     superspec plan init "<name>" --schema sdd --title "<title>" --goal "<goal>"
      ```
 
 3. **Validate plan**
@@ -72,16 +76,22 @@ This skill is the execution playbook for:
      - On success, report `complete`
      - On failure, report `fail`
 
+6. **Use `status` for progress and terminal detail**
+   ```bash
+   superspec plan status "<name>" --json
+   ```
+   - Use this for progress counters and last failure details.
+
 ## Required report payload fields
 
-- `complete --result-json` SHOULD include:
+- `complete --result-json` SHOULD include (JSON object):
   - `ok` (boolean)
   - `executor` (`script` or `skill`)
   - `actionId` (string)
   - `summary` (string, optional)
   - `outputs` (object, optional)
 
-- `fail --error-json` SHOULD include:
+- `fail --error-json` SHOULD include (JSON object):
   - `code` (string machine-readable)
   - `message` (string human-readable)
   - `executor` (`script` or `skill`)
@@ -106,7 +116,7 @@ This skill is the execution playbook for:
 
 ```bash
 superspec change new demo-change --summary "demo"
-superspec plan init demo-change
+superspec plan init demo-change --schema sdd
 superspec plan validate demo-change
 superspec plan next demo-change --owner agent --json
 # execute payload...

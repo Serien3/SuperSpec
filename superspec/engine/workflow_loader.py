@@ -5,6 +5,7 @@ from jsonschema import Draft202012Validator
 
 from superspec.engine.errors import ProtocolError
 
+
 def _load_json(path: Path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -27,74 +28,74 @@ def _deep_merge(base, overlay):
     return merged
 
 
-def _resolve_scheme_name(scheme: str | None):
-    return scheme or "sdd"
+def _resolve_workflow_name(workflow: str | None):
+    return workflow or "sdd"
 
 
-def _load_scheme_schema(repo_root: Path):
-    return _load_json(repo_root / "superspec" / "schemas" / "plan.scheme.schema.json")
+def _load_workflow_schema(repo_root: Path):
+    return _load_json(repo_root / "superspec" / "schemas" / "workflow.schema.json")
 
 
 def _load_base_template(repo_root: Path):
     return _load_json(repo_root / "superspec" / "templates" / "plan.base.json")
 
 
-def _load_scheme(repo_root: Path, scheme_name: str):
-    path = repo_root / "superspec" / "schemes" / f"{scheme_name}.scheme.json"
+def _load_workflow(repo_root: Path, workflow_name: str):
+    path = repo_root / "superspec" / "schemas" / "workflows" / f"{workflow_name}.workflow.json"
     if not path.exists():
         raise ProtocolError(
-            f"Unknown plan scheme '{scheme_name}'. Expected file: {path}",
-            code="invalid_plan_scheme",
-            details={"scheme": scheme_name, "path": str(path)},
+            f"Unknown plan schema '{workflow_name}'. Expected file: {path}",
+            code="invalid_plan_schema",
+            details={"schema": workflow_name, "path": str(path)},
         )
     return _load_json(path), path
 
 
-def _validate_scheme(repo_root: Path, scheme: dict, scheme_name: str):
-    schema = _load_scheme_schema(repo_root)
+def _validate_workflow(repo_root: Path, workflow: dict, workflow_name: str):
+    schema = _load_workflow_schema(repo_root)
     validator = Draft202012Validator(schema)
-    errors = sorted(validator.iter_errors(scheme), key=lambda e: list(e.path))
+    errors = sorted(validator.iter_errors(workflow), key=lambda e: list(e.path))
     if errors:
         first = errors[0]
         loc = ".".join(str(p) for p in first.path) or "$"
         raise ProtocolError(
-            f"Invalid scheme '{scheme_name}': {first.message}",
-            code="invalid_plan_scheme",
-            details={"scheme": scheme_name, "location": loc},
+            f"Invalid plan schema '{workflow_name}': {first.message}",
+            code="invalid_plan_schema",
+            details={"schema": workflow_name, "location": loc},
         )
 
 
-def _scheme_payload(scheme: dict):
+def _workflow_payload(workflow: dict):
     payload = {}
     for key in ("planId", "title", "goal", "variables", "defaults", "actions", "metadata"):
-        if key in scheme:
-            payload[key] = scheme[key]
+        if key in workflow:
+            payload[key] = workflow[key]
 
-    plan_overlay = scheme.get("plan", {})
+    plan_overlay = workflow.get("plan", {})
     if isinstance(plan_overlay, dict):
         payload = _deep_merge(payload, plan_overlay)
 
-    # Keep scheme identity in generated metadata for traceability.
+    # Keep workflow identity in generated metadata for traceability.
     payload.setdefault("metadata", {})
     payload["metadata"] = _deep_merge(
         payload.get("metadata", {}),
         {
-            "scheme": {
-                "id": scheme["schemeId"],
-                "version": scheme["version"],
+            "schema": {
+                "id": workflow["workflowId"],
+                "version": workflow["version"],
             }
         },
     )
     return payload
 
 
-def build_plan_from_scheme(repo_root: Path, change_name: str, scheme: str | None = None, overrides=None):
-    selected_scheme = _resolve_scheme_name(scheme)
+def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | None = None, overrides=None):
+    selected_workflow = _resolve_workflow_name(schema)
     base = _load_base_template(repo_root)
-    scheme_doc, scheme_path = _load_scheme(repo_root, selected_scheme)
-    _validate_scheme(repo_root, scheme_doc, selected_scheme)
+    workflow_doc, workflow_path = _load_workflow(repo_root, selected_workflow)
+    _validate_workflow(repo_root, workflow_doc, selected_workflow)
 
-    generated = _deep_merge(base, _scheme_payload(scheme_doc))
+    generated = _deep_merge(base, _workflow_payload(workflow_doc))
     generated = _deep_merge(generated, overrides or {})
 
     generated.setdefault("context", {})
@@ -103,4 +104,4 @@ def build_plan_from_scheme(repo_root: Path, change_name: str, scheme: str | None
     generated["context"].setdefault("repoRoot", ".")
     generated["context"].setdefault("specRoot", "openspec")
 
-    return generated, selected_scheme, str(scheme_path)
+    return generated, selected_workflow, str(workflow_path)

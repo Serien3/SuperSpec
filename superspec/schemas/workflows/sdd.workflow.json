@@ -1,7 +1,7 @@
 {
-  "schemeId": "sdd",
+  "workflowId": "sdd",
   "version": "1.0.0",
-  "description": "Default spec-driven development flow",
+  "description": "Default spec-driven development workflow",
   "title": "Main delivery plan",
   "goal": "Execute this change in a single-agent serial loop",
   "defaults": {

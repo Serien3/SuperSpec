@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://superspec.dev/schemas/plan-scheme-v1.json",
-  "title": "SuperSpec Plan Scheme",
+  "$id": "https://superspec.dev/schemas/workflow-v1.json",
+  "title": "SuperSpec Workflow Schema",
   "type": "object",
   "required": [
-    "schemeId",
+    "workflowId",
     "version",
     "actions"
   ],
   "properties": {
-    "schemeId": {
+    "workflowId": {
       "type": "string",
       "minLength": 1
     },

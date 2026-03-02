@@ -10,21 +10,21 @@ SuperSpec is a change-scoped orchestration layer for spec-driven development.
 
 ## Plan Generation (v0.4.0)
 
-Plan initialization is now scheme-driven:
+Plan initialization is now schema/workflow-driven:
 
 - Base template: `superspec/templates/plan.base.json`
-- Built-in schemes: `superspec/schemes/*.scheme.json`
-- Scheme schema: `superspec/schemas/plan.scheme.schema.json`
+- Workflow definitions: `superspec/schemas/workflows/*.workflow.json`
+- Workflow file schema: `superspec/schemas/workflow.schema.json`
 
 Initialization options:
 
-- `superspec plan init <change> --scheme <name>`
+- `superspec plan init <change> --schema <name>`
 - Optional init-time overrides: `--title`, `--goal`
 
 Merge precedence for generated `plan.json`:
 
 1. Base template
-2. Scheme payload
+2. Workflow payload
 3. Init-time overrides
 
 Protected fields always come from the active change context:
@@ -85,7 +85,7 @@ Skill output location policy:
 Recommended flow:
 
 1. `superspec change new <change>`
-2. `superspec plan init <change> --scheme sdd`
+2. `superspec plan init <change> --schema sdd`
 3. `superspec plan validate <change>`
 4. Loop on `superspec plan next <change> --json` and report with `plan complete` / `plan fail` until `done`
 

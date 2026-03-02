@@ -1,7 +1,9 @@
 ## Purpose
 
 Define the change-scoped plan orchestration behavior for SuperSpec v0.3, including plan validation, protocol-driven action execution, and execution state tracking.
+
 ## Requirements
+
 ### Requirement: Change-scoped plan definition
 The system MUST support a change-scoped `plan.json` located at `openspec/changes/<change-name>/plan.json` as the authoritative execution definition for that change.
 
@@ -15,32 +17,32 @@ The system MUST support a change-scoped `plan.json` located at `openspec/changes
 - **THEN** the system treats that change as having no executable plan definition yet
 - **AND** requires explicit plan initialization before plan validation or protocol execution can proceed
 
-### Requirement: Plan initialization mode selection
-The system MUST provide a plan initialization option to select a named plan scheme, with compatibility support for existing mode names.
+### Requirement: Plan initialization schema selection
+The system MUST provide a plan initialization option to select a named plan schema/workflow.
 
-#### Scenario: Initialize plan with default SDD compatibility key
-- **WHEN** a user runs plan initialization with `--mode sdd` or the equivalent scheme selector
+#### Scenario: Initialize plan with default schema key
+- **WHEN** a user runs plan initialization with `--schema sdd`
 - **THEN** the system writes a valid generated `plan.json` to the change directory
 - **AND** the resulting plan is immediately eligible for plan validation
 
 #### Scenario: Reject unsupported initialization selector
-- **WHEN** a user runs plan initialization with an unsupported mode alias or scheme name
+- **WHEN** a user runs plan initialization with an unsupported schema name
 - **THEN** initialization fails with a selector validation error
 - **AND** no plan file is created or overwritten
 
-### Requirement: Mode-aware template resolution
-The system MUST resolve plan initialization content through base-template-plus-scheme composition rather than a single monolithic template file.
+### Requirement: Schema-aware workflow resolution
+The system MUST resolve plan initialization content through base-template-plus-workflow composition rather than a single monolithic template file.
 
-#### Scenario: Resolve generated plan content from scheme key
+#### Scenario: Resolve generated plan content from schema key
 - **WHEN** initialization runs with a supported selector
-- **THEN** the engine resolves the corresponding scheme and base template inputs
+- **THEN** the engine resolves the corresponding workflow and base template inputs
 - **AND** interpolates change-scoped fields before writing the plan
 
 ### Requirement: Simplified single-agent starter template
 The system MUST provide a default plan template optimized for single-agent, single-process, serial execution.
 
 #### Scenario: Initialize simplified default plan
-- **WHEN** a user initializes a plan in the default mode
+- **WHEN** a user initializes a plan with the default schema
 - **THEN** the generated template expresses a serial action flow suitable for one agent
 - **AND** excludes lease-oriented or concurrency-oriented starter fields
 
@@ -99,4 +101,3 @@ The system MUST write per-action execution history for troubleshooting and audit
 - **WHEN** an action fails during execution
 - **THEN** a corresponding execution event record exists in protocol execution storage
 - **AND** includes error details sufficient for troubleshooting
-

@@ -46,122 +46,27 @@ def slugify(value: str) -> str:
 
 
 def detect_default_base(toplevel: Path) -> str:
-    origin_head = try_run(
-        [
-            "git",
-            "-C",
-            str(toplevel),
-            "symbolic-ref",
-            "--quiet",
-            "--short",
-            "refs/remotes/origin/HEAD",
-        ]
-    )
-    if origin_head and origin_head.startswith("origin/"):
-        default_branch = origin_head[len("origin/") :]
-        if (
-            try_run(
-                [
-                    "git",
-                    "-C",
-                    str(toplevel),
-                    "show-ref",
-                    "--verify",
-                    "--quiet",
-                    f"refs/heads/{default_branch}",
-                ]
-            )
-            is not None
-        ):
-            return default_branch
-        if (
-            try_run(
-                [
-                    "git",
-                    "-C",
-                    str(toplevel),
-                    "show-ref",
-                    "--verify",
-                    "--quiet",
-                    f"refs/remotes/{origin_head}",
-                ]
-            )
-            is not None
-        ):
-            return origin_head
-        return default_branch
-    if (
-        try_run(
-            [
-                "git",
-                "-C",
-                str(toplevel),
-                "show-ref",
-                "--verify",
-                "--quiet",
-                "refs/heads/main",
-            ]
-        )
-        is not None
-    ):
-        return "main"
-    if (
-        try_run(
-            [
-                "git",
-                "-C",
-                str(toplevel),
-                "show-ref",
-                "--verify",
-                "--quiet",
-                "refs/heads/master",
-            ]
-        )
-        is not None
-    ):
-        return "master"
-    current = run(["git", "-C", str(toplevel), "rev-parse", "--abbrev-ref", "HEAD"])
-    return current
+    current = try_run(["git", "-C", str(toplevel), "symbolic-ref", "--quiet", "--short", "HEAD"])
+    if current:
+        return current
+
+    fallback = run(["git", "-C", str(toplevel), "rev-parse", "--abbrev-ref", "HEAD"])
+    if fallback == "HEAD":
+        raise RuntimeError("cannot infer base branch: repository is in detached HEAD state")
+    return fallback
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Create a git worktree for a new branch (Codex helper)."
-    )
-    parser.add_argument(
-        "--slug", default="", help="Short slug for the branch name, e.g. 'fix-player'."
-    )
-    parser.add_argument(
-        "--base",
-        default="",
-        help="Base branch/ref/commit to branch FROM, e.g. 'main', 'origin/main', or a commit hash.",
-    )
-    parser.add_argument(
-        "--merge-target",
-        default="",
-        help="Branch to merge back INTO when finishing. Defaults to auto-detected default branch (main/master). Use this when --base is a commit hash.",
-    )
-    parser.add_argument(
-        "--branch",
-        default="",
-        help="Branch name to create/use, e.g. 'wt/20260203-fix-player'.",
-    )
-    parser.add_argument(
-        "--path", default="", help="Worktree path (relative to repo root or absolute)."
-    )
+    parser = argparse.ArgumentParser(description="Create a git worktree for a new branch (Codex helper).")
+    parser.add_argument("--slug", default="", help="Short slug for the branch name, e.g. 'fix-player'.")
+    parser.add_argument("--base", default="", help="Base branch/ref, e.g. 'main' or 'origin/main'.")
+    parser.add_argument("--branch", default="", help="Branch name to create/use, e.g. 'wt/20260203-fix-player'.")
+    parser.add_argument("--path", default="", help="Worktree path (relative to repo root or absolute).")
     args = parser.parse_args()
 
     toplevel = Path(run(["git", "rev-parse", "--show-toplevel"]))
-    git_common_dir = Path(
-        run(["git", "-C", str(toplevel), "rev-parse", "--git-common-dir"])
-    )
+    git_common_dir = Path(run(["git", "-C", str(toplevel), "rev-parse", "--git-common-dir"]))
     base = args.base.strip() or detect_default_base(toplevel)
-    # merge_target defaults to the current branch — the branch you're on
-    # when you create the worktree is where you intend to merge back into.
-    current_branch = run(
-        ["git", "-C", str(toplevel), "rev-parse", "--abbrev-ref", "HEAD"]
-    )
-    merge_target = args.merge_target.strip() or current_branch
 
     now = dt.datetime.now().strftime("%Y%m%d-%H%M")
     slug = slugify(args.slug) if args.slug else "work"
@@ -185,9 +90,7 @@ def main() -> int:
     info_exclude = git_common_dir / "info" / "exclude"
     info_exclude.parent.mkdir(parents=True, exist_ok=True)
     exclude_line = ".worktrees/"
-    existing_exclude = (
-        info_exclude.read_text(encoding="utf-8") if info_exclude.exists() else ""
-    )
+    existing_exclude = info_exclude.read_text(encoding="utf-8") if info_exclude.exists() else ""
     if exclude_line not in existing_exclude.splitlines():
         with info_exclude.open("a", encoding="utf-8") as f:
             if existing_exclude and not existing_exclude.endswith("\n"):
@@ -196,15 +99,7 @@ def main() -> int:
 
     branch_exists = (
         subprocess.run(
-            [
-                "git",
-                "-C",
-                str(toplevel),
-                "show-ref",
-                "--verify",
-                "--quiet",
-                f"refs/heads/{branch}",
-            ],
+            ["git", "-C", str(toplevel), "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).returncode
@@ -214,19 +109,7 @@ def main() -> int:
     if branch_exists:
         run(["git", "-C", str(toplevel), "worktree", "add", str(worktree_dir), branch])
     else:
-        run(
-            [
-                "git",
-                "-C",
-                str(toplevel),
-                "worktree",
-                "add",
-                "-b",
-                branch,
-                str(worktree_dir),
-                base,
-            ]
-        )
+        run(["git", "-C", str(toplevel), "worktree", "add", "-b", branch, str(worktree_dir), base])
 
     state_dir = git_common_dir / "codex-worktree-flow"
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -235,14 +118,11 @@ def main() -> int:
         "repo_root": str(toplevel),
         "git_common_dir": str(git_common_dir),
         "base": base,
-        "merge_target": merge_target,
         "branch": branch,
         "worktree_path": str(worktree_dir),
         "created_at": dt.datetime.now().isoformat(timespec="seconds"),
     }
-    state_path.write_text(
-        json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print(json.dumps(state, ensure_ascii=False, indent=2))
     return 0

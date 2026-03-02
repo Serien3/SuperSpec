@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://superspec.dev/schemas/plan-v0.1.json",
+  "title": "SuperSpec Plan v0.1",
+  "type": "object",
+  "required": ["schemaVersion", "planId", "title", "goal", "context", "actions"],
+  "properties": {
+    "schemaVersion": { "const": "superspec.plan/v0.1" },
+    "planId": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "goal": { "type": "string", "minLength": 1 },
+    "context": {
+      "type": "object",
+      "required": ["changeName", "changeDir", "repoRoot", "specRoot"],
+      "properties": {
+        "changeName": { "type": "string", "minLength": 1 },
+        "changeDir": { "type": "string", "minLength": 1 },
+        "repoRoot": { "type": "string", "minLength": 1 },
+        "specRoot": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "variables": { "type": "object" },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "executor": { "enum": ["skill", "script"] },
+        "timeoutSec": { "type": "integer", "minimum": 1 },
+        "onFail": { "enum": ["stop", "continue", "skip_dependents"] },
+        "ifExists": { "enum": ["fail", "skip", "overwrite"] },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "maxAttempts": { "type": "integer", "minimum": 1 },
+            "backoffSec": { "type": "integer", "minimum": 0 },
+            "strategy": { "enum": ["fixed", "exponential"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "title": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "dependsOn": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "when": { "type": "string" },
+          "executor": { "enum": ["skill", "script"] },
+          "skill": { "type": "string" },
+          "script": { "type": "string" },
+          "inputs": { "type": "object" },
+          "outputs": { "type": "object" },
+          "timeoutSec": { "type": "integer", "minimum": 1 },
+          "retry": {
+            "type": "object",
+            "properties": {
+              "maxAttempts": { "type": "integer", "minimum": 1 },
+              "backoffSec": { "type": "integer", "minimum": 0 },
+              "strategy": { "enum": ["fixed", "exponential"] }
+            },
+            "additionalProperties": false
+          },
+          "onFail": { "enum": ["stop", "continue", "skip_dependents"] },
+          "ifExists": { "enum": ["fail", "skip", "overwrite"] },
+          "approval": {
+            "type": "object",
+            "properties": {
+              "required": { "type": "boolean" },
+              "message": { "type": "string" }
+            },
+            "additionalProperties": false
+          },
+          "artifacts": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "notes": { "type": "string" },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "policies": {
+      "type": "object",
+      "properties": {
+        "allowPartialSuccess": { "type": "boolean" },
+        "stopOnValidationError": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

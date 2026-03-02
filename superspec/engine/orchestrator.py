@@ -33,7 +33,7 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
     if action == "fail":
         return run_protocol_fail(plan, change_dir, kwargs["action_id"], kwargs["error_payload"])
     if action == "status":
-        return run_protocol_status(plan, change_dir)
+        return status_snapshot(plan, change_dir, debug=bool(kwargs.get("debug", False)))
     raise ProtocolError(f"Unknown protocol action: {action}")
 
 

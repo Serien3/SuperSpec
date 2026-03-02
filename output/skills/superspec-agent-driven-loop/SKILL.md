@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires superspec CLI and openspec CLI.
 metadata:
   author: superspec
-  version: "1.2"
+  version: "1.3"
 ---
 
 Run SuperSpec end-to-end in protocol mode.
@@ -82,6 +82,10 @@ This skill is the execution playbook for:
    superspec plan status "<name>" --json
    ```
    - Use this for progress counters and last failure details.
+   - For protocol contract inspection/debugging only:
+     ```bash
+     superspec plan status "<name>" --json --debug
+     ```
 
 ## Required report payload fields
 

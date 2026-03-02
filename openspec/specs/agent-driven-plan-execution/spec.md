@@ -67,3 +67,16 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 - **WHEN** `next` returns `blocked` due to dependencies or retry backoff
 - **THEN** the agent can continue polling without invalidating state
 - **AND** serial action ordering remains intact across repeated polling
+
+### Requirement: Status contract visibility in debug mode
+The system MUST return protocol contract metadata in status responses only when debug mode is explicitly requested.
+
+#### Scenario: Status without debug
+- **WHEN** a client calls status without debug mode
+- **THEN** the response includes execution state and progress fields
+- **AND** does not include `contracts`
+
+#### Scenario: Status with debug enabled
+- **WHEN** a client calls status with debug mode enabled
+- **THEN** the response includes execution state and progress fields
+- **AND** includes `contracts` metadata for protocol inspection

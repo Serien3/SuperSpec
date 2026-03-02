@@ -294,59 +294,8 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
     return status_snapshot(plan, change_dir)
 
 
-def status_snapshot(plan: dict, change_dir: str):
-    state = ensure_protocol_state(plan, change_dir)
-    done = len([a for a in state["actions"] if a["status"] in {"SUCCESS", "SKIPPED"}])
-    failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
-    running = len([a for a in state["actions"] if a["status"] == "RUNNING"])
-
-    last_failure = None
-    for action in reversed(state["actions"]):
-        if action.get("status") == "FAILED" and action.get("error"):
-            last_failure = {"actionId": action["id"], "error": action["error"]}
-            break
-
+def _contracts_payload():
     return {
-        "changeName": plan["context"]["changeName"],
-        "schemaVersion": plan["schemaVersion"],
-        "protocolVersion": SUPPORTED_PROTOCOL_VERSION,
-        "status": state["status"],
-        "progress": {
-            "total": len(state["actions"]),
-            "done": done,
-            "failed": failed,
-            "running": running,
-            "remaining": len(state["actions"]) - done - failed - running,
-        },
-        "lastFailure": last_failure,
-        "actions": state["actions"],
-        "contracts": {
-            "next": {
-                "states": ["ready", "blocked", "done"],
-                "fields": ["state", "changeName", "action"],
-            },
-            "complete": {
-                "request": ["change", "action-id", "result-json"],
-                "errors": ["invalid_payload", "unknown_action", "invalid_state"],
-            },
-            "fail": {
-                "request": ["change", "action-id", "error-json"],
-                "errors": ["invalid_payload", "unknown_action", "invalid_state"],
-            },
-            "status": {
-                "fields": ["status", "progress", "lastFailure", "actions"],
-            },
-            "actionPayload": {
-                "script": ["actionId", "executor", "scriptName", "prompt"],
-                "skill": ["actionId", "executor", "skillName", "prompt"],
-                "debug": "renderedPrompt returned only when debug=true",
-            },
-        },
-    }
-
-
-def render_protocol_docs():
-    contracts = {
         "next": {
             "states": ["ready", "blocked", "done"],
             "fields": ["state", "changeName", "action"],
@@ -361,6 +310,7 @@ def render_protocol_docs():
         },
         "status": {
             "fields": ["status", "progress", "lastFailure", "actions"],
+            "debugFields": ["contracts"],
         },
         "actionPayload": {
             "script": ["actionId", "executor", "scriptName", "prompt"],
@@ -368,4 +318,39 @@ def render_protocol_docs():
             "debug": "renderedPrompt returned only when debug=true",
         },
     }
-    return json.dumps(contracts, indent=2)
+
+
+def status_snapshot(plan: dict, change_dir: str, debug: bool = False):
+    state = ensure_protocol_state(plan, change_dir)
+    done = len([a for a in state["actions"] if a["status"] in {"SUCCESS", "SKIPPED"}])
+    failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
+    running = len([a for a in state["actions"] if a["status"] == "RUNNING"])
+
+    last_failure = None
+    for action in reversed(state["actions"]):
+        if action.get("status") == "FAILED" and action.get("error"):
+            last_failure = {"actionId": action["id"], "error": action["error"]}
+            break
+
+    payload = {
+        "changeName": plan["context"]["changeName"],
+        "schemaVersion": plan["schemaVersion"],
+        "protocolVersion": SUPPORTED_PROTOCOL_VERSION,
+        "status": state["status"],
+        "progress": {
+            "total": len(state["actions"]),
+            "done": done,
+            "failed": failed,
+            "running": running,
+            "remaining": len(state["actions"]) - done - failed - running,
+        },
+        "lastFailure": last_failure,
+        "actions": state["actions"],
+    }
+    if debug:
+        payload["contracts"] = _contracts_payload()
+    return payload
+
+
+def render_protocol_docs():
+    return json.dumps(_contracts_payload(), indent=2)

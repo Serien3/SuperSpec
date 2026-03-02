@@ -117,7 +117,7 @@ def command_plan_fail(repo_root: Path, args):
 
 
 def command_plan_status(repo_root: Path, args):
-    payload = run_protocol_action_from_cli(repo_root, args.change, "status")
+    payload = run_protocol_action_from_cli(repo_root, args.change, "status", debug=bool(args.debug))
     if args.json:
         print(to_json(payload))
         return
@@ -176,6 +176,7 @@ def build_parser():
     plan_status = plan_sub.add_parser("status")
     plan_status.add_argument("change")
     plan_status.add_argument("--json", action="store_true")
+    plan_status.add_argument("--debug", action="store_true")
 
     return parser
 

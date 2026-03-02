@@ -42,6 +42,7 @@ Execution is Agent-driven via pull protocol commands:
 - `superspec plan complete <change> <action_id> --result-json '{...}'`
 - `superspec plan fail <change> <action_id> --error-json '{...}'`
 - `superspec plan status <change> --json`
+- `superspec plan status <change> --json --debug` (includes protocol `contracts`)
 
 The engine selects work; the agent executes and reports outcomes in a single-agent serial loop.
 
@@ -51,6 +52,7 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 - Script actions return: `actionId`, `executor`, `scriptName`, `prompt`.
 - Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
 - Debug rendered prompt is only included in debug mode (`--debug`).
+- `plan status` omits `contracts` by default; `contracts` are returned only when `status --debug` is set.
 
 Execution storage for protocol mode:
 

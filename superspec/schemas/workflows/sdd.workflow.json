@@ -40,9 +40,18 @@
     },
     {
       "id": "a5",
-      "type": "openspec.apply",
+      "type": "using-worktree",
       "dependsOn": [
         "a4"
+      ],
+      "executor": "script",
+      "script": "git worktree list"
+    },
+    {
+      "id": "a6",
+      "type": "openspec.apply",
+      "dependsOn": [
+        "a5"
       ],
       "skill": "openspec-apply-change"
     }

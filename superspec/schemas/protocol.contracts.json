@@ -81,7 +81,13 @@
       "debug": {
         "renderedPrompt": "string (only when debug=true)"
       }
-    }
+    },
+    "runtimeExpressionResolution": [
+      "executor",
+      "script",
+      "skill",
+      "inputs.prompt"
+    ]
   },
   "removed": [
     "plan run command",

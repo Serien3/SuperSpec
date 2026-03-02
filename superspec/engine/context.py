@@ -38,3 +38,18 @@ def resolve_value(value, context):
     if isinstance(value, dict):
         return {k: resolve_value(v, context) for k, v in value.items()}
     return resolve_template_string(value, context)
+
+
+def resolve_runtime_action_fields(action: dict, context: dict):
+    resolved = {}
+    for field in ("executor", "script", "skill"):
+        if field in action:
+            resolved[field] = resolve_template_string(action[field], context)
+
+    inputs = action.get("inputs")
+    if isinstance(inputs, dict) and "prompt" in inputs:
+        resolved["inputs"] = {
+            "prompt": resolve_template_string(inputs["prompt"], context),
+        }
+
+    return resolved

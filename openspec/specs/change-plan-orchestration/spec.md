@@ -87,6 +87,11 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **THEN** the execution protocol resolves executor type from effective plan defaults
 - **AND** returns a payload shape consistent with the resolved executor type
 
+#### Scenario: Limit runtime expression resolution surface
+- **WHEN** an action includes template expressions
+- **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, and `inputs.prompt`
+- **AND** other action fields do not participate in runtime payload expression expansion
+
 ### Requirement: OpenSpec workflow action support
 The system MUST support the action types `openspec.proposal`, `openspec.specs`, `openspec.design`, `openspec.tasks`, and `openspec.apply` in plan execution.
 

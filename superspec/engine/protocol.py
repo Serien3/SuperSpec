@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from superspec.engine.constants import DEFAULTS, SUPPORTED_PROTOCOL_VERSION
-from superspec.engine.context import resolve_value
+from superspec.engine.context import resolve_runtime_action_fields
 from superspec.engine.errors import ProtocolError
 from superspec.engine.state_store import append_event, read_execution_state, write_execution_state
 
@@ -44,7 +44,7 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
         "actions": _action_runtime_outputs(state),
         "env": dict(os.environ),
     }
-    return resolve_value(action, expr_context)
+    return resolve_runtime_action_fields(action, expr_context)
 
 
 def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defaults: dict):

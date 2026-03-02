@@ -56,6 +56,7 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 - `plan next` response contains only: `state`, `changeName`, `action`.
 - Script actions return: `actionId`, `executor`, `scriptName`, `prompt`.
 - Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
+- Runtime expression resolution for `next` payload is limited to: `executor`, `script`, `skill`, and `inputs.prompt`.
 - Action statuses are: `PENDING`, `READY`, `RUNNING`, `SUCCESS`, `FAILED`.
 - Debug rendered prompt is only included in debug mode (`--debug`).
 - `plan status` omits `contracts` by default; `contracts` are returned only when `status --debug` is set.

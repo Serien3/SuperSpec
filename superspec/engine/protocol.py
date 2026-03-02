@@ -62,9 +62,7 @@ def _build_action_payload(action: dict, resolved_action: dict, change_dir: Path,
     executor = _resolve_executor(resolved_action, {**DEFAULTS, **action.get("defaults", {})})
     payload = {
         "actionId": action["id"],
-        "type": action["type"],
         "executor": executor,
-        "contextFiles": _context_files(change_dir),
     }
 
     if executor == "script":
@@ -74,22 +72,13 @@ def _build_action_payload(action: dict, resolved_action: dict, change_dir: Path,
                 f"Action {action['id']} script executor requires script field",
                 code="invalid_action_payload",
             )
-        payload["script"] = {
-            "command": command,
-            "timeoutSec": resolved_action.get("timeoutSec", DEFAULTS["timeoutSec"]),
-        }
-        payload["instruction"] = f"Run script command for action {action['id']}"
+        payload["scriptName"] = command
+        payload["prompt"] = f"Run script command for action {action['id']}"
         return payload
 
     skill_name = resolved_action.get("skill") or action.get("skill") or action.get("type")
-    skill_payload = {
-        "name": skill_name,
-        "version": str((resolved_action.get("skillVersion") or "1.0")),
-        "input": resolved_action.get("inputs", {}),
-        "contextFiles": _context_files(change_dir),
-    }
-    payload["skill"] = skill_payload
-    payload["instruction"] = f"Invoke skill {skill_name} for action {action['id']}"
+    payload["skillName"] = skill_name
+    payload["prompt"] = f"Invoke skill {skill_name} for action {action['id']}"
 
     if debug:
         prompt = (resolved_action.get("inputs") or {}).get("prompt")
@@ -186,9 +175,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         return {
             "state": "done",
             "changeName": plan["context"]["changeName"],
-            "status": state["status"],
             "action": None,
-            "instruction": "Plan has reached terminal state.",
         }
 
     completed = _completed_ids(state)
@@ -217,7 +204,6 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
             "state": "ready",
             "changeName": plan["context"]["changeName"],
             "action": payload,
-            "instruction": payload["instruction"],
         }
 
     _terminalize_if_done(change_dir, state)
@@ -226,16 +212,13 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         return {
             "state": "done",
             "changeName": plan["context"]["changeName"],
-            "status": state["status"],
             "action": None,
-            "instruction": "Plan has reached terminal state.",
         }
 
     return {
         "state": "blocked",
         "changeName": plan["context"]["changeName"],
         "action": None,
-        "instruction": "No runnable actions at this time (waiting for dependencies or retry backoff).",
     }
 
 
@@ -340,7 +323,7 @@ def status_snapshot(plan: dict, change_dir: str):
         "contracts": {
             "next": {
                 "states": ["ready", "blocked", "done"],
-                "fields": ["state", "changeName", "action", "instruction"],
+                "fields": ["state", "changeName", "action"],
             },
             "complete": {
                 "request": ["change", "action-id", "result-json"],
@@ -354,8 +337,8 @@ def status_snapshot(plan: dict, change_dir: str):
                 "fields": ["status", "progress", "lastFailure", "actions"],
             },
             "actionPayload": {
-                "script": ["actionId", "type", "executor", "script.command", "contextFiles"],
-                "skill": ["actionId", "type", "executor", "skill.name", "skill.version", "skill.input", "contextFiles"],
+                "script": ["actionId", "executor", "scriptName", "prompt"],
+                "skill": ["actionId", "executor", "skillName", "prompt"],
                 "debug": "renderedPrompt returned only when debug=true",
             },
         },
@@ -366,7 +349,7 @@ def render_protocol_docs():
     contracts = {
         "next": {
             "states": ["ready", "blocked", "done"],
-            "fields": ["state", "changeName", "action", "instruction"],
+            "fields": ["state", "changeName", "action"],
         },
         "complete": {
             "request": ["change", "action-id", "result-json"],
@@ -380,8 +363,8 @@ def render_protocol_docs():
             "fields": ["status", "progress", "lastFailure", "actions"],
         },
         "actionPayload": {
-            "script": ["actionId", "type", "executor", "script.command", "contextFiles"],
-            "skill": ["actionId", "type", "executor", "skill.name", "skill.version", "skill.input", "contextFiles"],
+            "script": ["actionId", "executor", "scriptName", "prompt"],
+            "skill": ["actionId", "executor", "skillName", "prompt"],
             "debug": "renderedPrompt returned only when debug=true",
         },
     }

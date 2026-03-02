@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires superspec CLI and openspec CLI.
 metadata:
   author: superspec
-  version: "1.1"
+  version: "1.2"
 ---
 
 Run SuperSpec end-to-end in protocol mode.
@@ -62,7 +62,7 @@ This skill is the execution playbook for:
 
 5. **Dispatch by executor for `ready`**
    - If `action.executor == "script"`:
-     - Run `action.script.command`
+     - Run `action.scriptName`
      - On success:
        ```bash
        superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"script","actionId":"<actionId>","exitCode":0}'
@@ -72,7 +72,8 @@ This skill is the execution playbook for:
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"script_failed","message":"...","executor":"script"}'
        ```
    - If `action.executor == "skill"`:
-     - Invoke the named skill with provided `skill.name`, `skill.version`, `skill.input`, and `contextFiles`
+     - Invoke the named skill in `action.skillName`
+     - Use `action.prompt` as the execution guidance text
      - On success, report `complete`
      - On failure, report `fail`
 
@@ -106,8 +107,9 @@ This skill is the execution playbook for:
 
 ## Terminal signaling
 
-- If `done` with status `success`: report workflow success.
-- If `done` with status `failed`: report workflow failure and include last failure details from:
+- If `next` returns `done`, query `status` to determine terminal result.
+- If `status` is `success`: report workflow success.
+- If `status` is `failed`: report workflow failure and include last failure details from:
   ```bash
   superspec plan status "<name>" --json
   ```

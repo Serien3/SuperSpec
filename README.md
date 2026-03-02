@@ -47,9 +47,10 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 
 ### Action Payload Contract
 
-- Script actions return executable command payloads.
-- Skill actions return skill references (`name`, `version`, `input`, `contextFiles`).
-- Full rendered prompts are only included in debug mode (`--debug`).
+- `plan next` response contains only: `state`, `changeName`, `action`.
+- Script actions return: `actionId`, `executor`, `scriptName`, `prompt`.
+- Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
+- Debug rendered prompt is only included in debug mode (`--debug`).
 
 Execution storage for protocol mode:
 

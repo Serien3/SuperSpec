@@ -17,23 +17,23 @@ The agent guidance MUST define dispatch behavior by executor type and report out
 
 #### Scenario: Execute script action from guidance
 - **WHEN** `next` returns an action with `executor=script`
-- **THEN** the guided agent executes the provided script command
+- **THEN** the guided agent executes `action.scriptName`
 - **AND** reports `complete` or `fail` with the returned action identifier
 
 #### Scenario: Execute skill action from guidance
 - **WHEN** `next` returns an action with `executor=skill`
-- **THEN** the guided agent invokes a skill runtime using the provided skill payload
+- **THEN** the guided agent invokes the skill named by `action.skillName`
 - **AND** reports `complete` or `fail` with the returned action identifier
 
 ### Requirement: Loop observability and terminal signaling
 The agent guidance MUST specify structured progress reporting and terminal outcome signaling for success and failure.
 
 #### Scenario: Terminal success signaling
-- **WHEN** the loop reaches `done` with change status `success`
+- **WHEN** the loop reaches `done` and `status` reports `success`
 - **THEN** the guided agent reports terminal success
 - **AND** includes final progress summary
 
 #### Scenario: Terminal failure signaling
-- **WHEN** the loop reaches `done` with change status `failed`
+- **WHEN** the loop reaches `done` and `status` reports `failed`
 - **THEN** the guided agent reports terminal failure
 - **AND** surfaces the last failure action and error payload

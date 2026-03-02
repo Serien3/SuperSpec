@@ -71,12 +71,12 @@ The system MUST support both `skill` and `script` executors using a shared actio
 
 #### Scenario: Skill executor action
 - **WHEN** an action declares `executor: skill`
-- **THEN** the execution protocol returns a skill execution payload for an external agent
+- **THEN** the execution protocol returns a skill action payload containing `skillName` and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
 #### Scenario: Script executor action
 - **WHEN** an action declares `executor: script`
-- **THEN** the execution protocol returns script command payload for execution
+- **THEN** the execution protocol returns a script action payload containing `scriptName` and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
 ### Requirement: OpenSpec workflow action support

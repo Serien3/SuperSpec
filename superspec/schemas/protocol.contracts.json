@@ -10,8 +10,7 @@
       "response": {
         "state": "ready | blocked | done",
         "changeName": "string",
-        "action": "object | null",
-        "instruction": "string"
+        "action": "object | null"
       }
     },
     "complete": {
@@ -69,20 +68,13 @@
   "actionPayload": {
     "script": {
       "executor": "script",
-      "script": {
-        "command": "string",
-        "timeoutSec": "integer"
-      },
-      "contextFiles": "object"
+      "scriptName": "string",
+      "prompt": "string"
     },
     "skill": {
       "executor": "skill",
-      "skill": {
-        "name": "string",
-        "version": "string",
-        "input": "object",
-        "contextFiles": "object"
-      },
+      "skillName": "string",
+      "prompt": "string",
       "debug": {
         "renderedPrompt": "string (only when debug=true)"
       }

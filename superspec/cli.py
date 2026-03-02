@@ -82,7 +82,8 @@ def command_plan_next(repo_root: Path, args):
     if args.json:
         print(to_json(payload))
     else:
-        print(payload.get("instruction", ""))
+        action = payload.get("action") or {}
+        print(action.get("prompt") or payload.get("state", ""))
 
 
 def command_plan_complete(repo_root: Path, args):

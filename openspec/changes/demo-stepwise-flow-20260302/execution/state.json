@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "superspec.plan/v0.3",
+  "planId": "main",
+  "changeName": "demo-stepwise-flow-20260302",
+  "status": "running",
+  "startedAt": "2026-03-02T12:15:31.119859+00:00",
+  "updatedAt": "2026-03-02T12:31:11.387484+00:00",
+  "defaults": {
+    "executor": "skill",
+    "timeoutSec": 900,
+    "onFail": "stop",
+    "ifExists": "fail",
+    "retry": {
+      "maxAttempts": 1,
+      "backoffSec": 0,
+      "strategy": "fixed"
+    }
+  },
+  "actions": [
+    {
+      "id": "a1",
+      "type": "openspec.proposal",
+      "status": "SUCCESS",
+      "dependsOn": [],
+      "attempts": 0,
+      "nextEligibleAt": null,
+      "startedAt": "2026-03-02T12:17:30.321546+00:00",
+      "finishedAt": "2026-03-02T12:20:15.897599+00:00",
+      "error": null,
+      "output": {
+        "ok": true,
+        "executor": "skill",
+        "actionId": "a1",
+        "summary": "proposal instruction generated"
+      }
+    },
+    {
+      "id": "a2",
+      "type": "openspec.specs",
+      "status": "RUNNING",
+      "dependsOn": [
+        "a1"
+      ],
+      "attempts": 0,
+      "nextEligibleAt": null,
+      "startedAt": "2026-03-02T12:20:36.431786+00:00",
+      "finishedAt": null,
+      "error": null,
+      "output": null
+    },
+    {
+      "id": "a3",
+      "type": "openspec.design",
+      "status": "PENDING",
+      "dependsOn": [
+        "a2"
+      ],
+      "attempts": 0,
+      "nextEligibleAt": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "error": null,
+      "output": null
+    },
+    {
+      "id": "a4",
+      "type": "openspec.tasks",
+      "status": "PENDING",
+      "dependsOn": [
+        "a3"
+      ],
+      "attempts": 0,
+      "nextEligibleAt": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "error": null,
+      "output": null
+    },
+    {
+      "id": "a5",
+      "type": "openspec.apply",
+      "status": "PENDING",
+      "dependsOn": [
+        "a4"
+      ],
+      "attempts": 0,
+      "nextEligibleAt": null,
+      "startedAt": null,
+      "finishedAt": null,
+      "error": null,
+      "output": null
+    }
+  ]
+}

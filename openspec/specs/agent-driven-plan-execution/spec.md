@@ -10,7 +10,7 @@ The system MUST provide a command to retrieve exactly one executable action for 
 #### Scenario: Retrieve next ready action
 - **WHEN** a client requests the next action for a change with pending runnable work
 - **THEN** the system returns state `ready`
-- **AND** includes action metadata and execution payload
+- **AND** returns only top-level fields `state`, `changeName`, and `action`
 
 #### Scenario: No remaining actions
 - **WHEN** all actions are completed or skipped according to execution policy
@@ -38,12 +38,12 @@ The system MUST return normalized execution payloads that distinguish script and
 
 #### Scenario: Script action payload
 - **WHEN** the next action uses `executor=script`
-- **THEN** the payload includes executable script command details
+- **THEN** the payload includes `scriptName` and `prompt`
 
 #### Scenario: Skill action payload
 - **WHEN** the next action uses `executor=skill`
-- **THEN** the payload includes skill reference (`name`, `version`, `input`, `contextFiles`)
-- **AND** does not include full rendered prompt by default
+- **THEN** the payload includes `skillName` and `prompt`
+- **AND** does not include context file maps in the action payload
 
 #### Scenario: Skill action completion contract
 - **WHEN** a skill action finishes successfully in an external agent runtime

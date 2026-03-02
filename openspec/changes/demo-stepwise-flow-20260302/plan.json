@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "superspec.plan/v0.3",
+  "planId": "main",
+  "title": "Main delivery plan",
+  "goal": "Execute this change in a single-agent serial loop",
+  "context": {
+    "changeName": "demo-stepwise-flow-20260302",
+    "changeDir": "openspec/changes/demo-stepwise-flow-20260302",
+    "repoRoot": ".",
+    "specRoot": "openspec"
+  },
+  "metadata": {
+    "generatedBy": "superspec",
+    "schema": {
+      "id": "sdd",
+      "version": "1.0.0"
+    }
+  },
+  "defaults": {
+    "executor": "skill",
+    "timeoutSec": 900,
+    "onFail": "stop"
+  },
+  "actions": [
+    {
+      "id": "a1",
+      "type": "openspec.proposal",
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a2",
+      "type": "openspec.specs",
+      "dependsOn": [
+        "a1"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a3",
+      "type": "openspec.design",
+      "dependsOn": [
+        "a2"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a4",
+      "type": "openspec.tasks",
+      "dependsOn": [
+        "a3"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a5",
+      "type": "openspec.apply",
+      "dependsOn": [
+        "a4"
+      ],
+      "skill": "openspec-apply-change"
+    }
+  ]
+}

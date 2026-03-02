@@ -11,9 +11,7 @@ SUPPORTED_ACTION_TYPES = {
 
 DEFAULTS = {
     "executor": "skill",
-    "timeoutSec": 900,
     "onFail": "stop",
-    "ifExists": "fail",
     "retry": {
         "maxAttempts": 1,
         "backoffSec": 0,

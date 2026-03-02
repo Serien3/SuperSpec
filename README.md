@@ -32,6 +32,11 @@ Protected fields always come from the active change context:
 - `context.changeName`
 - `context.changeDir`
 
+Execution-relevant defaults in v0.5.0:
+- `executor`
+- `onFail`
+- `retry`
+
 Runtime execution remains unchanged: protocol commands only consume rendered `openspec/changes/<change>/plan.json`.
 
 ## Protocol Mode (v0.3)

@@ -120,3 +120,11 @@ The system MUST limit action failure policy values to the supported runtime sema
 #### Scenario: Reject unsupported skip-dependent policy
 - **WHEN** plan defaults or action overrides specify `onFail` as `skip_dependents`
 - **THEN** plan validation fails with a clear enum validation error
+
+### Requirement: Runtime-relevant defaults surface
+The system MUST keep runtime defaults constrained to fields with active execution semantics.
+
+#### Scenario: Persist effective runtime defaults
+- **WHEN** protocol execution state is initialized
+- **THEN** persisted defaults include only execution-relevant fields (`executor`, `onFail`, `retry`)
+- **AND** deprecated or no-op defaults are not persisted as active runtime configuration

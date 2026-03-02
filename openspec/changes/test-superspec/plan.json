@@ -1,11 +1,24 @@
 {
-  "workflowId": "sdd",
-  "version": "1.0.0",
-  "description": "Default spec-driven development workflow",
+  "schemaVersion": "superspec.plan/v0.3",
+  "planId": "main",
   "title": "Main delivery plan",
   "goal": "Execute this change in a single-agent serial loop",
+  "context": {
+    "changeName": "test-superspec",
+    "changeDir": "openspec/changes/test-superspec",
+    "repoRoot": ".",
+    "specRoot": "openspec"
+  },
+  "metadata": {
+    "generatedBy": "superspec",
+    "schema": {
+      "id": "sdd",
+      "version": "1.0.0"
+    }
+  },
   "defaults": {
     "executor": "skill",
+    "timeoutSec": 900,
     "onFail": "stop"
   },
   "actions": [

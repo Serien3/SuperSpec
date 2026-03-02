@@ -29,7 +29,6 @@ class IntegrationTest(unittest.TestCase):
             },
             "defaults": {
                 "executor": "script",
-                "timeoutSec": 5,
                 "onFail": "stop",
                 "retry": {
                     "maxAttempts": 1,

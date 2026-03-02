@@ -61,11 +61,11 @@ This skill is the execution playbook for:
      - Run `action.script.command`
      - On success:
        ```bash
-       superspec plan complete "<name>" "<actionId>" --lease "<leaseId>" --result-json '{"ok":true,"executor":"script","exitCode":0}'
+       superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"script","actionId":"<actionId>","exitCode":0}'
        ```
      - On failure:
        ```bash
-       superspec plan fail "<name>" "<actionId>" --lease "<leaseId>" --error-json '{"code":"script_failed","message":"...","executor":"script"}'
+       superspec plan fail "<name>" "<actionId>" --error-json '{"code":"script_failed","message":"...","executor":"script"}'
        ```
    - If `action.executor == "skill"`:
      - Invoke the named skill with provided `skill.name`, `skill.version`, `skill.input`, and `contextFiles`
@@ -87,13 +87,6 @@ This skill is the execution playbook for:
   - `executor` (`script` or `skill`)
   - `retryable` (boolean, optional)
   - `details` (object, optional)
-
-## Lease safety rules
-
-- Never report without a lease from the matching `next` response.
-- Never reuse a consumed or expired lease token.
-- Report exactly one terminal outcome (`complete` or `fail`) per leased action attempt.
-- If `invalid_lease` is returned, fetch fresh work via `next` and continue.
 
 ## Blocked-state polling guidance
 
@@ -117,5 +110,5 @@ superspec plan init demo-change
 superspec plan validate demo-change
 superspec plan next demo-change --owner agent --json
 # execute payload...
-superspec plan complete demo-change a1 --lease lease_a1_xxx --result-json '{"ok":true,"executor":"skill","actionId":"a1"}'
+superspec plan complete demo-change a1 --result-json '{"ok":true,"executor":"skill","actionId":"a1"}'
 ```

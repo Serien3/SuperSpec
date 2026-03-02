@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the change-scoped plan orchestration behavior for SuperSpec v0.2, including plan validation, protocol-driven action execution, and execution state tracking.
+Define the change-scoped plan orchestration behavior for SuperSpec v0.3, including plan validation, protocol-driven action execution, and execution state tracking.
 
 ## Requirements
 
@@ -38,6 +38,14 @@ The system MUST resolve plan initialization content through a mode-keyed templat
 - **THEN** the engine resolves the corresponding mode template
 - **AND** interpolates change-scoped fields before writing the plan
 
+### Requirement: Simplified single-agent starter template
+The system MUST provide a default plan template optimized for single-agent, single-process, serial execution.
+
+#### Scenario: Initialize simplified default plan
+- **WHEN** a user initializes a plan in the default mode
+- **THEN** the generated template expresses a serial action flow suitable for one agent
+- **AND** excludes lease-oriented or concurrency-oriented starter fields
+
 ### Requirement: Plan schema version validation
 The system MUST validate the declared plan schema version before any action execution begins.
 
@@ -59,7 +67,7 @@ The system MUST execute actions in dependency-safe order and reject invalid depe
 - **THEN** validation fails before execution starts
 
 ### Requirement: Unified action execution contract
-The system MUST support both `skill` and `script` executors using a shared action contract with normalized outputs.
+The system MUST support both `skill` and `script` executors using a shared action contract with normalized outputs under serial single-agent execution.
 
 #### Scenario: Skill executor action
 - **WHEN** an action declares `executor: skill`
@@ -79,7 +87,7 @@ The system MUST support the action types `openspec.proposal`, `openspec.specs`, 
 - **THEN** plan validation fails with a clear type error
 
 ### Requirement: Resumable execution state
-The system MUST persist execution state to allow interrupted runs to resume safely.
+The system MUST persist execution state to allow interrupted runs to resume safely in single-agent mode.
 
 #### Scenario: Resume after failed action
 - **WHEN** a prior run failed after completing a subset of actions

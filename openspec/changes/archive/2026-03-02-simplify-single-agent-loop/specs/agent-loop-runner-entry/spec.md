@@ -1,8 +1,4 @@
-## Purpose
-
-Define standardized agent guidance for running SuperSpec plans end-to-end using the pull protocol loop.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Agent loop execution guidance
 The system MUST provide standardized guidance (via skill and/or AGENT.md) that instructs an external agent to execute the protocol loop for a change until the plan reaches a terminal state.
@@ -10,7 +6,7 @@ The system MUST provide standardized guidance (via skill and/or AGENT.md) that i
 #### Scenario: Run loop to terminal state from guidance
 - **WHEN** an agent follows the published guidance for a valid change
 - **THEN** the agent repeatedly fetches work using `next`
-- **AND** exits only when protocol state is `done`
+- **AND** executes and reports outcomes in strict serial order until protocol state is `done`
 
 ### Requirement: Executor-dispatched action execution
 The agent guidance MUST define dispatch behavior by executor type and report outcomes through protocol commands.
@@ -18,12 +14,12 @@ The agent guidance MUST define dispatch behavior by executor type and report out
 #### Scenario: Execute script action from guidance
 - **WHEN** `next` returns an action with `executor=script`
 - **THEN** the guided agent executes the provided script command
-- **AND** reports `complete` or `fail` with the returned action identifier
+- **AND** reports `complete` or `fail` using the returned action identifier
 
 #### Scenario: Execute skill action from guidance
 - **WHEN** `next` returns an action with `executor=skill`
 - **THEN** the guided agent invokes a skill runtime using the provided skill payload
-- **AND** reports `complete` or `fail` with the returned action identifier
+- **AND** reports `complete` or `fail` using the returned action identifier
 
 ### Requirement: Loop observability and terminal signaling
 The agent guidance MUST specify structured progress reporting and terminal outcome signaling for success and failure.

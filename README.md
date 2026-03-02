@@ -1,4 +1,4 @@
-# SuperSpec (Protocol-Driven v0.2)
+# SuperSpec (Protocol-Driven v0.3)
 
 SuperSpec is a change-scoped orchestration layer for spec-driven development.
 
@@ -8,16 +8,16 @@ SuperSpec is a change-scoped orchestration layer for spec-driven development.
 - Going forward, new SuperSpec engine/CLI features should be implemented in Python first.
 - JS/TS implementations are not the default path unless explicitly requested.
 
-## Protocol Mode (v0.2)
+## Protocol Mode (v0.3)
 
 Execution is Agent-driven via pull protocol commands:
 
 - `superspec plan next <change> --json`
-- `superspec plan complete <change> <action_id> --lease <id> --result-json '{...}'`
-- `superspec plan fail <change> <action_id> --lease <id> --error-json '{...}'`
+- `superspec plan complete <change> <action_id> --result-json '{...}'`
+- `superspec plan fail <change> <action_id> --error-json '{...}'`
 - `superspec plan status <change> --json`
 
-The engine selects work; the agent executes and reports outcomes.
+The engine selects work; the agent executes and reports outcomes in a single-agent serial loop.
 
 ### Action Payload Contract
 
@@ -25,23 +25,14 @@ The engine selects work; the agent executes and reports outcomes.
 - Skill actions return skill references (`name`, `version`, `input`, `contextFiles`).
 - Full rendered prompts are only included in debug mode (`--debug`).
 
-### Lease Lifecycle
-
-Each `next` response may include a lease token for the action:
-
-- Issued when action is claimed
-- Validated on `complete` / `fail`
-- Expired automatically after TTL
-- Reclaimed by a subsequent `next`
-
 Execution storage for protocol mode:
 
 - `openspec/changes/<change>/execution/state.json`
-- `openspec/changes/<change>/execution/leases.json`
 - `openspec/changes/<change>/execution/events.log`
 
-## Removed in v0.2
+## Removed in v0.3
 
+- Lease token flow (`leaseId`, `--lease`, `--lease-ttl-sec`)
 - `superspec plan run`
 - Legacy run-state storage (`run-state.json`, `runs/<run-id>/...`)
 

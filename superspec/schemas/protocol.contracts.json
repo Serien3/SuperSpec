@@ -1,17 +1,15 @@
 {
-  "protocolVersion": "superspec.protocol/v0.2",
+  "protocolVersion": "superspec.protocol/v0.3",
   "commands": {
     "next": {
       "request": {
         "change": "string",
         "owner": "string (optional)",
-        "leaseTtlSec": "integer (optional)",
         "debug": "boolean (optional)"
       },
       "response": {
         "state": "ready | blocked | done",
         "changeName": "string",
-        "leaseId": "string (present when ready)",
         "action": "object | null",
         "instruction": "string"
       }
@@ -20,7 +18,6 @@
       "request": {
         "change": "string",
         "actionId": "string",
-        "lease": "string",
         "resultJson": {
           "type": "object",
           "recommendedFields": {
@@ -32,13 +29,12 @@
           }
         }
       },
-      "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"]
+      "errors": ["invalid_payload", "unknown_action", "invalid_state"]
     },
     "fail": {
       "request": {
         "change": "string",
         "actionId": "string",
-        "lease": "string",
         "errorJson": {
           "type": "object",
           "recommendedFields": {
@@ -50,7 +46,7 @@
           }
         }
       },
-      "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"]
+      "errors": ["invalid_payload", "unknown_action", "invalid_state"]
     },
     "status": {
       "request": {
@@ -65,7 +61,6 @@
           "running": "integer",
           "remaining": "integer"
         },
-        "leases": "object",
         "lastFailure": "object | null",
         "actions": "array"
       }
@@ -92,11 +87,6 @@
         "renderedPrompt": "string (only when debug=true)"
       }
     }
-  },
-  "leaseLifecycle": {
-    "tokenFormat": "lease_<action-id>_<12hex>",
-    "states": ["issued", "validated", "expired", "reclaimed"],
-    "fields": ["leaseId", "owner", "issuedAt", "expiresAt", "ttlSec"]
   },
   "removed": [
     "plan run command",

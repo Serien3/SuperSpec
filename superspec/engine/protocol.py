@@ -1,20 +1,12 @@
-import hashlib
 import json
 import os
-import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from superspec.engine.constants import DEFAULTS, DEFAULT_LEASE_TTL_SEC, SUPPORTED_PROTOCOL_VERSION
+from superspec.engine.constants import DEFAULTS, SUPPORTED_PROTOCOL_VERSION
 from superspec.engine.context import resolve_value
 from superspec.engine.errors import ProtocolError
-from superspec.engine.state_store import (
-    append_event,
-    read_execution_leases,
-    read_execution_state,
-    write_execution_leases,
-    write_execution_state,
-)
+from superspec.engine.state_store import append_event, read_execution_state, write_execution_state
 
 
 def _now():
@@ -27,12 +19,6 @@ def _now_iso():
 
 def _parse_iso(ts: str):
     return datetime.fromisoformat(ts)
-
-
-def _lease_id(change_name: str, action_id: str):
-    raw = f"{change_name}:{action_id}:{time.time_ns()}:{os.getpid()}"
-    digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
-    return f"lease_{action_id}_{digest}"
 
 
 def _context_files(change_dir: Path):
@@ -132,7 +118,6 @@ def _initial_protocol_state(plan: dict):
                 "dependsOn": action.get("dependsOn", []),
                 "attempts": 0,
                 "nextEligibleAt": None,
-                "leaseId": None,
                 "startedAt": None,
                 "finishedAt": None,
                 "error": None,
@@ -148,32 +133,13 @@ def ensure_protocol_state(plan: dict, change_dir: str):
     if state is None:
         state = _initial_protocol_state(plan)
         write_execution_state(change_dir, state)
-        write_execution_leases(change_dir, {"leases": {}})
         append_event(change_dir, {"event": "state.initialized", "planId": plan["planId"]})
     return state
 
 
-def _persist(change_dir: str, state: dict, leases: dict):
+def _persist(change_dir: str, state: dict):
     state["updatedAt"] = _now_iso()
     write_execution_state(change_dir, state)
-    write_execution_leases(change_dir, leases)
-
-
-def _expire_stale_leases(change_dir: str, state: dict, leases: dict):
-    now = _now()
-    by_id = {a["id"]: a for a in state["actions"]}
-    expired_ids = []
-    for action_id, lease in list(leases["leases"].items()):
-        expires_at = _parse_iso(lease["expiresAt"])
-        if now >= expires_at:
-            expired_ids.append(action_id)
-            action = by_id.get(action_id)
-            if action and action["status"] == "LEASED":
-                action["status"] = "PENDING"
-                action["leaseId"] = None
-    for action_id in expired_ids:
-        del leases["leases"][action_id]
-        append_event(change_dir, {"event": "lease.expired", "actionId": action_id})
 
 
 def _completed_ids(state: dict):
@@ -204,7 +170,7 @@ def _action_by_id(plan: dict, action_id: str):
 
 
 def _terminalize_if_done(change_dir: str, state: dict):
-    remaining = [a for a in state["actions"] if a["status"] in {"PENDING", "LEASED", "RUNNING"}]
+    remaining = [a for a in state["actions"] if a["status"] in {"PENDING", "RUNNING"}]
     if not remaining:
         has_failed = any(a["status"] == "FAILED" for a in state["actions"])
         state["status"] = "failed" if has_failed else "success"
@@ -212,13 +178,11 @@ def _terminalize_if_done(change_dir: str, state: dict):
         append_event(change_dir, {"event": "state.terminal", "status": state["status"]})
 
 
-def next_action(plan: dict, change_dir: str, owner: str = "agent", lease_ttl_sec: int | None = None, debug: bool = False):
+def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool = False):
     state = ensure_protocol_state(plan, change_dir)
-    leases = read_execution_leases(change_dir)
-    _expire_stale_leases(change_dir, state, leases)
 
     if state["status"] in {"success", "failed"}:
-        _persist(change_dir, state, leases)
+        _persist(change_dir, state)
         return {
             "state": "done",
             "changeName": plan["context"]["changeName"],
@@ -236,44 +200,28 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", lease_ttl_sec
             continue
 
         resolved_action = _resolve_action_for_payload(action, state, plan)
-        lease_id = _lease_id(plan["context"]["changeName"], action_state["id"])
-        ttl = lease_ttl_sec or int((plan.get("defaults") or {}).get("leaseTtlSec", DEFAULT_LEASE_TTL_SEC))
-        issued_at = _now()
-        expires_at = issued_at + timedelta(seconds=ttl)
-
-        action_state["status"] = "LEASED"
-        action_state["leaseId"] = lease_id
-        action_state["startedAt"] = issued_at.isoformat()
-
-        leases["leases"][action_state["id"]] = {
-            "leaseId": lease_id,
-            "owner": owner,
-            "issuedAt": issued_at.isoformat(),
-            "expiresAt": expires_at.isoformat(),
-            "ttlSec": ttl,
-        }
+        action_state["status"] = "RUNNING"
+        action_state["startedAt"] = _now_iso()
 
         payload = _build_action_payload(action, resolved_action, Path(change_dir), debug)
         append_event(
             change_dir,
             {
-                "event": "action.leased",
+                "event": "action.started",
                 "actionId": action_state["id"],
-                "leaseId": lease_id,
                 "owner": owner,
             },
         )
-        _persist(change_dir, state, leases)
+        _persist(change_dir, state)
         return {
             "state": "ready",
             "changeName": plan["context"]["changeName"],
-            "leaseId": lease_id,
             "action": payload,
             "instruction": payload["instruction"],
         }
 
     _terminalize_if_done(change_dir, state)
-    _persist(change_dir, state, leases)
+    _persist(change_dir, state)
     if state["status"] in {"success", "failed"}:
         return {
             "state": "done",
@@ -296,45 +244,37 @@ def _validate_report_shape(payload: dict, key: str):
         raise ProtocolError(f"{key} payload must be a JSON object", code="invalid_payload")
 
 
-def complete_action(plan: dict, change_dir: str, action_id: str, lease_id: str, result_payload: dict):
+def complete_action(plan: dict, change_dir: str, action_id: str, result_payload: dict):
     _validate_report_shape(result_payload, "result")
     state = ensure_protocol_state(plan, change_dir)
-    leases = read_execution_leases(change_dir)
-    lease = leases["leases"].get(action_id)
-    if not lease or lease.get("leaseId") != lease_id:
-        raise ProtocolError("Invalid or stale lease for completion report", code="invalid_lease")
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
     if not action_state:
         raise ProtocolError(f"Unknown action id: {action_id}", code="unknown_action")
-    if action_state["status"] not in {"LEASED", "RUNNING", "PENDING"}:
+    if action_state["status"] != "RUNNING":
         raise ProtocolError(f"Action {action_id} not completable from status {action_state['status']}", code="invalid_state")
 
     action_state["status"] = "SUCCESS"
     action_state["output"] = result_payload
     action_state["error"] = None
     action_state["finishedAt"] = _now_iso()
-    action_state["leaseId"] = None
-    leases["leases"].pop(action_id, None)
 
     append_event(change_dir, {"event": "action.completed", "actionId": action_id})
     _terminalize_if_done(change_dir, state)
-    _persist(change_dir, state, leases)
+    _persist(change_dir, state)
     return status_snapshot(plan, change_dir)
 
 
-def fail_action(plan: dict, change_dir: str, action_id: str, lease_id: str, error_payload: dict):
+def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict):
     _validate_report_shape(error_payload, "error")
     state = ensure_protocol_state(plan, change_dir)
-    leases = read_execution_leases(change_dir)
-    lease = leases["leases"].get(action_id)
-    if not lease or lease.get("leaseId") != lease_id:
-        raise ProtocolError("Invalid or stale lease for failure report", code="invalid_lease")
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
     action_def = _action_by_id(plan, action_id)
     if not action_state or not action_def:
         raise ProtocolError(f"Unknown action id: {action_id}", code="unknown_action")
+    if action_state["status"] != "RUNNING":
+        raise ProtocolError(f"Action {action_id} not fail-reportable from status {action_state['status']}", code="invalid_state")
 
     defaults = {**DEFAULTS, **plan.get("defaults", {})}
     retry_defaults = defaults.get("retry", {})
@@ -342,9 +282,7 @@ def fail_action(plan: dict, change_dir: str, action_id: str, lease_id: str, erro
     max_attempts = int(retry.get("maxAttempts", 1))
     action_state["attempts"] = int(action_state.get("attempts", 0)) + 1
     action_state["error"] = error_payload
-    action_state["leaseId"] = None
     action_state["finishedAt"] = _now_iso()
-    leases["leases"].pop(action_id, None)
 
     if action_state["attempts"] < max_attempts:
         backoff = int(retry.get("backoffSec", 0))
@@ -354,7 +292,7 @@ def fail_action(plan: dict, change_dir: str, action_id: str, lease_id: str, erro
         action_state["status"] = "PENDING"
         action_state["nextEligibleAt"] = (_now() + timedelta(seconds=backoff)).isoformat() if backoff > 0 else None
         append_event(change_dir, {"event": "action.retry_scheduled", "actionId": action_id, "attempt": action_state["attempts"]})
-        _persist(change_dir, state, leases)
+        _persist(change_dir, state)
         return status_snapshot(plan, change_dir)
 
     on_fail = action_def.get("onFail") or defaults.get("onFail", "stop")
@@ -369,16 +307,15 @@ def fail_action(plan: dict, change_dir: str, action_id: str, lease_id: str, erro
 
     append_event(change_dir, {"event": "action.failed", "actionId": action_id, "onFail": on_fail})
     _terminalize_if_done(change_dir, state)
-    _persist(change_dir, state, leases)
+    _persist(change_dir, state)
     return status_snapshot(plan, change_dir)
 
 
 def status_snapshot(plan: dict, change_dir: str):
     state = ensure_protocol_state(plan, change_dir)
-    leases = read_execution_leases(change_dir)
     done = len([a for a in state["actions"] if a["status"] in {"SUCCESS", "SKIPPED"}])
     failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
-    running = len([a for a in state["actions"] if a["status"] in {"LEASED", "RUNNING"}])
+    running = len([a for a in state["actions"] if a["status"] == "RUNNING"])
 
     last_failure = None
     for action in reversed(state["actions"]):
@@ -396,35 +333,30 @@ def status_snapshot(plan: dict, change_dir: str):
             "done": done,
             "failed": failed,
             "running": running,
-            "remaining": len(state["actions"]) - done - failed,
+            "remaining": len(state["actions"]) - done - failed - running,
         },
-        "leases": leases.get("leases", {}),
         "lastFailure": last_failure,
         "actions": state["actions"],
         "contracts": {
             "next": {
                 "states": ["ready", "blocked", "done"],
-                "fields": ["state", "changeName", "action", "leaseId", "instruction"],
+                "fields": ["state", "changeName", "action", "instruction"],
             },
             "complete": {
-                "request": ["change", "action-id", "lease", "result-json"],
-                "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"],
+                "request": ["change", "action-id", "result-json"],
+                "errors": ["invalid_payload", "unknown_action", "invalid_state"],
             },
             "fail": {
-                "request": ["change", "action-id", "lease", "error-json"],
-                "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"],
+                "request": ["change", "action-id", "error-json"],
+                "errors": ["invalid_payload", "unknown_action", "invalid_state"],
             },
             "status": {
-                "fields": ["status", "progress", "leases", "lastFailure", "actions"],
+                "fields": ["status", "progress", "lastFailure", "actions"],
             },
             "actionPayload": {
                 "script": ["actionId", "type", "executor", "script.command", "contextFiles"],
                 "skill": ["actionId", "type", "executor", "skill.name", "skill.version", "skill.input", "contextFiles"],
                 "debug": "renderedPrompt returned only when debug=true",
-            },
-            "leaseLifecycle": {
-                "states": ["issued", "validated", "expired", "reclaimed"],
-                "fields": ["leaseId", "owner", "issuedAt", "expiresAt", "ttlSec"],
             },
         },
     }
@@ -434,27 +366,23 @@ def render_protocol_docs():
     contracts = {
         "next": {
             "states": ["ready", "blocked", "done"],
-            "fields": ["state", "changeName", "action", "leaseId", "instruction"],
+            "fields": ["state", "changeName", "action", "instruction"],
         },
         "complete": {
-            "request": ["change", "action-id", "lease", "result-json"],
-            "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"],
+            "request": ["change", "action-id", "result-json"],
+            "errors": ["invalid_payload", "unknown_action", "invalid_state"],
         },
         "fail": {
-            "request": ["change", "action-id", "lease", "error-json"],
-            "errors": ["invalid_payload", "invalid_lease", "unknown_action", "invalid_state"],
+            "request": ["change", "action-id", "error-json"],
+            "errors": ["invalid_payload", "unknown_action", "invalid_state"],
         },
         "status": {
-            "fields": ["status", "progress", "leases", "lastFailure", "actions"],
+            "fields": ["status", "progress", "lastFailure", "actions"],
         },
         "actionPayload": {
             "script": ["actionId", "type", "executor", "script.command", "contextFiles"],
             "skill": ["actionId", "type", "executor", "skill.name", "skill.version", "skill.input", "contextFiles"],
             "debug": "renderedPrompt returned only when debug=true",
-        },
-        "leaseLifecycle": {
-            "states": ["issued", "validated", "expired", "reclaimed"],
-            "fields": ["leaseId", "owner", "issuedAt", "expiresAt", "ttlSec"],
         },
     }
     return json.dumps(contracts, indent=2)

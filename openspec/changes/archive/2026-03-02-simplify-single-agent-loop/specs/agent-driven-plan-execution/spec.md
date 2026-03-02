@@ -1,8 +1,4 @@
-## Purpose
-
-Define the protocol-driven, agent-executed action flow for SuperSpec v0.3, including pull-based action retrieval, serial reporting, and executor-specific payload contracts.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Next-action retrieval command
 The system MUST provide a command to retrieve exactly one executable action for a change in structured JSON form.
@@ -10,7 +6,7 @@ The system MUST provide a command to retrieve exactly one executable action for 
 #### Scenario: Retrieve next ready action
 - **WHEN** a client requests the next action for a change with pending runnable work
 - **THEN** the system returns state `ready`
-- **AND** includes action metadata and execution payload
+- **AND** includes action metadata and execution payload for a single runnable action
 
 #### Scenario: No remaining actions
 - **WHEN** all actions are completed or skipped according to execution policy
@@ -20,8 +16,8 @@ The system MUST provide a command to retrieve exactly one executable action for 
 ### Requirement: Action completion reporting
 The system MUST provide a command for clients to report successful action completion with structured result payload.
 
-#### Scenario: Complete running action
-- **WHEN** a client reports completion for a running action
+#### Scenario: Complete action in single-agent loop
+- **WHEN** a client reports completion for the current runnable action
 - **THEN** the action state transitions to `SUCCESS`
 - **AND** result payload is stored as action output
 
@@ -67,3 +63,9 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 - **WHEN** `next` returns `blocked` due to dependencies or retry backoff
 - **THEN** the agent can continue polling without invalidating state
 - **AND** serial action ordering remains intact across repeated polling
+
+## REMOVED Requirements
+
+### Requirement: Lease-based action claim safety
+**Reason**: Current execution scope is intentionally limited to single-agent single-process serial operation, so lease-based ownership protection is out of scope for now.
+**Migration**: Clients should stop sending or expecting lease tokens in `next`/`complete`/`fail` payloads and follow the simplified action-id based serial reporting flow.

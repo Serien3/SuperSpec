@@ -81,7 +81,6 @@ def command_plan_next(repo_root: Path, args):
         args.change,
         "next",
         owner=args.owner,
-        lease_ttl_sec=args.lease_ttl_sec,
         debug=bool(args.debug),
     )
     if args.json:
@@ -97,7 +96,6 @@ def command_plan_complete(repo_root: Path, args):
         args.change,
         "complete",
         action_id=args.action_id,
-        lease_id=args.lease,
         result_payload=result_payload,
     )
     if args.json:
@@ -113,7 +111,6 @@ def command_plan_fail(repo_root: Path, args):
         args.change,
         "fail",
         action_id=args.action_id,
-        lease_id=args.lease,
         error_payload=error_payload,
     )
     if args.json:
@@ -162,21 +159,18 @@ def build_parser():
     plan_next = plan_sub.add_parser("next")
     plan_next.add_argument("change")
     plan_next.add_argument("--owner", default="agent")
-    plan_next.add_argument("--lease-ttl-sec", type=int)
     plan_next.add_argument("--debug", action="store_true")
     plan_next.add_argument("--json", action="store_true")
 
     plan_complete = plan_sub.add_parser("complete")
     plan_complete.add_argument("change")
     plan_complete.add_argument("action_id")
-    plan_complete.add_argument("--lease", required=True)
     plan_complete.add_argument("--result-json", required=True)
     plan_complete.add_argument("--json", action="store_true")
 
     plan_fail = plan_sub.add_parser("fail")
     plan_fail.add_argument("change")
     plan_fail.add_argument("action_id")
-    plan_fail.add_argument("--lease", required=True)
     plan_fail.add_argument("--error-json", required=True)
     plan_fail.add_argument("--json", action="store_true")
 

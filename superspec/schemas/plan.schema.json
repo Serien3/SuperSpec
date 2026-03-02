@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://superspec.dev/schemas/plan-v0.2.json",
-  "title": "SuperSpec Plan v0.2",
+  "$id": "https://superspec.dev/schemas/plan-v0.3.json",
+  "title": "SuperSpec Plan v0.3",
   "type": "object",
   "required": ["schemaVersion", "planId", "title", "goal", "context", "actions"],
   "properties": {
-    "schemaVersion": { "const": "superspec.plan/v0.2" },
+    "schemaVersion": { "const": "superspec.plan/v0.3" },
     "planId": { "type": "string", "minLength": 1 },
     "title": { "type": "string", "minLength": 1 },
     "goal": { "type": "string", "minLength": 1 },

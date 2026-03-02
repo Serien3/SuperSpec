@@ -1,8 +1,8 @@
 {
-  "schemaVersion": "superspec.plan/v0.2",
+  "schemaVersion": "superspec.plan/v0.3",
   "planId": "main",
   "title": "Main delivery plan",
-  "goal": "Complete artifacts and apply implementation for this change",
+  "goal": "Execute this change in a single-agent serial loop",
   "context": {
     "changeName": "${CHANGE_NAME}",
     "changeDir": "openspec/changes/${CHANGE_NAME}",
@@ -12,13 +12,7 @@
   "defaults": {
     "executor": "skill",
     "timeoutSec": 900,
-    "onFail": "stop",
-    "ifExists": "fail",
-    "retry": {
-      "maxAttempts": 1,
-      "backoffSec": 0,
-      "strategy": "fixed"
-    }
+    "onFail": "stop"
   },
   "actions": [
     {
@@ -50,9 +44,5 @@
       "dependsOn": ["a4"],
       "skill": "openspec-apply-change"
     }
-  ],
-  "policies": {
-    "allowPartialSuccess": false,
-    "stopOnValidationError": true
-  }
+  ]
 }

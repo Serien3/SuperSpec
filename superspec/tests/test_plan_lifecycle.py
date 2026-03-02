@@ -44,7 +44,7 @@ class PlanLifecycleTest(unittest.TestCase):
         change_dir.mkdir(parents=True, exist_ok=True)
 
         with self.assertRaises(FileNotFoundError):
-            run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", lease_ttl_sec=10, debug=False)
+            run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", debug=False)
 
 
 if __name__ == "__main__":

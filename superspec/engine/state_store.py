@@ -17,7 +17,6 @@ def ensure_execution_layout(change_dir: str):
     return {
         "dir": base,
         "state": base / "state.json",
-        "leases": base / "leases.json",
         "events": base / "events.log",
     }
 
@@ -48,13 +47,3 @@ def write_execution_state(change_dir: str, payload: dict):
 def read_execution_state(change_dir: str):
     layout = ensure_execution_layout(change_dir)
     return read_json(layout["state"])
-
-
-def write_execution_leases(change_dir: str, payload: dict):
-    layout = ensure_execution_layout(change_dir)
-    write_json(layout["leases"], payload)
-
-
-def read_execution_leases(change_dir: str):
-    layout = ensure_execution_layout(change_dir)
-    return read_json(layout["leases"], {"leases": {}})

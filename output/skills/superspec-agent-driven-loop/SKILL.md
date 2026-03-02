@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires superspec CLI and openspec CLI.
 metadata:
   author: superspec
-  version: "1.3"
+  version: "1.4"
 ---
 
 Run SuperSpec end-to-end in protocol mode.
@@ -78,11 +78,16 @@ This skill is the execution playbook for:
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"skill_failed","message":"...","executor":"script"}'
        ```
 
-6. **Use `status` for progress and terminal detail**
+6. **Use `status` for checkpoints, not every action**
    ```bash
    superspec plan status "<name>" --json
    ```
-   - Use this for progress counters and last failure details.
+   - Do not call `status` after each successful action; `next` already drives progress.
+   - Call `status` at major checkpoints (start, unexpected blockage, terminal `done`, or failure triage).
+   - Default JSON is compact summary; use `--full` only when full action objects are needed:
+     ```bash
+     superspec plan status "<name>" --json --full
+     ```
    - For protocol contract inspection/debugging only:
      ```bash
      superspec plan status "<name>" --json --debug

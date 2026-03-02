@@ -310,6 +310,29 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["action"]["actionId"], "a1")
         self.assertEqual(nxt["action"]["script_command"], "echo one")
 
+    def test_status_snapshot_compact_mode_summarizes_and_truncates_actions(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "type": "openspec.specs", "executor": "script", "script": "echo two"},
+                {"id": "a3", "type": "openspec.design", "executor": "script", "script": "echo three"},
+            ],
+        )
+        validate_plan(plan)
+
+        compact = status_snapshot(plan, str(change_dir), compact=True, action_limit=2)
+        self.assertEqual(len(compact["actions"]), 2)
+        self.assertEqual(compact["actionsOmitted"], 1)
+        self.assertEqual(set(compact["actions"][0].keys()), {"id", "status"})
+
+        full = status_snapshot(plan, str(change_dir), compact=False)
+        self.assertIn("dependsOn", full["actions"][0])
+        self.assertIn("startedAt", full["actions"][0])
+        self.assertNotIn("actionsOmitted", full)
+
 
 if __name__ == "__main__":
     unittest.main()

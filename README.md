@@ -1,4 +1,4 @@
-# SuperSpec (v0.5.0, Protocol-Driven v0.3)
+# SuperSpec (v0.5.0, Protocol-Driven v0.5.0)
 
 SuperSpec is a change-scoped orchestration layer for spec-driven development.
 
@@ -39,7 +39,7 @@ Execution-relevant defaults in v0.5.0:
 
 Runtime execution remains unchanged: protocol commands only consume rendered `openspec/changes/<change>/plan.json`.
 
-## Protocol Mode (v0.3)
+## Protocol Mode (v0.5.0)
 
 Execution is Agent-driven via pull protocol commands:
 
@@ -47,6 +47,7 @@ Execution is Agent-driven via pull protocol commands:
 - `superspec plan complete <change> <action_id> --result-json '{...}'`
 - `superspec plan fail <change> <action_id> --error-json '{...}'`
 - `superspec plan status <change> --json`
+- `superspec plan status <change> --json --full` (full action objects)
 - `superspec plan status <change> --json --debug` (includes protocol `contracts`)
 
 The engine selects work; the agent executes and reports outcomes in a single-agent serial loop.
@@ -63,13 +64,14 @@ The engine selects work; the agent executes and reports outcomes in a single-age
 - Action statuses are: `PENDING`, `READY`, `RUNNING`, `SUCCESS`, `FAILED`.
 - Debug rendered prompt is only included in debug mode (`--debug`).
 - `plan status` omits `contracts` by default; `contracts` are returned only when `status --debug` is set.
+- `plan status --json` defaults to compact action summaries; use `--full` for complete action records.
 
 Execution storage for protocol mode:
 
 - `openspec/changes/<change>/execution/state.json`
 - `openspec/changes/<change>/execution/events.log`
 
-## Removed in v0.3
+## Removed in v0.5.0
 
 - Lease token flow (`leaseId`, `--lease`, `--lease-ttl-sec`)
 - `superspec plan run`

@@ -381,7 +381,24 @@ def _contracts_payload():
     }
 
 
-def status_snapshot(plan: dict, change_dir: str, debug: bool = False):
+def _compact_action_entry(action: dict):
+    entry = {
+        "id": action["id"],
+        "status": action["status"],
+    }
+    attempts = int(action.get("attempts") or 0)
+    if attempts > 0:
+        entry["attempts"] = attempts
+    if action.get("error"):
+        error = action["error"]
+        entry["error"] = {
+            "code": error.get("code"),
+            "message": error.get("message"),
+        }
+    return entry
+
+
+def status_snapshot(plan: dict, change_dir: str, debug: bool = False, compact: bool = False, action_limit: int = 40):
     state = ensure_protocol_state(plan, change_dir)
     done = len([a for a in state["actions"] if a["status"] == "SUCCESS"])
     failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
@@ -406,8 +423,14 @@ def status_snapshot(plan: dict, change_dir: str, debug: bool = False):
             "remaining": len(state["actions"]) - done - failed - running,
         },
         "lastFailure": last_failure,
-        "actions": state["actions"],
     }
+    if compact:
+        limit = max(1, int(action_limit))
+        compact_actions = [_compact_action_entry(action) for action in state["actions"][:limit]]
+        payload["actions"] = compact_actions
+        payload["actionsOmitted"] = max(0, len(state["actions"]) - len(compact_actions))
+    else:
+        payload["actions"] = state["actions"]
     if debug:
         payload["contracts"] = _contracts_payload()
     return payload

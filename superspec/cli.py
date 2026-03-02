@@ -88,36 +88,37 @@ def command_plan_next(repo_root: Path, args):
 
 def command_plan_complete(repo_root: Path, args):
     result_payload = _parse_object_json(args.result_json, "result-json")
-    payload = run_protocol_action_from_cli(
+    run_protocol_action_from_cli(
         repo_root,
         args.change,
         "complete",
         action_id=args.action_id,
         result_payload=result_payload,
     )
-    if args.json:
-        print(to_json(payload))
-    else:
-        print(f"Action {args.action_id} marked complete.")
+    print(f"Action {args.action_id} marked complete.")
 
 
 def command_plan_fail(repo_root: Path, args):
     error_payload = _parse_object_json(args.error_json, "error-json")
-    payload = run_protocol_action_from_cli(
+    run_protocol_action_from_cli(
         repo_root,
         args.change,
         "fail",
         action_id=args.action_id,
         error_payload=error_payload,
     )
-    if args.json:
-        print(to_json(payload))
-    else:
-        print(f"Action {args.action_id} marked failed.")
+    print(f"Action {args.action_id} marked failed.")
 
 
 def command_plan_status(repo_root: Path, args):
-    payload = run_protocol_action_from_cli(repo_root, args.change, "status", debug=bool(args.debug))
+    payload = run_protocol_action_from_cli(
+        repo_root,
+        args.change,
+        "status",
+        debug=bool(args.debug),
+        compact=(not bool(args.full)),
+        action_limit=int(args.action_limit),
+    )
     if args.json:
         print(to_json(payload))
         return
@@ -165,18 +166,23 @@ def build_parser():
     plan_complete.add_argument("change")
     plan_complete.add_argument("action_id")
     plan_complete.add_argument("--result-json", required=True)
-    plan_complete.add_argument("--json", action="store_true")
 
     plan_fail = plan_sub.add_parser("fail")
     plan_fail.add_argument("change")
     plan_fail.add_argument("action_id")
     plan_fail.add_argument("--error-json", required=True)
-    plan_fail.add_argument("--json", action="store_true")
 
     plan_status = plan_sub.add_parser("status")
     plan_status.add_argument("change")
     plan_status.add_argument("--json", action="store_true")
     plan_status.add_argument("--debug", action="store_true")
+    plan_status.add_argument("--full", action="store_true", help="Return full action objects in JSON output.")
+    plan_status.add_argument(
+        "--action-limit",
+        type=int,
+        default=40,
+        help="Compact JSON mode: max number of action summaries to include.",
+    )
 
     return parser
 

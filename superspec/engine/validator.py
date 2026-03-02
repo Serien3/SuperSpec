@@ -1,6 +1,6 @@
 import re
 
-from .constants import SUPPORTED_ACTION_TYPES, SUPPORTED_SCHEMA_VERSION
+from .constants import SUPPORTED_SCHEMA_VERSION
 from .errors import ValidationError
 
 
@@ -80,7 +80,6 @@ def validate_plan(plan):
 
         atype = action.get("type")
         _assert(isinstance(atype, str) and atype, f"Action {aid} type is required")
-        _assert(atype in SUPPORTED_ACTION_TYPES, f"Unsupported action type: {atype}")
 
         if action.get("executor") == "skill":
             _assert(isinstance(action.get("skill"), str) and action["skill"], f"Action {aid} must set skill for skill executor")

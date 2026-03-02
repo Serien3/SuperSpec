@@ -253,6 +253,21 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "invalid_action_payload")
         self.assertIn("script executor requires script field", str(ctx.exception))
 
+    def test_validate_accepts_custom_action_type_and_protocol_executes(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "custom.anything", "executor": "script", "script": "echo one"}],
+        )
+        validate_plan(plan)
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["actionId"], "a1")
+        self.assertEqual(nxt["action"]["executor"], "script")
+        self.assertEqual(nxt["action"]["scriptName"], "echo one")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -64,6 +64,7 @@ Execution storage for protocol mode:
 - Lease token flow (`leaseId`, `--lease`, `--lease-ttl-sec`)
 - `superspec plan run`
 - Legacy run-state storage (`run-state.json`, `runs/<run-id>/...`)
+- In-process action handlers/runners (`superspec/actions/*`, `superspec/runners/*`): execution is external-agent only
 
 ## Command Contract File
 

@@ -38,13 +38,3 @@ def resolve_value(value, context):
     if isinstance(value, dict):
         return {k: resolve_value(v, context) for k, v in value.items()}
     return resolve_template_string(value, context)
-
-
-def set_path(target, path: str, value):
-    parts = path.split(".")
-    current = target
-    for part in parts[:-1]:
-        if part not in current or not isinstance(current[part], dict):
-            current[part] = {}
-        current = current[part]
-    current[parts[-1]] = value

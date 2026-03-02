@@ -1,1 +1,0 @@
-"""Action handler registry."""

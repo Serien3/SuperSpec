@@ -1,7 +1,5 @@
-import json
 import os
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
 from superspec.engine.constants import DEFAULTS, SUPPORTED_PROTOCOL_VERSION
 from superspec.engine.context import resolve_value
@@ -19,15 +17,6 @@ def _now_iso():
 
 def _parse_iso(ts: str):
     return datetime.fromisoformat(ts)
-
-
-def _context_files(change_dir: Path):
-    return {
-        "proposal": str(change_dir / "proposal.md"),
-        "design": str(change_dir / "design.md"),
-        "tasks": str(change_dir / "tasks.md"),
-        "specs": str(change_dir / "specs" / "**" / "*.md"),
-    }
 
 
 def _resolve_executor(action, defaults):
@@ -58,7 +47,7 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
     return resolve_value(action, expr_context)
 
 
-def _build_action_payload(action: dict, resolved_action: dict, change_dir: Path, debug: bool):
+def _build_action_payload(action: dict, resolved_action: dict, debug: bool):
     executor = _resolve_executor(resolved_action, {**DEFAULTS, **action.get("defaults", {})})
     payload = {
         "actionId": action["id"],
@@ -190,7 +179,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         action_state["status"] = "RUNNING"
         action_state["startedAt"] = _now_iso()
 
-        payload = _build_action_payload(action, resolved_action, Path(change_dir), debug)
+        payload = _build_action_payload(action, resolved_action, debug)
         append_event(
             change_dir,
             {
@@ -351,6 +340,3 @@ def status_snapshot(plan: dict, change_dir: str, debug: bool = False):
         payload["contracts"] = _contracts_payload()
     return payload
 
-
-def render_protocol_docs():
-    return json.dumps(_contracts_payload(), indent=2)

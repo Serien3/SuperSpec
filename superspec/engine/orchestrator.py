@@ -6,32 +6,16 @@ from superspec.engine.plan_loader import load_plan_from_change
 from superspec.engine.protocol import complete_action, fail_action, next_action, status_snapshot
 
 
-def run_protocol_next(plan: dict, change_dir: str, owner: str, debug: bool):
-    return next_action(plan, change_dir, owner=owner, debug=debug)
-
-
-def run_protocol_complete(plan: dict, change_dir: str, action_id: str, result_payload: dict):
-    return complete_action(plan, change_dir, action_id, result_payload)
-
-
-def run_protocol_fail(plan: dict, change_dir: str, action_id: str, error_payload: dict):
-    return fail_action(plan, change_dir, action_id, error_payload)
-
-
-def run_protocol_status(plan: dict, change_dir: str):
-    return status_snapshot(plan, change_dir)
-
-
 def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str, **kwargs):
     plan, _ = load_plan_from_change(str(repo_root), change_name)
     change_dir = str((repo_root / plan["context"]["changeDir"]).resolve())
 
     if action == "next":
-        return run_protocol_next(plan, change_dir, kwargs.get("owner", "agent"), kwargs.get("debug", False))
+        return next_action(plan, change_dir, owner=kwargs.get("owner", "agent"), debug=kwargs.get("debug", False))
     if action == "complete":
-        return run_protocol_complete(plan, change_dir, kwargs["action_id"], kwargs["result_payload"])
+        return complete_action(plan, change_dir, kwargs["action_id"], kwargs["result_payload"])
     if action == "fail":
-        return run_protocol_fail(plan, change_dir, kwargs["action_id"], kwargs["error_payload"])
+        return fail_action(plan, change_dir, kwargs["action_id"], kwargs["error_payload"])
     if action == "status":
         return status_snapshot(plan, change_dir, debug=bool(kwargs.get("debug", False)))
     raise ProtocolError(f"Unknown protocol action: {action}")

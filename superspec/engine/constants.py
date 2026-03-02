@@ -20,5 +20,3 @@ DEFAULTS = {
         "strategy": "fixed",
     },
 }
-
-ACTION_STATUSES = {"PENDING", "RUNNING", "SUCCESS", "FAILED", "SKIPPED"}

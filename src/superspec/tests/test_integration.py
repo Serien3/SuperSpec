@@ -31,9 +31,8 @@ class IntegrationTest(unittest.TestCase):
                 "executor": "script",
                 "onFail": "stop",
                 "retry": {
-                    "maxAttempts": 1,
-                    "backoffSec": 0,
-                    "strategy": "fixed",
+                    "maxAttempts": 0,
+                    "intervalSec": 0,
                 },
             },
             "actions": actions,
@@ -158,7 +157,7 @@ class IntegrationTest(unittest.TestCase):
                     "type": "openspec.proposal",
                     "executor": "script",
                     "script": "echo one",
-                    "retry": {"maxAttempts": 2, "backoffSec": 0, "strategy": "fixed"},
+                    "retry": {"maxAttempts": 1, "intervalSec": 0},
                 }
             ],
         )
@@ -332,6 +331,38 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("dependsOn", full["actions"][0])
         self.assertIn("startedAt", full["actions"][0])
         self.assertNotIn("actionsOmitted", full)
+
+    def test_status_snapshot_retry_only_returns_retry_focus_payload(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "openspec.proposal",
+                    "executor": "script",
+                    "script": "echo one",
+                    "retry": {"maxAttempts": 1, "intervalSec": 10},
+                }
+            ],
+        )
+        validate_plan(plan)
+
+        _ = next_action(plan, str(change_dir), owner="agent-a")
+        _ = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "retry me"})
+
+        retry_status = status_snapshot(plan, str(change_dir), retry_only=True)
+        self.assertIn("retry", retry_status)
+        self.assertNotIn("actions", retry_status)
+        self.assertEqual(retry_status["retry"]["scheduledCount"], 1)
+        self.assertIsNotNone(retry_status["retry"]["nextWakeAt"])
+        self.assertGreaterEqual(retry_status["retry"]["nextWakeInSec"], 0)
+
+        first = retry_status["retry"]["scheduled"][0]
+        self.assertEqual(first["actionId"], "a1")
+        self.assertEqual(first["attempts"], 1)
+        self.assertEqual(first["lastError"]["code"], "boom")
 
 
 if __name__ == "__main__":

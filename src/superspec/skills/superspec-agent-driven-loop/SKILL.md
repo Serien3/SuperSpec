@@ -2,7 +2,6 @@
 name: superspec-agent-driven-loop
 description: Run the full SuperSpec workflow in agent-driven mode by polling next actions and reporting completion/failure until done.
 license: MIT
-compatibility: Requires superspec CLI and openspec CLI.
 metadata:
   author: superspec
   version: "1.4"
@@ -16,7 +15,7 @@ This skill is the execution playbook for:
 - running `next -> execute -> complete|fail` in a pull loop
 - stopping only at terminal `done`
 
-**Input**: change name (recommended), optional change summary, optional owner label.
+**Input**: change name (recommended), optional owner label.
 
 ## Steps
 
@@ -24,11 +23,11 @@ This skill is the execution playbook for:
    - If a change name is provided and exists, use it.
    - If a change name is provided and does not exist, create it:
      ```bash
-     superspec change new "<name>" --summary "<summary>"
+     superspec change new "<name>"
      ```
    - Optional one-step create+init:
      ```bash
-     superspec change new "<name>" --summary "<summary>" --init-plan --plan-schema sdd
+     superspec change new "<name>" --init-plan --plan-schema sdd
      ```
    - If no name is provided, list changes and ask user to choose:
      ```bash
@@ -52,8 +51,9 @@ This skill is the execution playbook for:
      ```
    - Handle by `state`:
      - `ready`: goto **step4**
-     - `blocked`: wait/poll with backoff, then call `next` again
+     - `blocked`: use blocked polling policy, then call `next` again
      - `done`: stop loop and report final status
+   - Treat `plan fail` as in-loop state update, not terminal signal. Continue polling until `next` returns `done`.
 
 4. **Dispatch by executor for `ready`**
   - If `action.executor == "script"`:
@@ -67,23 +67,27 @@ This skill is the execution playbook for:
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"script_failed","message":"...","executor":"script"}'
        ```
    - If `action.executor == "skill"`:
-    - Invoke the named skill in `action.skillName`
-    - Use `action.prompt` as the execution guidance text
+   - Invoke the named skill in `action.skillName`
+   - Use `action.prompt` as the execution guidance text
      - On success:
        ```bash
        superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"skill","actionId":"<actionId>","exitCode":0}'
        ```
      - On failure:
        ```bash
-       superspec plan fail "<name>" "<actionId>" --error-json '{"code":"skill_failed","message":"...","executor":"script"}'
+       superspec plan fail "<name>" "<actionId>" --error-json '{"code":"skill_failed","message":"...","executor":"skill"}'
        ```
 
-6. **Use `status` for checkpoints, not every action**
+5. **Use `status` for checkpoints, not every action**
    ```bash
    superspec plan status "<name>" --json
    ```
    - Do not call `status` after each successful action; `next` already drives progress.
    - Call `status` at major checkpoints (start, unexpected blockage, terminal `done`, or failure triage).
+   - Use `--retry` for retry timing and next wake-up:
+     ```bash
+     superspec plan status "<name>" --retry --json
+     ```
    - Default JSON is compact summary; use `--full` only when full action objects are needed:
      ```bash
      superspec plan status "<name>" --json --full
@@ -106,14 +110,21 @@ This skill is the execution playbook for:
   - `code` (string machine-readable)
   - `message` (string human-readable)
   - `executor` (`script` or `skill`)
-  - `retryable` (boolean, optional)
   - `details` (object, optional)
 
 ## Blocked-state polling guidance
 
 - For `state == "blocked"`, do not fail the run immediately.
-- Poll `next` again after backoff (e.g., 2s, then 4s, capped at 15s).
+- Prefer retry snapshot from execution state:
+  1. Run `superspec plan status "<name>" --retry --json`.
+  2. Read `retry.nextWakeInSec`.
+  3. If present, wait using `wait_sec = max(1, retry.nextWakeInSec)`.
+  4. If absent, fallback to fixed 2s polling.
 - Continue until `ready` or terminal `done`.
+- If the previous step was `plan fail`, keep following the same polling rules above.
+- Retry settings are fixed-interval from plan `retry` config:
+  - `maxAttempts`: max retry count after a failure report
+  - `intervalSec`: fixed wait between retry attempts
 
 ## Terminal signaling
 
@@ -127,7 +138,7 @@ This skill is the execution playbook for:
 ## Minimal example sequence
 
 ```bash
-superspec change new demo-change --summary "demo"
+superspec change new demo-change
 superspec plan init demo-change --schema sdd
 superspec plan validate demo-change
 superspec plan next demo-change --owner agent --json

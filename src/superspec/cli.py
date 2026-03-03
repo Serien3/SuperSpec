@@ -31,10 +31,8 @@ def _write_plan(repo_root: Path, change_name: str, schema: str | None, title: st
     return plan_path, selected_schema
 
 
-def _run_openspec_new_change(repo_root: Path, change_name: str, summary: str | None):
+def _run_openspec_new_change(repo_root: Path, change_name: str):
     cmd = ["openspec", "new", "change", change_name]
-    if summary:
-        cmd.extend(["--summary", summary])
     result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
     if result.returncode != 0:
         raise RuntimeError(result.stderr or result.stdout or "openspec new change failed")
@@ -91,7 +89,7 @@ def command_init(repo_root: Path, args):
 
 
 def command_change_new(repo_root: Path, args):
-    _run_openspec_new_change(repo_root, args.change, args.summary)
+    _run_openspec_new_change(repo_root, args.change)
     if args.init_plan:
         plan_path, selected_schema = _write_plan(repo_root, args.change, args.plan_schema, None, None)
         print(f"Initialized {plan_path} (schema={selected_schema})")
@@ -158,9 +156,26 @@ def command_plan_status(repo_root: Path, args):
         debug=bool(args.debug),
         compact=(not bool(args.full)),
         action_limit=int(args.action_limit),
+        retry_only=bool(args.retry),
     )
     if args.json:
         print(to_json(payload))
+        return
+
+    if args.retry:
+        retry = payload["retry"]
+        print(f"Change: {args.change}")
+        print(f"Status: {payload['status']}")
+        print(f"Retries scheduled: {retry['scheduledCount']}")
+        if retry["nextWakeAt"] is not None:
+            print(f"Next wake: {retry['nextWakeAt']} (in {retry['nextWakeInSec']}s)")
+        for entry in retry["scheduled"]:
+            suffix = ""
+            if entry.get("lastError") and entry["lastError"].get("message"):
+                suffix = f" ({entry['lastError']['message']})"
+            print(
+                f"- {entry['actionId']} attempts={entry['attempts']} next={entry['nextEligibleAt']} wait={entry['waitSec']}s{suffix}"
+            )
         return
 
     print(f"Change: {args.change}")
@@ -183,7 +198,6 @@ def build_parser():
     change_sub = change.add_subparsers(dest="sub")
     change_new = change_sub.add_parser("new")
     change_new.add_argument("change")
-    change_new.add_argument("--summary")
     change_new.add_argument("--init-plan", action="store_true")
     change_new.add_argument("--plan-schema", default="sdd")
 
@@ -220,6 +234,7 @@ def build_parser():
     plan_status.add_argument("--json", action="store_true")
     plan_status.add_argument("--debug", action="store_true")
     plan_status.add_argument("--full", action="store_true", help="Return full action objects in JSON output.")
+    plan_status.add_argument("--retry", action="store_true", help="Return retry-focused status payload.")
     plan_status.add_argument(
         "--action-limit",
         type=int,

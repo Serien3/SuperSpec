@@ -139,3 +139,16 @@ The system MUST keep runtime defaults constrained to fields with active executio
 - **WHEN** protocol execution state is initialized
 - **THEN** persisted defaults include only execution-relevant fields (`executor`, `onFail`, `retry`)
 - **AND** deprecated or no-op defaults are not persisted as active runtime configuration
+
+### Requirement: Fixed-interval retry configuration
+The system MUST model retry timing using only max retry count and fixed retry interval.
+
+#### Scenario: Validate retry configuration shape
+- **WHEN** plan defaults or action overrides define retry policy
+- **THEN** retry accepts only `maxAttempts` and `intervalSec`
+- **AND** retry rejects unsupported timing strategy fields
+
+#### Scenario: Apply fixed-interval retry behavior
+- **WHEN** an action failure is reported and retry attempts remain
+- **THEN** the next retry eligibility is scheduled using `intervalSec`
+- **AND** no exponential or strategy-based backoff is applied

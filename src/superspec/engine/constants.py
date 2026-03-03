@@ -6,7 +6,6 @@ DEFAULTS = {
     "onFail": "stop",
     "retry": {
         "maxAttempts": 1,
-        "backoffSec": 0,
-        "strategy": "fixed",
+        "intervalSec": 0,
     },
 }

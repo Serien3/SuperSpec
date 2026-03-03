@@ -1,4 +1,5 @@
 import os
+from math import ceil
 from datetime import datetime, timedelta, timezone
 
 from superspec.engine.constants import DEFAULTS, SUPPORTED_PROTOCOL_VERSION
@@ -319,18 +320,16 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
     defaults = {**DEFAULTS, **plan.get("defaults", {})}
     retry_defaults = defaults.get("retry", {})
     retry = {**retry_defaults, **(action_def.get("retry") or {})}
-    max_attempts = int(retry.get("maxAttempts", 1))
+    max_attempts = max(0, int(retry.get("maxAttempts", 1)))
+    interval_sec = max(0, int(retry.get("intervalSec", 0)))
     action_state["attempts"] = int(action_state.get("attempts", 0)) + 1
     action_state["error"] = error_payload
     action_state["finishedAt"] = _now_iso()
 
-    if action_state["attempts"] < max_attempts:
-        backoff = int(retry.get("backoffSec", 0))
-        strategy = retry.get("strategy", "fixed")
-        if strategy == "exponential":
-            backoff *= max(1, 2 ** (action_state["attempts"] - 1))
+    # maxAttempts means max retry count after a reported failure.
+    if action_state["attempts"] <= max_attempts:
         action_state["status"] = "PENDING"
-        action_state["nextEligibleAt"] = (_now() + timedelta(seconds=backoff)).isoformat() if backoff > 0 else None
+        action_state["nextEligibleAt"] = (_now() + timedelta(seconds=interval_sec)).isoformat() if interval_sec > 0 else None
         _refresh_ready_actions(state)
         append_event(change_dir, {"event": "action.retry_scheduled", "actionId": action_id, "attempt": action_state["attempts"]})
         _persist(change_dir, state)
@@ -372,6 +371,11 @@ def _contracts_payload():
             "fields": ["status", "progress", "lastFailure", "actions"],
             "actionStates": ["PENDING", "READY", "RUNNING", "SUCCESS", "FAILED"],
             "debugFields": ["contracts"],
+            "modes": {
+                "default": "compact action summaries",
+                "full": "full action objects",
+                "retry": "retry-only payload under retry field; actions omitted",
+            },
         },
         "actionPayload": {
             "script": ["actionId", "executor", "script_command", "prompt"],
@@ -398,7 +402,47 @@ def _compact_action_entry(action: dict):
     return entry
 
 
-def status_snapshot(plan: dict, change_dir: str, debug: bool = False, compact: bool = False, action_limit: int = 40):
+def _retry_snapshot(state: dict):
+    now = _now()
+    scheduled = []
+    for action in state["actions"]:
+        if action.get("status") != "PENDING" or not action.get("nextEligibleAt"):
+            continue
+        next_eligible_at = action["nextEligibleAt"]
+        wait_sec = max(0, int(ceil((_parse_iso(next_eligible_at) - now).total_seconds())))
+        entry = {
+            "actionId": action["id"],
+            "attempts": int(action.get("attempts") or 0),
+            "nextEligibleAt": next_eligible_at,
+            "waitSec": wait_sec,
+        }
+        if action.get("error"):
+            error = action["error"]
+            entry["lastError"] = {
+                "code": error.get("code"),
+                "message": error.get("message"),
+            }
+        scheduled.append(entry)
+
+    scheduled.sort(key=lambda item: item["nextEligibleAt"])
+    next_wake_at = scheduled[0]["nextEligibleAt"] if scheduled else None
+    next_wake_in_sec = scheduled[0]["waitSec"] if scheduled else None
+    return {
+        "scheduledCount": len(scheduled),
+        "nextWakeAt": next_wake_at,
+        "nextWakeInSec": next_wake_in_sec,
+        "scheduled": scheduled,
+    }
+
+
+def status_snapshot(
+    plan: dict,
+    change_dir: str,
+    debug: bool = False,
+    compact: bool = False,
+    action_limit: int = 40,
+    retry_only: bool = False,
+):
     state = ensure_protocol_state(plan, change_dir)
     done = len([a for a in state["actions"] if a["status"] == "SUCCESS"])
     failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
@@ -424,6 +468,12 @@ def status_snapshot(plan: dict, change_dir: str, debug: bool = False, compact: b
         },
         "lastFailure": last_failure,
     }
+    if retry_only:
+        payload["retry"] = _retry_snapshot(state)
+        if debug:
+            payload["contracts"] = _contracts_payload()
+        return payload
+
     if compact:
         limit = max(1, int(action_limit))
         compact_actions = [_compact_action_entry(action) for action in state["actions"][:limit]]

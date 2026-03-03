@@ -23,6 +23,7 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
             debug=bool(kwargs.get("debug", False)),
             compact=bool(kwargs.get("compact", False)),
             action_limit=int(kwargs.get("action_limit", 40)),
+            retry_only=bool(kwargs.get("retry_only", False)),
         )
     raise ProtocolError(f"Unknown protocol action: {action}")
 

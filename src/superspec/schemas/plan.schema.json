@@ -29,9 +29,8 @@
         "retry": {
           "type": "object",
           "properties": {
-            "maxAttempts": { "type": "integer", "minimum": 1 },
-            "backoffSec": { "type": "integer", "minimum": 0 },
-            "strategy": { "enum": ["fixed", "exponential"] }
+            "maxAttempts": { "type": "integer", "minimum": 0 },
+            "intervalSec": { "type": "integer", "minimum": 0 }
           },
           "additionalProperties": false
         }
@@ -63,9 +62,8 @@
           "retry": {
             "type": "object",
             "properties": {
-              "maxAttempts": { "type": "integer", "minimum": 1 },
-              "backoffSec": { "type": "integer", "minimum": 0 },
-              "strategy": { "enum": ["fixed", "exponential"] }
+              "maxAttempts": { "type": "integer", "minimum": 0 },
+              "intervalSec": { "type": "integer", "minimum": 0 }
             },
             "additionalProperties": false
           },

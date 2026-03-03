@@ -39,6 +39,7 @@ git clone https://github.com/Serien3/SuperSpec.git && cd SuperSpec/ && pip insta
 
 ### Requirements
 - Python >= 3.10 (tested on v3.12.3)
+- 
 The following tools must be available in your system path :
 - OpenSpec >= v1.1.0 (reference [OpenSpec](https://github.com/Fission-AI/OpenSpec))
   - You can quickly download the latest version via `npm install -g @fission-ai/openspec@latest`

@@ -31,16 +31,11 @@ The system MUST provide a command for clients to report successful action comple
 ### Requirement: Action failure reporting
 The system MUST provide a command for clients to report action failure with structured error payload.
 
-#### Scenario: Fail action with retry policy
-- **WHEN** a client reports failure for an action that has remaining retry attempts
-- **THEN** the system records the failure attempt
-- **AND** keeps the action eligible for retry according to configured fixed retry interval
-- **AND** transitions the action to `READY` immediately when `intervalSec` is zero, otherwise to `PENDING` until eligible
-
-#### Scenario: Fail action without remaining retries
-- **WHEN** a client reports failure for an action with no remaining retry attempts
+#### Scenario: Fail action is terminal
+- **WHEN** a client reports failure for a running action
 - **THEN** the action transitions to `FAILED`
-- **AND** the system applies configured `onFail` behavior without introducing `SKIPPED`
+- **AND** the workflow transitions to terminal `failed`
+- **AND** no retry scheduling is created
 
 #### Scenario: Propagate dependency failure to downstream actions
 - **WHEN** an action reaches terminal `FAILED` and downstream actions depend on it directly or transitively
@@ -83,7 +78,7 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 - **AND** eventually returns `done` when the plan reaches terminal state
 
 #### Scenario: Blocked loop behavior
-- **WHEN** `next` returns `blocked` because no action is currently runnable (for example due to unresolved dependencies, retry interval wait, or an in-flight `RUNNING` action awaiting report-back)
+- **WHEN** `next` returns `blocked` because no action is currently runnable (for example due to unresolved dependencies or an in-flight `RUNNING` action awaiting report-back)
 - **THEN** the agent can continue polling without invalidating state
 - **AND** serial action ordering remains intact across repeated polling
 
@@ -100,11 +95,6 @@ The system MUST return protocol contract metadata in status responses only when 
 - **THEN** the response includes execution state and progress fields
 - **AND** includes `contracts` metadata for protocol inspection
 
-#### Scenario: Status with retry mode enabled
-- **WHEN** a client calls status with retry mode enabled
-- **THEN** the response includes retry-focused fields (`scheduledCount`, `nextWakeAt`, `nextWakeInSec`, `scheduled`)
-- **AND** omits per-action status arrays from the response body
-
 ### Requirement: Two-terminal-state action model
 The system MUST represent action terminal outcomes using only `SUCCESS` and `FAILED`.
 
@@ -120,4 +110,3 @@ The system MUST compute progress fields without counting skipped outcomes.
 - **WHEN** status is computed for a change
 - **THEN** `progress.done` counts only actions in `SUCCESS`
 - **AND** `progress.failed` counts actions in `FAILED`
-

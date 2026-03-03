@@ -226,26 +226,9 @@ def command_plan_status(repo_root: Path, args):
         debug=bool(args.debug),
         compact=(not bool(args.full)),
         action_limit=int(args.action_limit),
-        retry_only=bool(args.retry),
     )
     if args.json:
         print(to_json(payload))
-        return
-
-    if args.retry:
-        retry = payload["retry"]
-        print(f"Change: {args.change}")
-        print(f"Status: {payload['status']}")
-        print(f"Retries scheduled: {retry['scheduledCount']}")
-        if retry["nextWakeAt"] is not None:
-            print(f"Next wake: {retry['nextWakeAt']} (in {retry['nextWakeInSec']}s)")
-        for entry in retry["scheduled"]:
-            suffix = ""
-            if entry.get("lastError") and entry["lastError"].get("message"):
-                suffix = f" ({entry['lastError']['message']})"
-            print(
-                f"- {entry['actionId']} attempts={entry['attempts']} next={entry['nextEligibleAt']} wait={entry['waitSec']}s{suffix}"
-            )
         return
 
     print(f"Change: {args.change}")
@@ -310,7 +293,6 @@ def build_parser():
     plan_status.add_argument("--json", action="store_true")
     plan_status.add_argument("--debug", action="store_true")
     plan_status.add_argument("--full", action="store_true", help="Return full action objects in JSON output.")
-    plan_status.add_argument("--retry", action="store_true", help="Return retry-focused status payload.")
     plan_status.add_argument(
         "--action-limit",
         type=int,

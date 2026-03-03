@@ -159,7 +159,7 @@
 
 ### `superspec plan status`
 
-查询执行状态、进度、动作列表与重试信息。
+查询执行状态、进度与动作列表。
 
 **Arguments**
 
@@ -174,6 +174,5 @@
 | `--json`         | 使用 JSON 输出。                                  | `false` |
 | `--debug`        | 在状态输出中附加 `contracts` 调试字段。           | `false` |
 | `--full`         | JSON 输出返回完整 action 对象；默认返回精简摘要。 | `false` |
-| `--retry`        | 返回重试视角状态（`retry` 字段）。                | `false` |
 | `--action-limit` | 精简模式下返回的 action 摘要数量上限。            | `40`    |
 | `-h`, `--help`   | 显示帮助信息。                                    | `false` |

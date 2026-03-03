@@ -47,9 +47,9 @@ This skill is the execution playbook for:
      ```
    - Handle by `state`:
      - `ready`: goto **step4**
-     - `blocked`: use blocked polling policy, then call `next` again
+     - `blocked`: wait fixed interval and call `next` again
      - `done`: stop loop and report final status
-   - Treat `plan fail` as in-loop state update, not terminal signal. Continue polling until `next` returns `done`.
+   - Treat `plan fail` as terminal failure signal for the workflow and immediately switch to failure reporting.
 
 4. **Dispatch by executor for `ready`**
   - If `action.executor == "script"`:
@@ -63,8 +63,8 @@ This skill is the execution playbook for:
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"script_failed","message":"...","executor":"script"}'
        ```
    - If `action.executor == "skill"`:
-   - Invoke the named skill in `action.skillName`
-   - Use `action.prompt` as the execution guidance text
+    - Invoke the named skill in `action.skillName`
+    - Use `action.prompt` as the execution guidance text
      - On success:
        ```bash
        superspec plan complete "<name>" "<actionId>" --output-json '{"ok":true,"executor":"skill","actionId":"<actionId>","exitCode":0}'
@@ -73,18 +73,6 @@ This skill is the execution playbook for:
        ```bash
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"skill_failed","message":"...","executor":"skill"}'
        ```
-  - If `action.executor == "human"`:
-   - Present `action.human.instruction` to the reviewer and wait for human decision
-   - Treat reviewer input equal to `action.human.approveLabel` as approval
-   - Treat reviewer input equal to `action.human.rejectLabel` as rejection
-   - On approval:
-       ```bash
-       superspec plan approve "<name>" "<actionId>" --summary "human review approved"
-       ```
-   - On rejection:
-       ```bash
-       superspec plan reject "<name>" "<actionId>" --code "human_rejected" --message "human review rejected"
-       ```
 
 5. **Use `status` for checkpoints, not every action**
    ```bash
@@ -92,10 +80,6 @@ This skill is the execution playbook for:
    ```
    - Do not call `status` after each successful action; `next` already drives progress.
    - Call `status` at major checkpoints (start, unexpected blockage, terminal `done`, or failure triage).
-   - Use `--retry` for retry timing and next wake-up:
-     ```bash
-     superspec plan status "<name>" --retry --json
-     ```
    - Default JSON is compact summary; use `--full` only when full action objects are needed:
      ```bash
      superspec plan status "<name>" --json --full
@@ -109,7 +93,7 @@ This skill is the execution playbook for:
 
 - `complete --output-json` SHOULD include (JSON object):
   - `ok` (boolean)
-  - `executor` (`script` or `skill` or `human`)
+  - `executor` (`script` or `skill`)
   - `actionId` (string)
   - `summary` (string, optional)
   - `outputs` (object, optional)
@@ -117,23 +101,17 @@ This skill is the execution playbook for:
 - `fail --error-json` SHOULD include (JSON object):
   - `code` (string machine-readable)
   - `message` (string human-readable)
-  - `executor` (`script` or `skill` or `human`)
+  - `executor` (`script` or `skill`)
   - `details` (object, optional)
 
 ## Blocked-state polling guidance
 
 - For `state == "blocked"`, do not fail the run immediately.
-- Prefer retry snapshot from execution state:
-  1. Run `superspec plan status "<name>" --retry --json`.
-  2. If `status=failed` and `retry.scheduledCount=0`, stop polling and report terminal failure.
-  3. Read `retry.nextWakeInSec`.
-  4. If present, wait using `wait_sec = max(1, retry.nextWakeInSec)`.
-  5. If absent, fallback to fixed 2s polling.
+- Use fixed polling interval:
+  1. Wait 2s.
+  2. Call `superspec plan next "<name>" --owner "<owner>" --json` again.
 - Continue until `ready` or terminal `done`.
-- If the previous step was `plan fail`, keep following the same polling rules above.
-- Retry settings are fixed-interval from plan `retry` config:
-  - `maxAttempts`: max retry count after a failure report
-  - `intervalSec`: fixed wait between retry attempts
+- If the previous step was `plan fail`, do not continue polling; report terminal failure to human immediately.
 - Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
 
 ## Terminal signaling

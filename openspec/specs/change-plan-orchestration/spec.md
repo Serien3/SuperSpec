@@ -121,34 +121,26 @@ The system MUST write per-action execution history for troubleshooting and audit
 - **THEN** a corresponding execution event record exists in protocol execution storage
 - **AND** includes error details sufficient for troubleshooting
 
-### Requirement: Failure policy enum constraints
-The system MUST limit action failure policy values to the supported runtime semantics.
+### Requirement: Fail-fast failure handling
+The system MUST apply terminal fail-fast behavior when any action failure is reported.
 
-#### Scenario: Accept supported failure policies
-- **WHEN** plan defaults or action overrides specify `onFail` as `stop` or `continue`
-- **THEN** plan validation succeeds for that field
-
-#### Scenario: Reject unsupported skip-dependent policy
-- **WHEN** plan defaults or action overrides specify `onFail` as `skip_dependents`
-- **THEN** plan validation fails with a clear enum validation error
+#### Scenario: Any reported failure halts workflow
+- **WHEN** a running action is reported failed through the protocol
+- **THEN** the workflow transitions to terminal `failed`
+- **AND** no continuation policy is applied for additional autonomous actions
 
 ### Requirement: Runtime-relevant defaults surface
 The system MUST keep runtime defaults constrained to fields with active execution semantics.
 
 #### Scenario: Persist effective runtime defaults
 - **WHEN** protocol execution state is initialized
-- **THEN** persisted defaults include only execution-relevant fields (`executor`, `onFail`, `retry`)
+- **THEN** persisted defaults include only execution-relevant fields (`executor`)
 - **AND** deprecated or no-op defaults are not persisted as active runtime configuration
 
-### Requirement: Fixed-interval retry configuration
-The system MUST model retry timing using only max retry count and fixed retry interval.
+### Requirement: Retry configuration removal
+The system MUST not expose retry policy configuration in runtime plan semantics.
 
-#### Scenario: Validate retry configuration shape
-- **WHEN** plan defaults or action overrides define retry policy
-- **THEN** retry accepts only `maxAttempts` and `intervalSec`
-- **AND** retry rejects unsupported timing strategy fields
-
-#### Scenario: Apply fixed-interval retry behavior
-- **WHEN** an action failure is reported and retry attempts remain
-- **THEN** the next retry eligibility is scheduled using `intervalSec`
-- **AND** no exponential or strategy-based backoff is applied
+#### Scenario: Reject retry fields in plan defaults and actions
+- **WHEN** plan defaults or action definitions include retry controls
+- **THEN** plan validation fails
+- **AND** users are guided to fail-fast plus human intervention behavior

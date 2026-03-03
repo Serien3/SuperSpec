@@ -52,27 +52,15 @@ Prefer installed CLI commands:
      ```
    - Handle response state:
      - `ready`: dispatch executor and report `complete` or `fail`.
-     - `blocked`: use blocked polling policy and poll again.
+     - `blocked`: use fixed-interval polling and poll again.
      - `done`: stop loop and fetch terminal status.
 
 #### Blocked Polling Policy
 
-When `next.state=blocked`, use retry snapshot:
-1. Read retry status:
-   ```bash
-   superspec plan status "<change_name>" --retry --json
-   ```
-2. If `status=failed` and `retry.scheduledCount=0`, stop polling and report terminal failure.
-3. Read `retry.nextWakeInSec`.
-4. If present, use:
-   - `wait_sec = max(1, retry.nextWakeInSec)`
-5. If absent, use fallback fixed polling interval (2s).
-6. Sleep `wait_sec`, then call `next` again.
-7. Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
-
-Retry behavior comes from plan `retry` config:
-- `maxAttempts`: max retry count after a failure report
-- `intervalSec`: fixed wait between retry attempts
+When `next.state=blocked`:
+1. Sleep 2s.
+2. Call `next` again.
+3. Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
 
 5. Dispatch `ready` action by executor.
    - `script` executor:
@@ -125,8 +113,8 @@ Use structured payloads.
 - Use the exact `action.id` returned by `next`.
 - Do not report `complete` or `fail` before real execution.
 - Do not call `status` after every success; use checkpoint/terminal reads.
-- Do not call `status --retry` or `status --full` after every failure; keep the loop pull-driven by `next`.
-- Do not treat `plan fail` as terminal; continue `next` polling until `next.state=done`.
+- Do not call `status --full` after every failure; keep the loop pull-driven by `next`.
+- Treat `plan fail` as terminal failure and escalate to a human.
 - Do not terminate on first `blocked`; continue polling.
 - Stop only when `next` returns `done`.
 
@@ -142,4 +130,4 @@ On failure, report:
 - `change_name`
 - terminal `status`
 - failed action id(s)
-- error code/message and whether retry/replan is required
+- error code/message and that human intervention is required

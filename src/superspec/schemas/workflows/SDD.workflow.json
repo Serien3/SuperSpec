@@ -5,8 +5,7 @@
   "title": "Main delivery plan",
   "goal": "Execute this change in a single-agent serial loop",
   "defaults": {
-    "executor": "skill",
-    "onFail": "stop"
+    "executor": "skill"
   },
   "actions": [
     {

@@ -29,11 +29,6 @@ class IntegrationTest(unittest.TestCase):
             },
             "defaults": {
                 "executor": "script",
-                "onFail": "stop",
-                "retry": {
-                    "maxAttempts": 0,
-                    "intervalSec": 0,
-                },
             },
             "actions": actions,
         }
@@ -146,7 +141,7 @@ class IntegrationTest(unittest.TestCase):
         by_id = {action["id"]: action for action in after_complete["actions"]}
         self.assertEqual(by_id["a2"]["status"], "READY")
 
-    def test_fail_retry_without_leases(self):
+    def test_fail_is_terminal_without_retry(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -157,22 +152,55 @@ class IntegrationTest(unittest.TestCase):
                     "type": "openspec.proposal",
                     "executor": "script",
                     "script": "echo one",
-                    "retry": {"maxAttempts": 1, "intervalSec": 0},
                 }
             ],
         )
         validate_plan(plan)
 
         _ = next_action(plan, str(change_dir), owner="agent-a")
-        status_after_first_fail = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "fail once"})
-        a1 = next(action for action in status_after_first_fail["actions"] if action["id"] == "a1")
-        self.assertEqual(a1["status"], "READY")
+        status_after_fail = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "failed"})
+        a1 = next(action for action in status_after_fail["actions"] if action["id"] == "a1")
+        self.assertEqual(a1["status"], "FAILED")
+        self.assertEqual(status_after_fail["status"], "failed")
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(nxt["state"], "ready")
-        complete_action(plan, str(change_dir), "a1", {"ok": True})
+        self.assertEqual(nxt["state"], "done")
         terminal = status_snapshot(plan, str(change_dir))
-        self.assertEqual(terminal["status"], "success")
+        self.assertEqual(terminal["status"], "failed")
+        self.assertEqual(terminal["progress"]["failed"], 1)
+
+    def test_fail_stops_even_if_independent_actions_exist(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+                {"id": "b1", "type": "openspec.tasks", "executor": "script", "script": "echo independent"},
+            ],
+        )
+        validate_plan(plan)
+
+        first = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["action"]["actionId"], "a1")
+
+        after_fail = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "root failure"})
+        by_id = {action["id"]: action for action in after_fail["actions"]}
+        self.assertEqual(by_id["a1"]["status"], "FAILED")
+        self.assertEqual(by_id["a2"]["status"], "FAILED")
+        self.assertEqual(by_id["a2"]["error"]["code"], "dependency_failed")
+        self.assertEqual(after_fail["status"], "failed")
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "done")
+
+        terminal = status_snapshot(plan, str(change_dir))
+        self.assertEqual(terminal["status"], "failed")
+        self.assertEqual(terminal["progress"]["done"], 0)
+        self.assertEqual(terminal["progress"]["failed"], 2)
+        self.assertEqual(terminal["progress"]["remaining"], 1)
 
     def test_dependency_failure_propagates_and_never_emits_skipped(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -186,7 +214,6 @@ class IntegrationTest(unittest.TestCase):
                 {"id": "b1", "type": "openspec.tasks", "executor": "script", "script": "echo independent"},
             ],
         )
-        plan["defaults"]["onFail"] = "continue"
         validate_plan(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
@@ -198,7 +225,6 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(by_id["a1"]["status"], "FAILED")
         self.assertEqual(by_id["a2"]["status"], "FAILED")
         self.assertEqual(by_id["a3"]["status"], "FAILED")
-        self.assertEqual(by_id["b1"]["status"], "READY")
         self.assertEqual(by_id["a2"]["error"]["code"], "dependency_failed")
         self.assertEqual(by_id["a3"]["error"]["code"], "dependency_failed")
         self.assertEqual(after_fail["progress"]["done"], 0)
@@ -207,35 +233,50 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(all(action["status"] != "SKIPPED" for action in after_fail["actions"]))
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["action"]["actionId"], "b1")
-        complete_action(plan, str(change_dir), "b1", {"ok": True})
+        self.assertEqual(nxt["state"], "done")
 
         terminal = status_snapshot(plan, str(change_dir))
         self.assertEqual(terminal["status"], "failed")
-        self.assertEqual(terminal["progress"]["done"], 1)
+        self.assertEqual(terminal["progress"]["done"], 0)
         self.assertEqual(terminal["progress"]["failed"], 3)
-        self.assertEqual(terminal["progress"]["remaining"], 0)
+        self.assertEqual(terminal["progress"]["remaining"], 1)
         self.assertTrue(all(action["status"] != "SKIPPED" for action in terminal["actions"]))
 
-    def test_validate_rejects_skip_dependents_on_fail(self):
+    def test_validate_rejects_legacy_failure_controls(self):
         root, change_name, _ = self.setup_temp_change()
         plan_defaults_invalid = self.build_plan(
             root,
             change_name,
             [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
         )
-        plan_defaults_invalid["defaults"]["onFail"] = "skip_dependents"
+        plan_defaults_invalid["defaults"]["onFail"] = "stop"
         with self.assertRaises(ValidationError):
             validate_plan(plan_defaults_invalid)
+
+        plan_defaults_retry_invalid = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
+        )
+        plan_defaults_retry_invalid["defaults"]["retry"] = {"maxAttempts": 1, "intervalSec": 1}
+        with self.assertRaises(ValidationError):
+            validate_plan(plan_defaults_retry_invalid)
 
         plan_action_invalid = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one", "onFail": "skip_dependents"}],
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one", "onFail": "stop"}],
         )
         with self.assertRaises(ValidationError):
             validate_plan(plan_action_invalid)
+
+        plan_action_retry_invalid = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one", "retry": {"maxAttempts": 1}}],
+        )
+        with self.assertRaises(ValidationError):
+            validate_plan(plan_action_retry_invalid)
 
     def test_next_uses_plan_default_executor_when_action_has_no_explicit_executor(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -387,39 +428,6 @@ class IntegrationTest(unittest.TestCase):
         self.assertIn("dependsOn", full["actions"][0])
         self.assertIn("startedAt", full["actions"][0])
         self.assertNotIn("actionsOmitted", full)
-
-    def test_status_snapshot_retry_only_returns_retry_focus_payload(self):
-        root, change_name, change_dir = self.setup_temp_change()
-        plan = self.build_plan(
-            root,
-            change_name,
-            [
-                {
-                    "id": "a1",
-                    "type": "openspec.proposal",
-                    "executor": "script",
-                    "script": "echo one",
-                    "retry": {"maxAttempts": 1, "intervalSec": 10},
-                }
-            ],
-        )
-        validate_plan(plan)
-
-        _ = next_action(plan, str(change_dir), owner="agent-a")
-        _ = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "retry me"})
-
-        retry_status = status_snapshot(plan, str(change_dir), retry_only=True)
-        self.assertIn("retry", retry_status)
-        self.assertNotIn("actions", retry_status)
-        self.assertEqual(retry_status["retry"]["scheduledCount"], 1)
-        self.assertIsNotNone(retry_status["retry"]["nextWakeAt"])
-        self.assertGreaterEqual(retry_status["retry"]["nextWakeInSec"], 0)
-
-        first = retry_status["retry"]["scheduled"][0]
-        self.assertEqual(first["actionId"], "a1")
-        self.assertEqual(first["attempts"], 1)
-        self.assertEqual(first["lastError"]["code"], "boom")
-
 
 if __name__ == "__main__":
     unittest.main()

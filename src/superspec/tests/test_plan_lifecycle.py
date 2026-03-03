@@ -185,7 +185,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "title": "Workflow title",
             "goal": "Workflow goal",
             "defaults": {
-                "onFail": "continue",
+                "executor": "script",
             },
             "actions": [
                 {
@@ -210,7 +210,7 @@ class PlanLifecycleTest(unittest.TestCase):
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["title"], "CLI title")
         self.assertEqual(plan["goal"], "CLI goal")
-        self.assertEqual(plan["defaults"]["onFail"], "continue")
+        self.assertEqual(plan["defaults"]["executor"], "script")
 
     def test_plan_init_rejects_unknown_schema(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

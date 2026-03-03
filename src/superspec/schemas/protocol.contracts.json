@@ -51,8 +51,7 @@
       "request": {
         "change": "string",
         "debug": "boolean (optional)",
-        "full": "boolean (optional)",
-        "retry": "boolean (optional)"
+        "full": "boolean (optional)"
       },
       "response": {
         "status": "running | success | failed",
@@ -65,17 +64,10 @@
         },
         "lastFailure": "object | null",
         "actions": "array",
-        "retry": {
-          "scheduledCount": "integer",
-          "nextWakeAt": "string | null (ISO timestamp)",
-          "nextWakeInSec": "integer | null",
-          "scheduled": "array of {actionId, attempts, nextEligibleAt, waitSec, lastError?}"
-        },
         "actionStatusValues": "PENDING | READY | RUNNING | SUCCESS | FAILED",
         "contracts": "object (only when debug=true)",
         "notes": [
-          "Default status JSON returns compact actions unless --full is provided",
-          "--retry returns retry-focused payload and omits actions array"
+          "Default status JSON returns compact actions unless --full is provided"
         ]
       }
     }

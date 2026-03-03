@@ -45,26 +45,6 @@
             "script",
             "human"
           ]
-        },
-        "onFail": {
-          "enum": [
-            "stop",
-            "continue"
-          ]
-        },
-        "retry": {
-          "type": "object",
-          "properties": {
-            "maxAttempts": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "intervalSec": {
-              "type": "integer",
-              "minimum": 0
-            }
-          },
-          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -154,35 +134,9 @@
                   "script",
                   "human"
                 ]
-              },
-              "onFail": {
-                "enum": [
-                  "stop",
-                  "continue"
-                ]
               }
             },
             "additionalProperties": false
-          },
-          "retry": {
-            "type": "object",
-            "properties": {
-              "maxAttempts": {
-                "type": "integer",
-                "minimum": 0
-              },
-              "intervalSec": {
-                "type": "integer",
-                "minimum": 0
-              }
-            },
-            "additionalProperties": false
-          },
-          "onFail": {
-            "enum": [
-              "stop",
-              "continue"
-            ]
           },
           "approval": {
             "type": "object",

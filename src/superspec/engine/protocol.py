@@ -1,6 +1,5 @@
 import os
-from math import ceil
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from superspec.engine.constants import DEFAULTS, SUPPORTED_PROTOCOL_VERSION
 from superspec.engine.context import resolve_runtime_action_fields
@@ -14,10 +13,6 @@ def _now():
 
 def _now_iso():
     return _now().isoformat()
-
-
-def _parse_iso(ts: str):
-    return datetime.fromisoformat(ts)
 
 
 def _resolve_executor(action, defaults):
@@ -116,8 +111,6 @@ def _initial_protocol_state(plan: dict):
                 "type": action["type"],
                 "status": "PENDING",
                 "dependsOn": action.get("dependsOn", []),
-                "attempts": 0,
-                "nextEligibleAt": None,
                 "startedAt": None,
                 "finishedAt": None,
                 "error": None,
@@ -163,11 +156,6 @@ def _refresh_ready_actions(state: dict):
         if action_state["status"] not in {"PENDING", "READY"}:
             continue
 
-        if action_state.get("nextEligibleAt"):
-            if _now() < _parse_iso(action_state["nextEligibleAt"]):
-                action_state["status"] = "PENDING"
-                continue
-
         if _dependencies_satisfied(action_state, completed):
             action_state["status"] = "READY"
         else:
@@ -206,7 +194,6 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
                 continue
 
             action_state["status"] = "FAILED"
-            action_state["nextEligibleAt"] = None
             action_state["finishedAt"] = _now_iso()
             action_state["error"] = {
                 "code": "dependency_failed",
@@ -218,7 +205,7 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
                 {
                     "event": "action.failed",
                     "actionId": action_state["id"],
-                    "onFail": "dependency_failed",
+                    "reason": "dependency_failed",
                     "dependency": failed_dep,
                 },
             )
@@ -324,40 +311,18 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
     state = ensure_protocol_state(plan, change_dir)
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
-    action_def = _action_by_id(plan, action_id)
-    if not action_state or not action_def:
+    if not action_state or not _action_by_id(plan, action_id):
         raise ProtocolError(f"Unknown action id: {action_id}", code="unknown_action")
     if action_state["status"] != "RUNNING":
         raise ProtocolError(f"Action {action_id} not fail-reportable from status {action_state['status']}", code="invalid_state")
 
-    defaults = {**DEFAULTS, **plan.get("defaults", {})}
-    retry_defaults = defaults.get("retry", {})
-    retry = {**retry_defaults, **(action_def.get("retry") or {})}
-    max_attempts = max(0, int(retry.get("maxAttempts", 1)))
-    interval_sec = max(0, int(retry.get("intervalSec", 0)))
-    action_state["attempts"] = int(action_state.get("attempts", 0)) + 1
     action_state["error"] = error_payload
     action_state["finishedAt"] = _now_iso()
-
-    # maxAttempts means max retry count after a reported failure.
-    if action_state["attempts"] <= max_attempts:
-        action_state["status"] = "PENDING"
-        action_state["nextEligibleAt"] = (_now() + timedelta(seconds=interval_sec)).isoformat() if interval_sec > 0 else None
-        _refresh_ready_actions(state)
-        append_event(change_dir, {"event": "action.retry_scheduled", "actionId": action_id, "attempt": action_state["attempts"]})
-        _persist(change_dir, state)
-        return status_snapshot(plan, change_dir)
-
-    on_fail = action_def.get("onFail") or defaults.get("onFail", "stop")
     action_state["status"] = "FAILED"
-    action_state["nextEligibleAt"] = None
-    if on_fail == "stop":
-        state["status"] = "failed"
-        state["finishedAt"] = _now_iso()
-    elif on_fail != "continue":
-        raise ProtocolError(f"Unsupported onFail policy: {on_fail}", code="invalid_policy")
+    state["status"] = "failed"
+    state["finishedAt"] = _now_iso()
 
-    append_event(change_dir, {"event": "action.failed", "actionId": action_id, "onFail": on_fail})
+    append_event(change_dir, {"event": "action.failed", "actionId": action_id, "reason": "reported_failure"})
     _propagate_dependency_failures(change_dir, state)
     _refresh_ready_actions(state)
     _terminalize_if_done(change_dir, state)
@@ -387,7 +352,6 @@ def _contracts_payload():
             "modes": {
                 "default": "compact action summaries",
                 "full": "full action objects",
-                "retry": "retry-only payload under retry field; actions omitted",
             },
         },
         "actionPayload": {
@@ -404,9 +368,6 @@ def _compact_action_entry(action: dict):
         "id": action["id"],
         "status": action["status"],
     }
-    attempts = int(action.get("attempts") or 0)
-    if attempts > 0:
-        entry["attempts"] = attempts
     if action.get("error"):
         error = action["error"]
         entry["error"] = {
@@ -416,46 +377,12 @@ def _compact_action_entry(action: dict):
     return entry
 
 
-def _retry_snapshot(state: dict):
-    now = _now()
-    scheduled = []
-    for action in state["actions"]:
-        if action.get("status") != "PENDING" or not action.get("nextEligibleAt"):
-            continue
-        next_eligible_at = action["nextEligibleAt"]
-        wait_sec = max(0, int(ceil((_parse_iso(next_eligible_at) - now).total_seconds())))
-        entry = {
-            "actionId": action["id"],
-            "attempts": int(action.get("attempts") or 0),
-            "nextEligibleAt": next_eligible_at,
-            "waitSec": wait_sec,
-        }
-        if action.get("error"):
-            error = action["error"]
-            entry["lastError"] = {
-                "code": error.get("code"),
-                "message": error.get("message"),
-            }
-        scheduled.append(entry)
-
-    scheduled.sort(key=lambda item: item["nextEligibleAt"])
-    next_wake_at = scheduled[0]["nextEligibleAt"] if scheduled else None
-    next_wake_in_sec = scheduled[0]["waitSec"] if scheduled else None
-    return {
-        "scheduledCount": len(scheduled),
-        "nextWakeAt": next_wake_at,
-        "nextWakeInSec": next_wake_in_sec,
-        "scheduled": scheduled,
-    }
-
-
 def status_snapshot(
     plan: dict,
     change_dir: str,
     debug: bool = False,
     compact: bool = False,
     action_limit: int = 40,
-    retry_only: bool = False,
 ):
     state = ensure_protocol_state(plan, change_dir)
     done = len([a for a in state["actions"] if a["status"] == "SUCCESS"])
@@ -482,12 +409,6 @@ def status_snapshot(
         },
         "lastFailure": last_failure,
     }
-    if retry_only:
-        payload["retry"] = _retry_snapshot(state)
-        if debug:
-            payload["contracts"] = _contracts_payload()
-        return payload
-
     if compact:
         limit = max(1, int(action_limit))
         compact_actions = [_compact_action_entry(action) for action in state["actions"][:limit]]

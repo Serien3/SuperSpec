@@ -29,6 +29,5 @@ The system SHALL use existing completion/failure reporting commands for human ac
 
 #### Scenario: Human rejection reports failure
 - **WHEN** a client submits `fail` for a running human action
-- **THEN** retry and on-fail policy handling follows standard action failure semantics
+- **THEN** the workflow follows standard fail-fast semantics and becomes terminal `failed`
 - **AND** status output reflects failure without introducing new action states
-

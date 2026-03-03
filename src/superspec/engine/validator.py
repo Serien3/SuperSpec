@@ -61,10 +61,9 @@ def validate_plan(plan):
     context = plan.get("context")
     _assert(isinstance(context, dict), "context is required")
     _assert(isinstance(context.get("changeName"), str) and context["changeName"], "context.changeName is required")
-    allowed_on_fail = {"stop", "continue"}
     defaults = plan.get("defaults") or {}
-    if "onFail" in defaults:
-        _assert(defaults["onFail"] in allowed_on_fail, f"Unsupported onFail policy in defaults: {defaults['onFail']}")
+    _assert("retry" not in defaults, "defaults.retry is no longer supported")
+    _assert("onFail" not in defaults, "defaults.onFail is no longer supported")
 
     actions = plan.get("actions")
     _assert(isinstance(actions, list) and len(actions) > 0, "actions must be a non-empty array")
@@ -89,8 +88,8 @@ def validate_plan(plan):
             human = action.get("human")
             _assert(isinstance(human, dict), f"Action {aid} must set human object for human executor")
             _assert(isinstance(human.get("instruction"), str) and human["instruction"], f"Action {aid} human executor requires human.instruction")
-        if "onFail" in action:
-            _assert(action["onFail"] in allowed_on_fail, f"Unsupported onFail policy in action {aid}: {action['onFail']}")
+        _assert("retry" not in action, f"Action {aid} retry is no longer supported")
+        _assert("onFail" not in action, f"Action {aid} onFail is no longer supported")
 
         exprs = []
         _scan_exprs(action, exprs)

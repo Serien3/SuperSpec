@@ -24,16 +24,7 @@
     "defaults": {
       "type": "object",
       "properties": {
-        "executor": { "enum": ["skill", "script"] },
-        "onFail": { "enum": ["stop", "continue"] },
-        "retry": {
-          "type": "object",
-          "properties": {
-            "maxAttempts": { "type": "integer", "minimum": 0 },
-            "intervalSec": { "type": "integer", "minimum": 0 }
-          },
-          "additionalProperties": false
-        }
+        "executor": { "enum": ["skill", "script", "human"] }
       },
       "additionalProperties": true
     },
@@ -54,20 +45,12 @@
             "uniqueItems": true
           },
           "when": { "type": "string" },
-          "executor": { "enum": ["skill", "script"] },
+          "executor": { "enum": ["skill", "script", "human"] },
           "skill": { "type": "string" },
           "script": { "type": "string" },
+          "human": { "type": "object" },
           "inputs": { "type": "object" },
           "outputs": { "type": "object" },
-          "retry": {
-            "type": "object",
-            "properties": {
-              "maxAttempts": { "type": "integer", "minimum": 0 },
-              "intervalSec": { "type": "integer", "minimum": 0 }
-            },
-            "additionalProperties": false
-          },
-          "onFail": { "enum": ["stop", "continue"] },
           "approval": {
             "type": "object",
             "properties": {

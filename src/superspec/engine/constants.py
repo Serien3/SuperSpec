@@ -3,9 +3,4 @@ SUPPORTED_PROTOCOL_VERSION = "superspec.protocol/v0.5.0"
 
 DEFAULTS = {
     "executor": "skill",
-    "onFail": "stop",
-    "retry": {
-        "maxAttempts": 1,
-        "intervalSec": 0,
-    },
 }

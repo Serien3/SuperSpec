@@ -72,7 +72,8 @@ After installation, try **SuperSpec** with the following steps:
    ```
    Note: The current SuperSpec workflow still relies on OpenSpec programs and skills.
 
-## TODO List to v0.6.0
+## TODO List to v0.7.0
 
-- [x] 增加和修改内置工作流
-- [x] 重写入口skill
+- [ ] 增加新的skill
+- [ ] 修改plan validate的逻辑
+- [ ] 新的工作流(“fast-dev”， “review”)

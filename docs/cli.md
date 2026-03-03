@@ -1,178 +1,117 @@
 # SuperSpec CLI
 
+## Global Options
+
+| option | description |
+| --- | --- |
+| `-h`, `--help` | 显示帮助信息（适用于 `superspec` 及各级子命令）。 |
+
 ## Human-Only Commands
 
 ### `superspec init`
 
 初始化当前仓库的 SuperSpec/OpenSpec 基础环境，并同步内置 skills 到 `.codex/skills`。
 
-**Options**
-
-| Options        | Description                    | Default  |
-| -------------- | ------------------------------ | -------- |
-| `--agent`      | 代理类型。当前仅支持 `codex`。 | Required |
-| `-h`, `--help` | 显示帮助信息。                 | `false`  |
+| option | description | default |
+| --- | --- | --- |
+| `--agent` | 代理类型（当前仅支持 `codex`）。 | Required |
 
 ### `superspec validate`
 
-校验用户定义的 workflow 模板（`*.workflow.json`）是否符合字段契约并可用于后续 `superspec plan init` 生成计划。
+校验 workflow 文件是否符合 SuperSpec 支持的模板/字段约束。
 
-**Options**
+| option | description | default |
+| --- | --- | --- |
+| `--schema` | workflow 名称（`superspec/schemas/workflows/<schema>.workflow.json`）。 | `None` |
+| `--file` | workflow 文件路径（绝对路径或相对仓库路径）。 | `None` |
+| `--json` | 输出机器可读 JSON（`ok/errors/warnings`）。 | `false` |
 
-| Options        | Description                                                                                        | Default |
-| -------------- | -------------------------------------------------------------------------------------------------- | ------- |
-| `--schema`     | workflow 名称（解析 `superspec/schemas/workflows/<schema>.workflow.json`，无本地时回退内置模板）。 | `None`  |
-| `--file`       | workflow 文件路径（绝对路径或相对当前仓库）。                                                      | `None`  |
-| `--json`       | 输出机器可读结果（`ok/errors/warnings`）。                                                         | `false` |
-| `-h`, `--help` | 显示帮助信息。                                                                                     | `false` |
+> `--schema` 与 `--file` 必须且只能提供一个。
 
-> `--schema` 与 `--file` 必须且只能提供一个。\
-> **BREAKING**: 该命令语义已替代旧的 `superspec plan validate`（后者已移除）。
+### `superspec change new <change>`
+
+创建 OpenSpec change 骨架，不自动初始化 `plan.json`。
 
 ## Git Commands
 
 ### `superspec git create-worktree`
 
-创建或复用分支并新增 git worktree，同时写入 `git-common-dir/codex-worktree-flow/<slug>.json` 保存该 worktree 的状态。  
-若 `<slug>.json` 已存在，命令会报错，避免状态冲突/覆盖。  
+创建 git worktree 并输出状态 JSON。
 
-**Options**
-
-| Options        | Description                                 | Default                                        |
-| -------------- | ------------------------------------------- | ---------------------------------------------- |
-| `--slug`       | 分支名短标识（用于自动生成分支名）          | Required                                       |
-| `--base`       | 基线分支/引用                               | 使用当前分支，若当前处在其他工作树分支上则报错 |
-| `--branch`     | 工作树的分支名                              | 自动生成 `wt/<timestamp>-<slug>`               |
-| `--path`       | worktree 路径（支持仓库相对路径或绝对路径） | 当前项目的`.wroktree`文件夹中                  |
-| `-h`, `--help` | 显示帮助信息                                | `false`                                        |
+| option | description | default |
+| --- | --- | --- |
+| `--slug` | 分支命名短标识。 | Required |
+| `--base` | 基线分支/引用。 | `""` |
+| `--branch` | 显式分支名。 | `""` |
+| `--path` | worktree 路径（绝对或仓库相对）。 | `""` |
 
 ### `superspec git finish-worktree`
 
-基于 worktree 状态文件执行收尾操作（预览或执行）：支持合并（`--merge`）、清理（`--cleanup`）或二者组合。
-当仅执行 `--cleanup`（未带 `--merge`）且使用 `--yes` 时，命令会先给出风险警示并要求输入 `yes` 确认后才继续。
+合并和/或清理 worktree，并输出结果 JSON。
 
-**Options**
+| option | description | default |
+| --- | --- | --- |
+| `--slug` | 目标 worktree slug。 | `""` |
+| `--yes` | 实际执行（不加则仅预览）。 | `false` |
+| `--merge` | 执行合并流程。 | `false` |
+| `--cleanup` | 执行清理流程。 | `false` |
+| `--strategy` | 合并策略：`merge` / `squash`。 | `merge` |
+| `--commit-message` | 合并提交信息。 | `""` |
 
-| Options            | Description                                                    | Default   |
-| ------------------ | -------------------------------------------------------------- | --------- |
-| `--slug`           | 状态文件 slug（解析为 `codex-worktree-flow/<slug>.json`）     | `""`      |
-| `--yes`            | 真正执行；不加时只输出 planned 预览                           | `false`   |
-| `--merge`          | 在主工作区执行分支合并                                         | `false`   |
-| `--cleanup`        | 删除 worktree、删除分支，并删除对应状态文件                   | `false`   |
-| `--strategy`       | 合并策略：`merge` 或 `squash`                                 | `merge`   |
-| `--commit-message` | 合并提交信息（`merge/squash` 策略都建议显式给出）             | `""`      |
-| `-h`, `--help`     | 显示帮助信息                                                   | `false`   |
+## Agent-Compatible Commands
 
-## Change Commands
+### `superspec plan init <change> --schema <schema>`
 
-### `superspec change new`
+生成 `openspec/changes/<change>/plan.json`。
 
-创建新的 OpenSpec change 骨架；不会自动初始化计划文件。
+| option | description | default |
+| --- | --- | --- |
+| `--schema` | plan workflow 名称。 | Required |
+| `--title` | 覆盖 plan 标题。 | `None` |
+| `--goal` | 覆盖 plan 目标。 | `None` |
 
-**Arguments**
+### `superspec plan next <change>`
 
-| Arguments | Description                                         | Default  |
-| --------- | --------------------------------------------------- | -------- |
-| `change`  | 变更名称（用于创建 `openspec/changes/<change>/`）。 | Required |
+拉取下一个可执行 action。
 
-**Options**
+| option | description | default |
+| --- | --- | --- |
+| `--owner` | 执行者标识。 | `agent` |
+| `--debug` | 返回调试字段。 | `false` |
+| `--json` | JSON 输出。 | `false` |
 
-| Options        | Description    | Default |
-| -------------- | -------------- | ------- |
-| `-h`, `--help` | 显示帮助信息。 | `false` |
+### `superspec plan complete <change> <action_id> --output-json <json-object>`
 
-## Plan Commands
+将 action 标记为完成并提交输出 payload。
 
-### `superspec plan init`
+### `superspec plan fail <change> <action_id> --error-json <json-object>`
 
-基于指定 schema 生成 `openspec/changes/<change>/plan.json`。
+将 action 标记为失败并提交错误 payload。
 
-**Arguments**
+### `superspec plan approve <change> <action_id>`
 
-| Arguments | Description | Default  |
-| --------- | ----------- | -------- |
-| `change`  | 变更名称。  | Required |
+人类审批通过快捷命令（内部映射为 `complete`，`executor=human`）。
 
-**Options**
+| option | description | default |
+| --- | --- | --- |
+| `--summary` | 审批备注。 | `""` |
 
-| Options        | Description        | Default  |
-| -------------- | ------------------ | -------- |
-| `--schema`     | 计划 schema 名称。 | Required |
-| `--title`      | 计划标题覆盖值。   | `None`   |
-| `--goal`       | 计划目标覆盖值。   | `None`   |
-| `-h`, `--help` | 显示帮助信息。     | `false`  |
+### `superspec plan reject <change> <action_id>`
 
-### `superspec plan next`
+人类审批拒绝快捷命令（内部映射为 `fail`，`executor=human`）。
 
-获取下一个可执行 action（Agent 拉取下一步任务的入口）。
+| option | description | default |
+| --- | --- | --- |
+| `--code` | 拒绝错误码。 | `human_rejected` |
+| `--message` | 拒绝信息。 | `human review rejected` |
 
-**Arguments**
+### `superspec plan status <change>`
 
-| Arguments | Description | Default  |
-| --------- | ----------- | -------- |
-| `change`  | 变更名称。  | Required |
+查询执行状态、进度和 action 列表。
 
-**Options**
-
-| Options        | Description                     | Default |
-| -------------- | ------------------------------- | ------- |
-| `--owner`      | 领取该 action 的执行者标识。    | `agent` |
-| `--debug`      | 在返回 payload 中附加调试字段。 | `false` |
-| `--json`       | 使用 JSON 输出。                | `false` |
-| `-h`, `--help` | 显示帮助信息。                  | `false` |
-
-### `superspec plan complete`
-
-将指定 action 标记为完成，并提交结果 payload。
-
-**Arguments**
-
-| Arguments   | Description          | Default  |
-| ----------- | -------------------- | -------- |
-| `change`    | 变更名称。           | Required |
-| `action_id` | 要完成的 action ID。 | Required |
-
-**Options**
-
-| Options         | Description                  | Default  |
-| --------------- | ---------------------------- | -------- |
-| `--output-json` | 完成结果的 JSON 对象字符串。 | Required |
-| `-h`, `--help`  | 显示帮助信息。               | `false`  |
-
-### `superspec plan fail`
-
-将指定 action 标记为失败，并提交错误 payload。
-
-**Arguments**
-
-| Arguments   | Description              | Default  |
-| ----------- | ------------------------ | -------- |
-| `change`    | 变更名称。               | Required |
-| `action_id` | 要标记失败的 action ID。 | Required |
-
-**Options**
-
-| Options        | Description                  | Default  |
-| -------------- | ---------------------------- | -------- |
-| `--error-json` | 错误信息的 JSON 对象字符串。 | Required |
-| `-h`, `--help` | 显示帮助信息。               | `false`  |
-
-### `superspec plan status`
-
-查询执行状态、进度与动作列表。
-
-**Arguments**
-
-| Arguments | Description | Default  |
-| --------- | ----------- | -------- |
-| `change`  | 变更名称。  | Required |
-
-**Options**
-
-| Options          | Description                                       | Default |
-| ---------------- | ------------------------------------------------- | ------- |
-| `--json`         | 使用 JSON 输出。                                  | `false` |
-| `--debug`        | 在状态输出中附加 `contracts` 调试字段。           | `false` |
-| `--full`         | JSON 输出返回完整 action 对象；默认返回精简摘要。 | `false` |
-| `--action-limit` | 精简模式下返回的 action 摘要数量上限。            | `40`    |
-| `-h`, `--help`   | 显示帮助信息。                                    | `false` |
+| option | description | default |
+| --- | --- | --- |
+| `--json` | JSON 输出。 | `false` |
+| `--debug` | 返回协议调试字段。 | `false` |
+| `--full` | 返回完整 action 对象。 | `false` |
+| `--action-limit` | 精简模式返回 action 摘要上限。 | `40` |

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from superspec.engine.constants import DEFAULTS, SUPPORTED_PROTOCOL_VERSION
+from superspec.engine.constants import DEFAULT_EXECUTOR, SUPPORTED_PROTOCOL_VERSION
 from superspec.engine.context import resolve_runtime_action_fields
 from superspec.engine.errors import ProtocolError
 from superspec.engine.state_store import append_event, read_execution_state, write_execution_state
@@ -15,7 +15,7 @@ def _now_iso():
     return _now().isoformat()
 
 
-def _resolve_executor(action, defaults):
+def _resolve_executor(action):
     if action.get("executor"):
         return action["executor"]
     if action.get("script"):
@@ -24,7 +24,7 @@ def _resolve_executor(action, defaults):
         return "skill"
     if action.get("human"):
         return "human"
-    return defaults.get("executor", DEFAULTS["executor"])
+    return DEFAULT_EXECUTOR
 
 
 def _action_runtime_outputs(state: dict):
@@ -52,9 +52,8 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
         ) from exc
 
 
-def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defaults: dict):
-    action_defaults = action.get("defaults") if isinstance(action.get("defaults"), dict) else {}
-    executor = _resolve_executor(resolved_action, {**DEFAULTS, **defaults, **action_defaults})
+def _build_action_payload(action: dict, resolved_action: dict, debug: bool):
+    executor = _resolve_executor(resolved_action)
     payload = {
         "actionId": action["id"],
         "executor": executor,
@@ -96,7 +95,6 @@ def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defa
 
 def _initial_protocol_state(plan: dict):
     now = _now_iso()
-    defaults = {**DEFAULTS, **plan.get("defaults", {})}
     return {
         "schemaVersion": plan["schemaVersion"],
         "planId": plan["planId"],
@@ -104,7 +102,6 @@ def _initial_protocol_state(plan: dict):
         "status": "running",
         "startedAt": now,
         "updatedAt": now,
-        "defaults": defaults,
         "actions": [
             {
                 "id": action["id"],
@@ -247,7 +244,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         action_state["status"] = "RUNNING"
         action_state["startedAt"] = _now_iso()
 
-        payload = _build_action_payload(action, resolved_action, debug, state.get("defaults", {}))
+        payload = _build_action_payload(action, resolved_action, debug)
         append_event(
             change_dir,
             {

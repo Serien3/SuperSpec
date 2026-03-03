@@ -76,4 +76,3 @@ After installation, try **SuperSpec** with the following steps:
 
 - [x] 增加和修改内置工作流
 - [x] 重写入口skill
-- [ ] 增加适合superspec的头脑风暴skill

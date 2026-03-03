@@ -6,12 +6,12 @@ Define file-based workflow definitions for plan generation, including identity, 
 ## Requirements
 
 ### Requirement: File-based workflow definitions
-The system MUST support declarative workflow files that define workflow metadata, defaults, and action sequence content.
+The system MUST support declarative workflow files that define workflow metadata and action sequence content.
 
 #### Scenario: Load a valid workflow file
 - **WHEN** a user requests plan initialization with a schema name that exists in the configured workflow directory
 - **THEN** the system loads that workflow definition
-- **AND** uses its metadata, defaults, and actions as generation input
+- **AND** uses its metadata and actions as generation input
 
 #### Scenario: Discover workflow in default filesystem location
 - **WHEN** a user adds a valid workflow file under `superspec/schemas/workflows/` using the `<schema>.workflow.json` naming pattern
@@ -32,7 +32,7 @@ The system MUST validate required workflow metadata fields and workflow template
 - **AND** no plan file is generated
 
 #### Scenario: Reject unknown nested field in constrained workflow object
-- **WHEN** a workflow definition includes an unknown field under constrained objects such as `defaults` or `actions[*]`
+- **WHEN** a workflow definition includes an unknown field under constrained objects such as `actions[*]`
 - **THEN** validation fails before plan generation
 - **AND** the error identifies the precise nested path
 

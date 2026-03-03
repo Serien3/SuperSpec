@@ -36,19 +36,6 @@
       "type": "object",
       "additionalProperties": true
     },
-    "defaults": {
-      "type": "object",
-      "properties": {
-        "executor": {
-          "enum": [
-            "skill",
-            "script",
-            "human"
-          ]
-        }
-      },
-      "additionalProperties": false
-    },
     "actions": {
       "type": "array",
       "minItems": 1,
@@ -124,19 +111,6 @@
           "outputs": {
             "type": "object",
             "additionalProperties": true
-          },
-          "defaults": {
-            "type": "object",
-            "properties": {
-              "executor": {
-                "enum": [
-                  "skill",
-                  "script",
-                  "human"
-                ]
-              }
-            },
-            "additionalProperties": false
           },
           "approval": {
             "type": "object",

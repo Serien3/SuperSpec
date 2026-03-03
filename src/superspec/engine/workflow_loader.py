@@ -14,7 +14,6 @@ WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
     "title",
     "goal",
     "variables",
-    "defaults",
     "actions",
     "metadata",
 )
@@ -24,7 +23,6 @@ WORKFLOW_PLAN_CUSTOMIZATION_FIELDS = (
     "title",
     "goal",
     "variables",
-    "defaults",
     "actions",
     "metadata",
 )

@@ -21,13 +21,6 @@
       "additionalProperties": true
     },
     "variables": { "type": "object" },
-    "defaults": {
-      "type": "object",
-      "properties": {
-        "executor": { "enum": ["skill", "script", "human"] }
-      },
-      "additionalProperties": true
-    },
     "actions": {
       "type": "array",
       "minItems": 1,

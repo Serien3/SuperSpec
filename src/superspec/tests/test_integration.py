@@ -27,9 +27,6 @@ class IntegrationTest(unittest.TestCase):
                 "repoRoot": str(root),
                 "specRoot": "openspec",
             },
-            "defaults": {
-                "executor": "script",
-            },
             "actions": actions,
         }
 
@@ -242,43 +239,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(terminal["progress"]["remaining"], 1)
         self.assertTrue(all(action["status"] != "SKIPPED" for action in terminal["actions"]))
 
-    def test_validate_rejects_legacy_failure_controls(self):
-        root, change_name, _ = self.setup_temp_change()
-        plan_defaults_invalid = self.build_plan(
-            root,
-            change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
-        )
-        plan_defaults_invalid["defaults"]["onFail"] = "stop"
-        with self.assertRaises(ValidationError):
-            validate_plan(plan_defaults_invalid)
-
-        plan_defaults_retry_invalid = self.build_plan(
-            root,
-            change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
-        )
-        plan_defaults_retry_invalid["defaults"]["retry"] = {"maxAttempts": 1, "intervalSec": 1}
-        with self.assertRaises(ValidationError):
-            validate_plan(plan_defaults_retry_invalid)
-
-        plan_action_invalid = self.build_plan(
-            root,
-            change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one", "onFail": "stop"}],
-        )
-        with self.assertRaises(ValidationError):
-            validate_plan(plan_action_invalid)
-
-        plan_action_retry_invalid = self.build_plan(
-            root,
-            change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one", "retry": {"maxAttempts": 1}}],
-        )
-        with self.assertRaises(ValidationError):
-            validate_plan(plan_action_retry_invalid)
-
-    def test_next_uses_plan_default_executor_when_action_has_no_explicit_executor(self):
+    def test_next_uses_builtin_default_executor_when_action_has_no_explicit_executor(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -287,11 +248,10 @@ class IntegrationTest(unittest.TestCase):
         )
         validate_plan(plan)
 
-        with self.assertRaises(ProtocolError) as ctx:
-            next_action(plan, str(change_dir), owner="agent-a")
-
-        self.assertEqual(ctx.exception.code, "invalid_action_payload")
-        self.assertIn("script executor requires script field", str(ctx.exception))
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["executor"], "skill")
+        self.assertEqual(nxt["action"]["skillName"], "openspec.proposal")
 
     def test_validate_accepts_custom_action_type_and_protocol_executes(self):
         root, change_name, change_dir = self.setup_temp_change()

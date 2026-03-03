@@ -82,9 +82,10 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **THEN** the execution protocol returns a script action payload containing `script_command` and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
-#### Scenario: Inherit executor from plan defaults
+#### Scenario: Use built-in default executor
 - **WHEN** an action omits explicit `executor`, `script`, and `skill` fields
-- **THEN** the execution protocol resolves executor type from effective plan defaults
+- **THEN** the execution protocol resolves executor type from built-in runtime defaults
+- **AND** runtime code uses the `DEFAULT_EXECUTOR` constant as the single source of truth for that fallback
 - **AND** returns a payload shape consistent with the resolved executor type
 
 #### Scenario: Limit runtime expression resolution surface
@@ -129,18 +130,10 @@ The system MUST apply terminal fail-fast behavior when any action failure is rep
 - **THEN** the workflow transitions to terminal `failed`
 - **AND** no continuation policy is applied for additional autonomous actions
 
-### Requirement: Runtime-relevant defaults surface
-The system MUST keep runtime defaults constrained to fields with active execution semantics.
-
-#### Scenario: Persist effective runtime defaults
-- **WHEN** protocol execution state is initialized
-- **THEN** persisted defaults include only execution-relevant fields (`executor`)
-- **AND** deprecated or no-op defaults are not persisted as active runtime configuration
-
 ### Requirement: Retry configuration removal
 The system MUST not expose retry policy configuration in runtime plan semantics.
 
-#### Scenario: Reject retry fields in plan defaults and actions
-- **WHEN** plan defaults or action definitions include retry controls
+#### Scenario: Reject retry fields in plan actions
+- **WHEN** action definitions include retry controls
 - **THEN** plan validation fails
 - **AND** users are guided to fail-fast plus human intervention behavior

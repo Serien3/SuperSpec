@@ -184,8 +184,8 @@ class PlanLifecycleTest(unittest.TestCase):
             "version": "1.0.0",
             "title": "Workflow title",
             "goal": "Workflow goal",
-            "defaults": {
-                "executor": "script",
+            "variables": {
+                "channel": "test",
             },
             "actions": [
                 {
@@ -210,7 +210,7 @@ class PlanLifecycleTest(unittest.TestCase):
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["title"], "CLI title")
         self.assertEqual(plan["goal"], "CLI goal")
-        self.assertEqual(plan["defaults"]["executor"], "script")
+        self.assertEqual(plan["variables"]["channel"], "test")
 
     def test_plan_init_rejects_unknown_schema(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -363,7 +363,7 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertIn("path", payload["errors"][0])
         self.assertIn("message", payload["errors"][0])
 
-    def test_validate_rejects_unknown_nested_defaults_field(self):
+    def test_validate_rejects_unsupported_defaults_field(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
 

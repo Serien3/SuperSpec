@@ -56,7 +56,7 @@ This skill is the execution playbook for:
     - Run `action.script_command`
      - On success:
        ```bash
-       superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"script","actionId":"<actionId>","exitCode":0}'
+       superspec plan complete "<name>" "<actionId>" --output-json '{"ok":true,"executor":"script","actionId":"<actionId>","exitCode":0}'
        ```
      - On failure:
        ```bash
@@ -67,7 +67,7 @@ This skill is the execution playbook for:
    - Use `action.prompt` as the execution guidance text
      - On success:
        ```bash
-       superspec plan complete "<name>" "<actionId>" --result-json '{"ok":true,"executor":"skill","actionId":"<actionId>","exitCode":0}'
+       superspec plan complete "<name>" "<actionId>" --output-json '{"ok":true,"executor":"skill","actionId":"<actionId>","exitCode":0}'
        ```
      - On failure:
        ```bash
@@ -95,7 +95,7 @@ This skill is the execution playbook for:
 
 ## Required report payload fields
 
-- `complete --result-json` SHOULD include (JSON object):
+- `complete --output-json` SHOULD include (JSON object):
   - `ok` (boolean)
   - `executor` (`script` or `skill`)
   - `actionId` (string)
@@ -141,5 +141,5 @@ superspec plan init demo-change --schema SDD
 superspec validate --schema SDD
 superspec plan next demo-change --owner agent --json
 # execute payload...
-superspec plan complete demo-change a1 --result-json '{"ok":true,"executor":"skill","actionId":"a1"}'
+superspec plan complete demo-change a1 --output-json '{"ok":true,"executor":"skill","actionId":"a1"}'
 ```

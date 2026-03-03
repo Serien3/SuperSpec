@@ -79,7 +79,7 @@ Retry behavior comes from plan `retry` config:
      - Execute `action.script_command`.
      - On success:
        ```bash
-       superspec plan complete "<change_name>" "<actionId>" --result-json '{"ok":true,"executor":"script","actionId":"<actionId>","summary":"script completed"}'
+       superspec plan complete "<change_name>" "<actionId>" --output-json '{"ok":true,"executor":"script","actionId":"<actionId>","summary":"script completed"}'
        ```
      - On failure:
        ```bash
@@ -89,7 +89,7 @@ Retry behavior comes from plan `retry` config:
      - Invoke `action.skillName` and follow `action.prompt`.
      - On success:
        ```bash
-       superspec plan complete "<change_name>" "<actionId>" --result-json '{"ok":true,"executor":"skill","actionId":"<actionId>","summary":"skill completed"}'
+       superspec plan complete "<change_name>" "<actionId>" --output-json '{"ok":true,"executor":"skill","actionId":"<actionId>","summary":"skill completed"}'
        ```
      - On failure:
        ```bash
@@ -108,7 +108,7 @@ Retry behavior comes from plan `retry` config:
 
 Use structured payloads.
 
-`complete --result-json` should include:
+`complete --output-json` should include:
 - `ok` (boolean)
 - `executor` (`script` or `skill`)
 - `actionId` (string)

@@ -102,7 +102,7 @@
 
 | Options | Description | Default |
 | --- | --- | --- |
-| `--result-json` | 完成结果的 JSON 对象字符串。 | Required |
+| `--output-json` | 完成结果的 JSON 对象字符串。 | Required |
 | `-h`, `--help` | 显示帮助信息。 | `false` |
 
 ### `superspec plan fail`

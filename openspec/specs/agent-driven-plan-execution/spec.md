@@ -21,12 +21,12 @@ The system MUST provide a command to retrieve exactly one executable action for 
 - **AND** does not return an executable action payload
 
 ### Requirement: Action completion reporting
-The system MUST provide a command for clients to report successful action completion with structured result payload.
+The system MUST provide a command for clients to report successful action completion with structured output payload.
 
 #### Scenario: Complete running action
 - **WHEN** a client reports completion for a running action
 - **THEN** the action state transitions to `SUCCESS`
-- **AND** result payload is stored as action output
+- **AND** output payload is stored as action output
 
 ### Requirement: Action failure reporting
 The system MUST provide a command for clients to report action failure with structured error payload.
@@ -62,7 +62,7 @@ The system MUST return normalized execution payloads that distinguish script and
 #### Scenario: Skill action completion contract
 - **WHEN** a skill action finishes successfully in an external agent runtime
 - **THEN** the client reports completion using the returned `actionId`
-- **AND** the result payload includes runtime outcome fields sufficient for audit and replay decisions
+- **AND** the output payload includes runtime outcome fields sufficient for audit and replay decisions
 
 #### Scenario: Skill action failure contract
 - **WHEN** a skill action fails in an external agent runtime

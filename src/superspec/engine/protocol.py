@@ -284,8 +284,8 @@ def _validate_report_shape(payload: dict, key: str):
         raise ProtocolError(f"{key} payload must be a JSON object", code="invalid_payload")
 
 
-def complete_action(plan: dict, change_dir: str, action_id: str, result_payload: dict):
-    _validate_report_shape(result_payload, "result")
+def complete_action(plan: dict, change_dir: str, action_id: str, output_payload: dict):
+    _validate_report_shape(output_payload, "output")
     state = ensure_protocol_state(plan, change_dir)
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
@@ -295,7 +295,7 @@ def complete_action(plan: dict, change_dir: str, action_id: str, result_payload:
         raise ProtocolError(f"Action {action_id} not completable from status {action_state['status']}", code="invalid_state")
 
     action_state["status"] = "SUCCESS"
-    action_state["output"] = result_payload
+    action_state["output"] = output_payload
     action_state["error"] = None
     action_state["finishedAt"] = _now_iso()
 
@@ -360,7 +360,7 @@ def _contracts_payload():
             "errors": ["invalid_expression", "invalid_action_payload"],
         },
         "complete": {
-            "request": ["change", "action-id", "result-json"],
+            "request": ["change", "action-id", "output-json"],
             "errors": ["invalid_payload", "unknown_action", "invalid_state"],
         },
         "fail": {

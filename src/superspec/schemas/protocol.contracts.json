@@ -18,7 +18,7 @@
       "request": {
         "change": "string",
         "actionId": "string",
-        "resultJson": {
+        "outputJson": {
           "type": "object",
           "recommendedFields": {
             "ok": "boolean",

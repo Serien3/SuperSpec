@@ -135,13 +135,13 @@ def command_plan_next(repo_root: Path, args):
 
 
 def command_plan_complete(repo_root: Path, args):
-    result_payload = _parse_object_json(args.result_json, "result-json")
+    output_payload = _parse_object_json(args.output_json, "output-json")
     run_protocol_action_from_cli(
         repo_root,
         args.change,
         "complete",
         action_id=args.action_id,
-        result_payload=result_payload,
+        output_payload=output_payload,
     )
     print(f"Action {args.action_id} marked complete.")
 
@@ -227,7 +227,7 @@ def build_parser():
     plan_complete = plan_sub.add_parser("complete")
     plan_complete.add_argument("change")
     plan_complete.add_argument("action_id")
-    plan_complete.add_argument("--result-json", required=True)
+    plan_complete.add_argument("--output-json", required=True)
 
     plan_fail = plan_sub.add_parser("fail")
     plan_fail.add_argument("change")

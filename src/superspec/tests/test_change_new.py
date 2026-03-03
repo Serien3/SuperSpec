@@ -56,6 +56,15 @@ class ChangeNewCommandTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse_args(["plan", "init", "demo-change"])
 
+    def test_plan_complete_parser_requires_output_json(self):
+        parser = build_parser()
+
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["plan", "complete", "demo-change", "a1", "--result-json", '{"ok": true}'])
+
+        args = parser.parse_args(["plan", "complete", "demo-change", "a1", "--output-json", '{"ok": true}'])
+        self.assertEqual(args.output_json, '{"ok": true}')
+
 
 if __name__ == "__main__":
     unittest.main()

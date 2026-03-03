@@ -13,7 +13,7 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
     if action == "next":
         return next_action(plan, change_dir, owner=kwargs.get("owner", "agent"), debug=kwargs.get("debug", False))
     if action == "complete":
-        return complete_action(plan, change_dir, kwargs["action_id"], kwargs["result_payload"])
+        return complete_action(plan, change_dir, kwargs["action_id"], kwargs["output_payload"])
     if action == "fail":
         return fail_action(plan, change_dir, kwargs["action_id"], kwargs["error_payload"])
     if action == "status":

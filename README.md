@@ -72,46 +72,6 @@ After installation, try **SuperSpec** with the following steps:
    ```
    Note: The current SuperSpec workflow still relies on OpenSpec programs and skills.
 
-## Workflow Authoring Notes
-
-Custom workflow files are loaded from `superspec/schemas/workflows/<name>.workflow.json`.
-
-Use `superspec validate --schema <name>` (or `--file <path>`) before `plan init` to ensure your workflow is valid and generation-ready.
-
-Supported top-level fields are:
-- `workflowId`
-- `version`
-- `description`
-- `planId`
-- `title`
-- `goal`
-- `variables`
-- `defaults`
-- `actions`
-- `metadata`
-
-Supported `defaults` fields:
-- `executor`: `skill | script`
-- `onFail`: `stop | continue`
-- `retry.maxAttempts`: integer >= 0
-- `retry.intervalSec`: integer >= 0
-
-Supported `actions[*]` fields:
-- `id`, `type`, `title`, `enabled`, `dependsOn`, `when`
-- `executor`, `skill`, `script`
-- `inputs`, `outputs`
-- `defaults.executor`, `defaults.onFail`
-- `retry.maxAttempts`, `retry.intervalSec`
-- `onFail`, `approval.required`, `approval.message`
-- `artifacts`, `notes`, `tags`
-
-Unknown top-level and constrained nested fields are rejected. The legacy `plan` overlay field is not supported.
-
-## Breaking Changes
-
-- `superspec plan validate` has been removed.
-- `superspec validate` now validates workflow templates for human authors.
-
 ## TODO List to v0.6.0
 
 - [x] 增加和修改内置工作流

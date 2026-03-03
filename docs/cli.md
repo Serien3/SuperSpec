@@ -33,7 +33,8 @@
 
 ### `superspec git create-worktree`
 
-创建或复用分支并新增 git worktree，同时写入 `git-common-dir/codex-worktree-flow/state.json` 记录最近一次创建状态。  
+创建或复用分支并新增 git worktree，同时写入 `git-common-dir/codex-worktree-flow/<slug>.json` 保存该 worktree 的状态。  
+若 `<slug>.json` 已存在，命令会报错，避免状态冲突/覆盖。  
 
 **Options**
 
@@ -44,6 +45,23 @@
 | `--branch`     | 工作树的分支名                              | 自动生成 `wt/<timestamp>-<slug>`               |
 | `--path`       | worktree 路径（支持仓库相对路径或绝对路径） | 当前项目的`.wroktree`文件夹中                  |
 | `-h`, `--help` | 显示帮助信息                                | `false`                                        |
+
+### `superspec git finish-worktree`
+
+基于 worktree 状态文件执行收尾操作（预览或执行）：支持合并（`--merge`）、清理（`--cleanup`）或二者组合。
+当仅执行 `--cleanup`（未带 `--merge`）且使用 `--yes` 时，命令会先给出风险警示并要求输入 `yes` 确认后才继续。
+
+**Options**
+
+| Options            | Description                                                    | Default   |
+| ------------------ | -------------------------------------------------------------- | --------- |
+| `--slug`           | 状态文件 slug（解析为 `codex-worktree-flow/<slug>.json`）     | `""`      |
+| `--yes`            | 真正执行；不加时只输出 planned 预览                           | `false`   |
+| `--merge`          | 在主工作区执行分支合并                                         | `false`   |
+| `--cleanup`        | 删除 worktree、删除分支，并删除对应状态文件                   | `false`   |
+| `--strategy`       | 合并策略：`merge` 或 `squash`                                 | `merge`   |
+| `--commit-message` | 合并提交信息（`merge/squash` 策略都建议显式给出）             | `""`      |
+| `-h`, `--help`     | 显示帮助信息                                                   | `false`   |
 
 ## Change Commands
 

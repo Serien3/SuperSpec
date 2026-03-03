@@ -10,6 +10,7 @@ from superspec.engine.plan_loader import resolve_change_dir
 from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
 from superspec.engine.validator import validate_plan
 from superspec.scripts.worktree_create import create_worktree_state
+from superspec.scripts.worktree_finish import finish_worktree_flow
 
 def _write_plan(repo_root: Path, change_name: str, schema: str | None, title: str | None, goal: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
@@ -129,6 +130,18 @@ def command_git_worktree_create(repo_root: Path, args):
         path=args.path,
     )
     print(json.dumps(state, ensure_ascii=False, indent=2))
+
+
+def command_git_worktree_finish(repo_root: Path, args):
+    payload = finish_worktree_flow(
+        slug=args.slug,
+        yes=bool(args.yes),
+        merge=bool(args.merge),
+        cleanup=bool(args.cleanup),
+        strategy=args.strategy,
+        commit_message=args.commit_message,
+    )
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 def command_plan_next(repo_root: Path, args):
@@ -274,6 +287,37 @@ def build_parser():
     git_worktree_create.add_argument("--base", default="", help="Base branch/ref (defaults to current branch).")
     git_worktree_create.add_argument("--branch", default="", help="Explicit branch name to create or reuse.")
     git_worktree_create.add_argument("--path", default="", help="Worktree path (absolute or repo-relative).")
+    git_worktree_finish = git_sub.add_parser(
+        "finish-worktree",
+        help="Merge and/or clean up a git worktree from saved state.",
+    )
+    git_worktree_finish.add_argument("--slug", default="", help="Slug of target worktree state (optional).")
+    git_worktree_finish.add_argument(
+        "--yes",
+        action="store_true",
+        help="Actually perform actions. Without this, only prints plan.",
+    )
+    git_worktree_finish.add_argument(
+        "--merge",
+        action="store_true",
+        help="Merge branch into merge target in the main worktree.",
+    )
+    git_worktree_finish.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="Remove worktree and delete branch (safe delete).",
+    )
+    git_worktree_finish.add_argument(
+        "--strategy",
+        default="merge",
+        choices=["merge", "squash"],
+        help="Merge strategy.",
+    )
+    git_worktree_finish.add_argument(
+        "--commit-message",
+        default="",
+        help="Commit message for merge/squash workflow.",
+    )
 
     return parser
 
@@ -298,6 +342,9 @@ def main():
             return
         if args.group == "git" and args.sub == "create-worktree":
             command_git_worktree_create(repo_root, args)
+            return
+        if args.group == "git" and args.sub == "finish-worktree":
+            command_git_worktree_finish(repo_root, args)
             return
         if args.group == "plan" and args.sub == "next":
             command_plan_next(repo_root, args)

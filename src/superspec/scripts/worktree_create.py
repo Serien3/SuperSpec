@@ -81,6 +81,13 @@ def create_worktree_state(
     now = dt.datetime.now().strftime("%Y%m%d-%H%M")
     selected_slug = slugify(slug)
     selected_branch = branch.strip() or f"wt/{now}-{selected_slug}"
+    state_dir = git_common_dir / "codex-worktree-flow"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    state_path = state_dir / f"{selected_slug}.json"
+    if state_path.exists():
+        raise RuntimeError(
+            f"slug already exists: {selected_slug} (state file exists: {state_path})"
+        )
 
     worktree_path = path.strip()
     if worktree_path:
@@ -121,15 +128,14 @@ def create_worktree_state(
     else:
         run(["git", "-C", str(toplevel), "worktree", "add", "-b", selected_branch, str(worktree_dir), selected_base])
 
-    state_dir = git_common_dir / "codex-worktree-flow"
-    state_dir.mkdir(parents=True, exist_ok=True)
-    state_path = state_dir / "state.json"
     state = {
         "repo_root": str(toplevel),
         "git_common_dir": str(git_common_dir),
+        "slug": selected_slug,
         "base": selected_base,
         "branch": selected_branch,
         "worktree_path": str(worktree_dir),
+        "state_path": str(state_path),
         "created_at": dt.datetime.now().isoformat(timespec="seconds"),
     }
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

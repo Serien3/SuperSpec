@@ -73,6 +73,18 @@ This skill is the execution playbook for:
        ```bash
        superspec plan fail "<name>" "<actionId>" --error-json '{"code":"skill_failed","message":"...","executor":"skill"}'
        ```
+  - If `action.executor == "human"`:
+   - Present `action.human.instruction` to the reviewer and wait for human decision
+   - Treat reviewer input equal to `action.human.approveLabel` as approval
+   - Treat reviewer input equal to `action.human.rejectLabel` as rejection
+   - On approval:
+       ```bash
+       superspec plan approve "<name>" "<actionId>" --summary "human review approved"
+       ```
+   - On rejection:
+       ```bash
+       superspec plan reject "<name>" "<actionId>" --code "human_rejected" --message "human review rejected"
+       ```
 
 5. **Use `status` for checkpoints, not every action**
    ```bash
@@ -97,7 +109,7 @@ This skill is the execution playbook for:
 
 - `complete --output-json` SHOULD include (JSON object):
   - `ok` (boolean)
-  - `executor` (`script` or `skill`)
+  - `executor` (`script` or `skill` or `human`)
   - `actionId` (string)
   - `summary` (string, optional)
   - `outputs` (object, optional)
@@ -105,7 +117,7 @@ This skill is the execution playbook for:
 - `fail --error-json` SHOULD include (JSON object):
   - `code` (string machine-readable)
   - `message` (string human-readable)
-  - `executor` (`script` or `skill`)
+  - `executor` (`script` or `skill` or `human`)
   - `details` (object, optional)
 
 ## Blocked-state polling guidance

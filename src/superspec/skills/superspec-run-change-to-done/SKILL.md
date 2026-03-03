@@ -86,6 +86,16 @@ Retry behavior comes from plan `retry` config:
        ```bash
        superspec plan fail "<change_name>" "<actionId>" --error-json '{"code":"skill_failed","message":"skill execution failed","executor":"skill"}'
        ```
+   - `human` executor:
+     - Present `action.human.instruction` and wait for human decision.
+     - Treat reviewer input equal to `action.human.approveLabel` as approval. Run
+       ```bash
+       superspec plan approve "<change_name>" "<actionId>"  --summary "human review approved"
+       ```
+     - Treat reviewer input equal to `action.human.rejectLabel` as rejection. Run
+       ```bash
+       superspec plan reject "<change_name>" "<actionId>" --code "human_rejected" --message "human review rejected"
+       ```
 
 ### Step 5: Produce terminal result and feedback.
    - Read terminal status:
@@ -100,14 +110,14 @@ Use structured payloads.
 
 `complete --output-json` should include:
 - `ok` (boolean)
-- `executor` (`script` or `skill`)
+- `executor` (`script` or `skill` or `human`)
 - `actionId` (string)
 - optional `summary`, `outputs`
 
 `fail --error-json` should include:
 - `code` (machine-readable)
 - `message` (human-readable)
-- `executor` (`script` or `skill`)
+- `executor` (`script` or `skill` or `human`)
 - optional `details`
 
 ## Guardrails

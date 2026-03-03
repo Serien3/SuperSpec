@@ -11,22 +11,43 @@
   "actions": [
     {
       "id": "a1",
-      "type": "proposal+specs+design+tasks",
-      "skill": "openspec-ff-change"
+      "type": "proposal",
+      "skill": "openspec-continue-change"
     },
     {
       "id": "a2",
-      "type": "openspec.apply",
+      "type": "proposal.review",
       "dependsOn": [
         "a1"
+      ],
+      "executor": "human",
+      "human": {
+        "instruction": "Please review openspec/changes/${context.changeName}/proposal.md and approve or reject before continuing.",
+        "approveLabel": "Approve proposal",
+        "rejectLabel": "Request changes"
+      }
+    },
+    {
+      "id": "a3",
+      "type": "proposal",
+      "dependsOn": [
+        "a2"
+      ],
+      "skill": "openspec-continue-change"
+    },
+    {
+      "id": "a4",
+      "type": "openspec.apply",
+      "dependsOn": [
+        "a3"
       ],
       "skill": "openspec-apply-change"
     },
     {
-      "id": "a3",
+      "id": "a5",
       "type": "openspec.verify",
       "dependsOn": [
-        "a2"
+        "a4"
       ],
       "skill": "openspec-verify-change"
     }

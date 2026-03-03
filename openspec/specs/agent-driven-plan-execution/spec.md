@@ -48,7 +48,7 @@ The system MUST provide a command for clients to report action failure with stru
 - **AND** each propagated failure includes dependency-failure context identifying the upstream failed action
 
 ### Requirement: Executor-specific payload contract
-The system MUST return normalized execution payloads that distinguish script and skill execution modes.
+The system MUST return normalized execution payloads that distinguish script, skill, and human execution modes.
 
 #### Scenario: Script action payload
 - **WHEN** the next action uses `executor=script`
@@ -58,6 +58,11 @@ The system MUST return normalized execution payloads that distinguish script and
 - **WHEN** the next action uses `executor=skill`
 - **THEN** the payload includes `skillName` and `prompt`
 - **AND** does not include context file maps in the action payload
+
+#### Scenario: Human action payload
+- **WHEN** the next action uses `executor=human`
+- **THEN** the payload includes `human` review metadata and `prompt`
+- **AND** does not include `script_command` or `skillName`
 
 #### Scenario: Skill action completion contract
 - **WHEN** a skill action finishes successfully in an external agent runtime
@@ -115,3 +120,4 @@ The system MUST compute progress fields without counting skipped outcomes.
 - **WHEN** status is computed for a change
 - **THEN** `progress.done` counts only actions in `SUCCESS`
 - **AND** `progress.failed` counts actions in `FAILED`
+

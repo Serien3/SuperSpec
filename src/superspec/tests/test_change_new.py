@@ -1,10 +1,18 @@
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from superspec.cli import _run_openspec_new_change, build_parser, command_change_new
+from superspec.cli import (
+    _run_openspec_new_change,
+    build_parser,
+    command_change_new,
+    command_plan_approve,
+    command_plan_reject,
+)
 
 
 class ChangeNewCommandTest(unittest.TestCase):
@@ -64,6 +72,71 @@ class ChangeNewCommandTest(unittest.TestCase):
 
         args = parser.parse_args(["plan", "complete", "demo-change", "a1", "--output-json", '{"ok": true}'])
         self.assertEqual(args.output_json, '{"ok": true}')
+
+    def test_plan_approve_parser_defaults(self):
+        parser = build_parser()
+        args = parser.parse_args(["plan", "approve", "demo-change", "a1"])
+        self.assertEqual(args.change, "demo-change")
+        self.assertEqual(args.action_id, "a1")
+        self.assertEqual(args.summary, "")
+
+    def test_plan_reject_parser_defaults(self):
+        parser = build_parser()
+        args = parser.parse_args(["plan", "reject", "demo-change", "a1"])
+        self.assertEqual(args.change, "demo-change")
+        self.assertEqual(args.action_id, "a1")
+        self.assertEqual(args.code, "human_rejected")
+        self.assertEqual(args.message, "human review rejected")
+
+    def test_command_plan_approve_maps_to_complete(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace(change="demo-change", action_id="a1", summary="approved by reviewer")
+
+        with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                command_plan_approve(root, args)
+
+        mock_run.assert_called_once_with(
+            root,
+            "demo-change",
+            "complete",
+            action_id="a1",
+            output_payload={
+                "ok": True,
+                "executor": "human",
+                "actionId": "a1",
+                "summary": "approved by reviewer",
+            },
+        )
+        self.assertIn("Action a1 approved.", stdout.getvalue())
+
+    def test_command_plan_reject_maps_to_fail(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace(
+            change="demo-change",
+            action_id="a1",
+            code="human_rejected",
+            message="needs changes",
+        )
+
+        with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                command_plan_reject(root, args)
+
+        mock_run.assert_called_once_with(
+            root,
+            "demo-change",
+            "fail",
+            action_id="a1",
+            error_payload={
+                "code": "human_rejected",
+                "message": "needs changes",
+                "executor": "human",
+            },
+        )
+        self.assertIn("Action a1 rejected.", stdout.getvalue())
 
 
 if __name__ == "__main__":

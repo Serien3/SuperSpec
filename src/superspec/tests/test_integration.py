@@ -309,6 +309,62 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["action"]["actionId"], "a1")
         self.assertEqual(nxt["action"]["script_command"], "echo one")
 
+    def test_human_executor_blocks_until_completion_and_emits_human_payload(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "human.review",
+                    "executor": "human",
+                    "human": {
+                        "instruction": "Review generated code and approve to continue",
+                        "approveLabel": "Approve",
+                        "rejectLabel": "Reject",
+                    },
+                },
+                {"id": "a2", "type": "openspec.apply", "dependsOn": ["a1"], "executor": "script", "script": "echo go"},
+            ],
+        )
+        validate_plan(plan)
+
+        first = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["action"]["executor"], "human")
+        self.assertEqual(first["action"]["actionId"], "a1")
+        self.assertEqual(first["action"]["human"]["instruction"], "Review generated code and approve to continue")
+        self.assertEqual(first["action"]["human"]["approveLabel"], "Approve")
+        self.assertEqual(first["action"]["human"]["rejectLabel"], "Reject")
+        self.assertIn("prompt", first["action"])
+
+        blocked = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(blocked["state"], "blocked")
+
+        after_complete = complete_action(plan, str(change_dir), "a1", {"ok": True, "executor": "human", "actionId": "a1"})
+        by_id = {action["id"]: action for action in after_complete["actions"]}
+        self.assertEqual(by_id["a1"]["status"], "SUCCESS")
+        self.assertEqual(by_id["a2"]["status"], "READY")
+
+    def test_validate_rejects_human_executor_without_instruction(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "human.review",
+                    "executor": "human",
+                    "human": {},
+                }
+            ],
+        )
+
+        with self.assertRaises(ValidationError):
+            validate_plan(plan)
+
     def test_status_snapshot_compact_mode_summarizes_and_truncates_actions(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(

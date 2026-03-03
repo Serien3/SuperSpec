@@ -22,7 +22,7 @@
           "type": "object",
           "recommendedFields": {
             "ok": "boolean",
-            "executor": "script | skill",
+            "executor": "script | skill | human",
             "actionId": "string",
             "summary": "string (optional)",
             "outputs": "object (optional)"
@@ -40,7 +40,7 @@
           "recommendedFields": {
             "code": "string",
             "message": "string",
-            "executor": "script | skill",
+            "executor": "script | skill | human",
             "details": "object (optional)"
           }
         }
@@ -94,10 +94,22 @@
         "renderedPrompt": "string (only when debug=true)"
       }
     },
+    "human": {
+      "executor": "human",
+      "human": {
+        "instruction": "string",
+        "approveLabel": "string (optional)",
+        "rejectLabel": "string (optional)"
+      },
+      "prompt": "string"
+    },
     "runtimeExpressionResolution": [
       "executor",
       "script",
       "skill",
+      "human.instruction",
+      "human.approveLabel",
+      "human.rejectLabel",
       "inputs.prompt"
     ],
     "runtimeExpressionNotes": [

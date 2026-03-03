@@ -185,6 +185,24 @@ def _semantic_errors(workflow: dict):
                     "Action with executor 'script' must define a non-empty 'script' field",
                 )
             )
+        if executor == "human":
+            human = action.get("human")
+            if not isinstance(human, dict):
+                errors.append(
+                    _error(
+                        "invalid_executor_payload",
+                        f"actions.{idx}.human",
+                        "Action with executor 'human' must define a 'human' object",
+                    )
+                )
+            elif not isinstance(human.get("instruction"), str) or not human.get("instruction"):
+                errors.append(
+                    _error(
+                        "invalid_executor_payload",
+                        f"actions.{idx}.human.instruction",
+                        "Action with executor 'human' must define non-empty 'human.instruction'",
+                    )
+                )
 
     # Validate dependency references and detect cycles.
     for idx, action in enumerate(actions):

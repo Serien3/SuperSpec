@@ -183,6 +183,41 @@ def command_plan_fail(repo_root: Path, args):
     print(f"Action {args.action_id} marked failed.")
 
 
+def command_plan_approve(repo_root: Path, args):
+    output_payload = {
+        "ok": True,
+        "executor": "human",
+        "actionId": args.action_id,
+    }
+    if args.summary:
+        output_payload["summary"] = args.summary
+
+    run_protocol_action_from_cli(
+        repo_root,
+        args.change,
+        "complete",
+        action_id=args.action_id,
+        output_payload=output_payload,
+    )
+    print(f"Action {args.action_id} approved.")
+
+
+def command_plan_reject(repo_root: Path, args):
+    error_payload = {
+        "code": args.code,
+        "message": args.message,
+        "executor": "human",
+    }
+    run_protocol_action_from_cli(
+        repo_root,
+        args.change,
+        "fail",
+        action_id=args.action_id,
+        error_payload=error_payload,
+    )
+    print(f"Action {args.action_id} rejected.")
+
+
 def command_plan_status(repo_root: Path, args):
     payload = run_protocol_action_from_cli(
         repo_root,
@@ -258,6 +293,17 @@ def build_parser():
     plan_fail.add_argument("change")
     plan_fail.add_argument("action_id")
     plan_fail.add_argument("--error-json", required=True)
+
+    plan_approve = plan_sub.add_parser("approve")
+    plan_approve.add_argument("change")
+    plan_approve.add_argument("action_id")
+    plan_approve.add_argument("--summary", default="")
+
+    plan_reject = plan_sub.add_parser("reject")
+    plan_reject.add_argument("change")
+    plan_reject.add_argument("action_id")
+    plan_reject.add_argument("--code", default="human_rejected")
+    plan_reject.add_argument("--message", default="human review rejected")
 
     plan_status = plan_sub.add_parser("status")
     plan_status.add_argument("change")
@@ -354,6 +400,12 @@ def main():
             return
         if args.group == "plan" and args.sub == "fail":
             command_plan_fail(repo_root, args)
+            return
+        if args.group == "plan" and args.sub == "approve":
+            command_plan_approve(repo_root, args)
+            return
+        if args.group == "plan" and args.sub == "reject":
+            command_plan_reject(repo_root, args)
             return
         if args.group == "plan" and args.sub == "status":
             command_plan_status(repo_root, args)

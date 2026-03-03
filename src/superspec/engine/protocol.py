@@ -27,6 +27,8 @@ def _resolve_executor(action, defaults):
         return "script"
     if action.get("skill"):
         return "skill"
+    if action.get("human"):
+        return "human"
     return defaults.get("executor", DEFAULTS["executor"])
 
 
@@ -72,6 +74,17 @@ def _build_action_payload(action: dict, resolved_action: dict, debug: bool, defa
             )
         payload["script_command"] = command
         payload["prompt"] = f"Run script command for action {action['id']}"
+        return payload
+
+    if executor == "human":
+        human = resolved_action.get("human") or action.get("human")
+        if not isinstance(human, dict) or not human.get("instruction"):
+            raise ProtocolError(
+                f"Action {action['id']} human executor requires human.instruction",
+                code="invalid_action_payload",
+            )
+        payload["human"] = human
+        payload["prompt"] = human.get("instruction") or f"Wait for human review on action {action['id']}"
         return payload
 
     skill_name = resolved_action.get("skill") or action.get("skill") or action.get("type")
@@ -380,6 +393,7 @@ def _contracts_payload():
         "actionPayload": {
             "script": ["actionId", "executor", "script_command", "prompt"],
             "skill": ["actionId", "executor", "skillName", "prompt"],
+            "human": ["actionId", "executor", "human", "prompt"],
             "debug": "renderedPrompt returned only when debug=true",
         },
     }

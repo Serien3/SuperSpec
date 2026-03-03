@@ -38,6 +38,15 @@ def resolve_runtime_action_fields(action: dict, context: dict):
         if field in action:
             resolved[field] = resolve_template_string(action[field], context)
 
+    human = action.get("human")
+    if isinstance(human, dict):
+        resolved_human = {}
+        for field in ("instruction", "approveLabel", "rejectLabel"):
+            if field in human:
+                resolved_human[field] = resolve_template_string(human[field], context)
+        if resolved_human:
+            resolved["human"] = resolved_human
+
     inputs = action.get("inputs")
     if isinstance(inputs, dict) and "prompt" in inputs:
         resolved["inputs"] = {

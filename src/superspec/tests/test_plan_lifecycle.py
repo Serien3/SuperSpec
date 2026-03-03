@@ -408,6 +408,48 @@ class PlanLifecycleTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             command_validate(root, SimpleNamespace(schema="executor-mismatch", file=None, json=False))
 
+    def test_validate_accepts_human_executor_payload(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        workflow = {
+            "workflowId": "human-exec",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "human.review",
+                    "executor": "human",
+                    "human": {"instruction": "Review and approve"},
+                }
+            ],
+        }
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "human-exec.workflow.json"
+        workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
+
+        command_validate(root, SimpleNamespace(schema="human-exec", file=None, json=False))
+
+    def test_validate_rejects_human_executor_payload_mismatch(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        workflow = {
+            "workflowId": "human-mismatch",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "human.review",
+                    "executor": "human",
+                }
+            ],
+        }
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "human-mismatch.workflow.json"
+        workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
+
+        with self.assertRaises(SystemExit):
+            command_validate(root, SimpleNamespace(schema="human-mismatch", file=None, json=False))
+
 
 if __name__ == "__main__":
     unittest.main()

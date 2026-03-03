@@ -85,6 +85,10 @@ def validate_plan(plan):
             _assert(isinstance(action.get("skill"), str) and action["skill"], f"Action {aid} must set skill for skill executor")
         if action.get("executor") == "script":
             _assert(isinstance(action.get("script"), str) and action["script"], f"Action {aid} must set script for script executor")
+        if action.get("executor") == "human":
+            human = action.get("human")
+            _assert(isinstance(human, dict), f"Action {aid} must set human object for human executor")
+            _assert(isinstance(human.get("instruction"), str) and human["instruction"], f"Action {aid} human executor requires human.instruction")
         if "onFail" in action:
             _assert(action["onFail"] in allowed_on_fail, f"Unsupported onFail policy in action {aid}: {action['onFail']}")
 

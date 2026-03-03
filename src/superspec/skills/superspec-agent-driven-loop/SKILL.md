@@ -117,14 +117,16 @@ This skill is the execution playbook for:
 - For `state == "blocked"`, do not fail the run immediately.
 - Prefer retry snapshot from execution state:
   1. Run `superspec plan status "<name>" --retry --json`.
-  2. Read `retry.nextWakeInSec`.
-  3. If present, wait using `wait_sec = max(1, retry.nextWakeInSec)`.
-  4. If absent, fallback to fixed 2s polling.
+  2. If `status=failed` and `retry.scheduledCount=0`, stop polling and report terminal failure.
+  3. Read `retry.nextWakeInSec`.
+  4. If present, wait using `wait_sec = max(1, retry.nextWakeInSec)`.
+  5. If absent, fallback to fixed 2s polling.
 - Continue until `ready` or terminal `done`.
 - If the previous step was `plan fail`, keep following the same polling rules above.
 - Retry settings are fixed-interval from plan `retry` config:
   - `maxAttempts`: max retry count after a failure report
   - `intervalSec`: fixed wait between retry attempts
+- Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
 
 ## Terminal signaling
 

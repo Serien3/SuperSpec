@@ -2,7 +2,6 @@
 import argparse
 import datetime as dt
 import json
-import os
 import re
 import subprocess
 import sys
@@ -48,42 +47,48 @@ def slugify(value: str) -> str:
 def detect_default_base(toplevel: Path) -> str:
     current = try_run(["git", "-C", str(toplevel), "symbolic-ref", "--quiet", "--short", "HEAD"])
     if current:
+        if current.startswith("wt/"):
+            raise RuntimeError(
+                "cannot infer base branch from a worktree branch. Please pass --base explicitly from a mainline branch."
+            )
         return current
 
     fallback = run(["git", "-C", str(toplevel), "rev-parse", "--abbrev-ref", "HEAD"])
     if fallback == "HEAD":
         raise RuntimeError("cannot infer base branch: repository is in detached HEAD state")
+    if fallback.startswith("wt/"):
+        raise RuntimeError(
+            "cannot infer base branch from a worktree branch. Please pass --base explicitly from a mainline branch."
+        )
     return fallback
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Create a git worktree for a new branch (Codex helper).")
-    parser.add_argument("--slug", default="", help="Short slug for the branch name, e.g. 'fix-player'.")
-    parser.add_argument("--base", default="", help="Base branch/ref, e.g. 'main' or 'origin/main'.")
-    parser.add_argument("--branch", default="", help="Branch name to create/use, e.g. 'wt/20260203-fix-player'.")
-    parser.add_argument("--path", default="", help="Worktree path (relative to repo root or absolute).")
-    parser.add_argument(
-        "--print-worktree-path",
-        action="store_true",
-        help="Print only the created worktree path to stdout.",
-    )
-    args = parser.parse_args()
-
-    toplevel = Path(run(["git", "rev-parse", "--show-toplevel"]))
+def create_worktree_state(
+    *,
+    repo_root: Optional[Path] = None,
+    slug: str,
+    base: str = "",
+    branch: str = "",
+    path: str = "",
+) -> dict[str, str]:
+    if repo_root is None:
+        toplevel = Path(run(["git", "rev-parse", "--show-toplevel"]))
+    else:
+        toplevel = Path(repo_root).resolve()
     git_common_dir = Path(run(["git", "-C", str(toplevel), "rev-parse", "--git-common-dir"]))
-    base = args.base.strip() or detect_default_base(toplevel)
+    selected_base = base.strip() or detect_default_base(toplevel)
 
     now = dt.datetime.now().strftime("%Y%m%d-%H%M")
-    slug = slugify(args.slug) if args.slug else "work"
-    branch = args.branch.strip() or f"wt/{now}-{slug}"
+    selected_slug = slugify(slug)
+    selected_branch = branch.strip() or f"wt/{now}-{selected_slug}"
 
-    worktree_path = args.path.strip()
+    worktree_path = path.strip()
     if worktree_path:
         worktree_dir = Path(worktree_path)
         if not worktree_dir.is_absolute():
             worktree_dir = toplevel / worktree_dir
     else:
-        safe_dir = branch.replace("/", "__")
+        safe_dir = selected_branch.replace("/", "__")
         worktree_dir = toplevel / ".worktrees" / safe_dir
 
     if worktree_dir.exists():
@@ -104,7 +109,7 @@ def main() -> int:
 
     branch_exists = (
         subprocess.run(
-            ["git", "-C", str(toplevel), "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
+            ["git", "-C", str(toplevel), "show-ref", "--verify", "--quiet", f"refs/heads/{selected_branch}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         ).returncode
@@ -112,9 +117,9 @@ def main() -> int:
     )
 
     if branch_exists:
-        run(["git", "-C", str(toplevel), "worktree", "add", str(worktree_dir), branch])
+        run(["git", "-C", str(toplevel), "worktree", "add", str(worktree_dir), selected_branch])
     else:
-        run(["git", "-C", str(toplevel), "worktree", "add", "-b", branch, str(worktree_dir), base])
+        run(["git", "-C", str(toplevel), "worktree", "add", "-b", selected_branch, str(worktree_dir), selected_base])
 
     state_dir = git_common_dir / "codex-worktree-flow"
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -122,17 +127,31 @@ def main() -> int:
     state = {
         "repo_root": str(toplevel),
         "git_common_dir": str(git_common_dir),
-        "base": base,
-        "branch": branch,
+        "base": selected_base,
+        "branch": selected_branch,
         "worktree_path": str(worktree_dir),
         "created_at": dt.datetime.now().isoformat(timespec="seconds"),
     }
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return state
 
-    if args.print_worktree_path:
-        print(state["worktree_path"])
-    else:
-        print(json.dumps(state, ensure_ascii=False, indent=2))
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Create a git worktree for a new branch (Codex helper).")
+    parser.add_argument("--slug", required=True, help="Short slug for the branch name, e.g. 'fix-player'.")
+    parser.add_argument("--base", default="", help="Base branch/ref, e.g. 'main' or 'origin/main'.")
+    parser.add_argument("--branch", default="", help="Branch name to create/use, e.g. 'wt/20260203-fix-player'.")
+    parser.add_argument("--path", default="", help="Worktree path (relative to repo root or absolute).")
+    args = parser.parse_args()
+
+    state = create_worktree_state(
+        slug=args.slug,
+        base=args.base,
+        branch=args.branch,
+        path=args.path,
+    )
+
+    print(json.dumps(state, ensure_ascii=False, indent=2))
     return 0
 
 

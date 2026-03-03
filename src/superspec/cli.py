@@ -9,6 +9,7 @@ from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import resolve_change_dir
 from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
 from superspec.engine.validator import validate_plan
+from superspec.scripts.worktree_create import create_worktree_state
 
 def _write_plan(repo_root: Path, change_name: str, schema: str | None, title: str | None, goal: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
@@ -117,6 +118,17 @@ def command_validate(repo_root: Path, args):
 
     if not payload["ok"]:
         raise SystemExit(1)
+
+
+def command_git_worktree_create(repo_root: Path, args):
+    state = create_worktree_state(
+        repo_root=repo_root,
+        slug=args.slug,
+        base=args.base,
+        branch=args.branch,
+        path=args.path,
+    )
+    print(json.dumps(state, ensure_ascii=False, indent=2))
 
 
 def command_plan_next(repo_root: Path, args):
@@ -252,6 +264,17 @@ def build_parser():
     validate.add_argument("--file")
     validate.add_argument("--json", action="store_true")
 
+    git = sub.add_parser("git")
+    git_sub = git.add_subparsers(dest="sub")
+    git_worktree_create = git_sub.add_parser(
+        "create-worktree",
+        help="Create a git worktree and persist creation state.",
+    )
+    git_worktree_create.add_argument("--slug", required=True, help="Short slug for branch naming.")
+    git_worktree_create.add_argument("--base", default="", help="Base branch/ref (defaults to current branch).")
+    git_worktree_create.add_argument("--branch", default="", help="Explicit branch name to create or reuse.")
+    git_worktree_create.add_argument("--path", default="", help="Worktree path (absolute or repo-relative).")
+
     return parser
 
 
@@ -272,6 +295,9 @@ def main():
             return
         if args.group == "validate":
             command_validate(repo_root, args)
+            return
+        if args.group == "git" and args.sub == "create-worktree":
+            command_git_worktree_create(repo_root, args)
             return
         if args.group == "plan" and args.sub == "next":
             command_plan_next(repo_root, args)

@@ -12,21 +12,15 @@ from superspec.engine.validator import validate_plan
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
-def _write_plan(repo_root: Path, change_name: str, schema: str | None, title: str | None, goal: str | None):
+def _write_plan(repo_root: Path, change_name: str, schema: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
     plan_path = change_dir / "plan.json"
-    overrides = {}
-    if title:
-        overrides["title"] = title
-    if goal:
-        overrides["goal"] = goal
 
     plan, selected_schema, _ = build_plan_from_workflow(
         repo_root,
         change_name,
         schema=schema,
-        overrides=overrides or None,
     )
     validate_plan(plan)
     plan_path.write_text(f"{json.dumps(plan, indent=2, ensure_ascii=True)}\n", encoding="utf-8")
@@ -97,7 +91,7 @@ def command_change_new(repo_root: Path, args):
 
 
 def command_plan_init(repo_root: Path, args):
-    plan_path, selected_schema = _write_plan(repo_root, args.change, args.schema, args.title, args.goal)
+    plan_path, selected_schema = _write_plan(repo_root, args.change, args.schema)
     print(f"Initialized {plan_path} (schema={selected_schema})")
 
 
@@ -258,8 +252,6 @@ def build_parser():
     plan_init = plan_sub.add_parser("init")
     plan_init.add_argument("change")
     plan_init.add_argument("--schema", required=True)
-    plan_init.add_argument("--title")
-    plan_init.add_argument("--goal")
 
     plan_next = plan_sub.add_parser("next")
     plan_next.add_argument("change")

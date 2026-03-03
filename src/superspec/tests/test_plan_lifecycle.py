@@ -158,24 +158,22 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "invalid_plan_schema")
         self.assertEqual(ctx.exception.details["location"], "context")
 
-    def test_plan_init_applies_init_time_overrides(self):
+    def test_plan_init_uses_workflow_defaults_without_cli_overrides(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         args = SimpleNamespace(
             change="demo-change",
             schema=None,
-            title="Override title",
-            goal="Override goal",
         )
 
         command_plan_init(root, args)
 
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        self.assertEqual(plan["title"], "Override title")
-        self.assertEqual(plan["goal"], "Override goal")
+        self.assertEqual(plan["title"], "Main delivery plan")
+        self.assertEqual(plan["goal"], "Execute this change in a single-agent serial loop")
 
-    def test_plan_init_applies_deterministic_merge_precedence(self):
+    def test_plan_init_uses_workflow_title_and_goal(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
 
@@ -201,15 +199,13 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(
             change="demo-change",
             schema="with-overrides",
-            title="CLI title",
-            goal="CLI goal",
         )
         command_plan_init(root, args)
 
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        self.assertEqual(plan["title"], "CLI title")
-        self.assertEqual(plan["goal"], "CLI goal")
+        self.assertEqual(plan["title"], "Workflow title")
+        self.assertEqual(plan["goal"], "Workflow goal")
         self.assertEqual(plan["variables"]["channel"], "test")
 
     def test_plan_init_rejects_unknown_schema(self):

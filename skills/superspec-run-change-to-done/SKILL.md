@@ -42,7 +42,7 @@ Prefer installed CLI commands:
      ```
    - Validate before execution:
      ```bash
-     superspec plan validate "<change_name>"
+     superspec validate --schema "<schema_name>"
      ```
 
 4. Run protocol loop until terminal.

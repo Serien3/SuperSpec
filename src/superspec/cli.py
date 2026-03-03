@@ -6,8 +6,8 @@ from pathlib import Path
 
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
-from superspec.engine.plan_loader import load_plan_from_change, resolve_change_dir
-from superspec.engine.workflow_loader import build_plan_from_workflow
+from superspec.engine.plan_loader import resolve_change_dir
+from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
 from superspec.engine.validator import validate_plan
 
 def _write_plan(repo_root: Path, change_name: str, schema: str | None, title: str | None, goal: str | None):
@@ -99,10 +99,24 @@ def command_plan_init(repo_root: Path, args):
     print(f"Initialized {plan_path} (schema={selected_schema})")
 
 
-def command_plan_validate(repo_root: Path, args):
-    plan, plan_path = load_plan_from_change(str(repo_root), args.change)
-    validate_plan(plan)
-    print(f"Plan is valid: {plan_path}")
+def command_validate(repo_root: Path, args):
+    payload = validate_workflow_source(
+        repo_root,
+        schema=args.schema,
+        workflow_file=args.file,
+    )
+    if args.json:
+        print(to_json(payload))
+    elif payload["ok"]:
+        print(f"Workflow is valid: {payload['target']}")
+    else:
+        print(f"Workflow validation failed: {payload.get('target') or '<unknown>'}")
+        for error in payload.get("errors", []):
+            hint = f" (hint: {error['hint']})" if error.get("hint") else ""
+            print(f"- [{error['code']}] {error['path']}: {error['message']}{hint}")
+
+    if not payload["ok"]:
+        raise SystemExit(1)
 
 
 def command_plan_next(repo_root: Path, args):
@@ -204,9 +218,6 @@ def build_parser():
     plan_init.add_argument("--title")
     plan_init.add_argument("--goal")
 
-    plan_validate = plan_sub.add_parser("validate")
-    plan_validate.add_argument("change")
-
     plan_next = plan_sub.add_parser("next")
     plan_next.add_argument("change")
     plan_next.add_argument("--owner", default="agent")
@@ -236,6 +247,11 @@ def build_parser():
         help="Compact JSON mode: max number of action summaries to include.",
     )
 
+    validate = sub.add_parser("validate")
+    validate.add_argument("--schema")
+    validate.add_argument("--file")
+    validate.add_argument("--json", action="store_true")
+
     return parser
 
 
@@ -254,8 +270,8 @@ def main():
         if args.group == "plan" and args.sub == "init":
             command_plan_init(repo_root, args)
             return
-        if args.group == "plan" and args.sub == "validate":
-            command_plan_validate(repo_root, args)
+        if args.group == "validate":
+            command_validate(repo_root, args)
             return
         if args.group == "plan" and args.sub == "next":
             command_plan_next(repo_root, args)

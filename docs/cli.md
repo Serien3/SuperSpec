@@ -13,6 +13,22 @@
 | `--agent` | 代理类型。当前仅支持 `codex`。 | Required |
 | `-h`, `--help` | 显示帮助信息。 | `false` |
 
+### `superspec validate`
+
+校验用户定义的 workflow 模板（`*.workflow.json`）是否符合字段契约并可用于后续 `superspec plan init` 生成计划。
+
+**Options**
+
+| Options | Description | Default |
+| --- | --- | --- |
+| `--schema` | workflow 名称（解析 `superspec/schemas/workflows/<schema>.workflow.json`，无本地时回退内置模板）。 | `None` |
+| `--file` | workflow 文件路径（绝对路径或相对当前仓库）。 | `None` |
+| `--json` | 输出机器可读结果（`ok/errors/warnings`）。 | `false` |
+| `-h`, `--help` | 显示帮助信息。 | `false` |
+
+> `--schema` 与 `--file` 必须且只能提供一个。\
+> **BREAKING**: 该命令语义已替代旧的 `superspec plan validate`（后者已移除）。
+
 ## Change Commands
 
 ### `superspec change new`
@@ -50,22 +66,6 @@
 | `--schema` | 计划 schema 名称。 | Required |
 | `--title` | 计划标题覆盖值。 | `None` |
 | `--goal` | 计划目标覆盖值。 | `None` |
-| `-h`, `--help` | 显示帮助信息。 | `false` |
-
-### `superspec plan validate`
-
-校验指定 change 的 `plan.json` 是否符合协议与 schema。
-
-**Arguments**
-
-| Arguments | Description | Default |
-| --- | --- | --- |
-| `change` | 变更名称。 | Required |
-
-**Options**
-
-| Options | Description | Default |
-| --- | --- | --- |
 | `-h`, `--help` | 显示帮助信息。 | `false` |
 
 ### `superspec plan next`

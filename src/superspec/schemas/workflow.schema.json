@@ -38,7 +38,35 @@
     },
     "defaults": {
       "type": "object",
-      "additionalProperties": true
+      "properties": {
+        "executor": {
+          "enum": [
+            "skill",
+            "script"
+          ]
+        },
+        "onFail": {
+          "enum": [
+            "stop",
+            "continue"
+          ]
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "maxAttempts": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "intervalSec": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     },
     "actions": {
       "type": "array",
@@ -57,9 +85,113 @@
           "type": {
             "type": "string",
             "minLength": 1
+          },
+          "title": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "when": {
+            "type": "string"
+          },
+          "executor": {
+            "enum": [
+              "skill",
+              "script"
+            ]
+          },
+          "skill": {
+            "type": "string",
+            "minLength": 1
+          },
+          "script": {
+            "type": "string",
+            "minLength": 1
+          },
+          "inputs": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "outputs": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "defaults": {
+            "type": "object",
+            "properties": {
+              "executor": {
+                "enum": [
+                  "skill",
+                  "script"
+                ]
+              },
+              "onFail": {
+                "enum": [
+                  "stop",
+                  "continue"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          "retry": {
+            "type": "object",
+            "properties": {
+              "maxAttempts": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "intervalSec": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "onFail": {
+            "enum": [
+              "stop",
+              "continue"
+            ]
+          },
+          "approval": {
+            "type": "object",
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     },
     "metadata": {

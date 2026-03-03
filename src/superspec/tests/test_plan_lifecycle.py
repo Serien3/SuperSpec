@@ -1,10 +1,12 @@
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
-from superspec.cli import command_plan_init, command_plan_validate
+from superspec.cli import command_plan_init, command_validate
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli
 
@@ -276,7 +278,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         self.assertEqual(ctx.exception.code, "invalid_path")
 
-    def test_custom_workflow_generated_plan_can_validate_and_run_protocol(self):
+    def test_custom_workflow_generated_plan_can_run_protocol_after_validate(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
 
@@ -294,13 +296,117 @@ class PlanLifecycleTest(unittest.TestCase):
         custom_path = root / "superspec" / "schemas" / "workflows" / "quick-apply.workflow.json"
         custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
 
+        command_validate(root, SimpleNamespace(schema="quick-apply", file=None, json=False))
+
         init_args = SimpleNamespace(change="demo-change", schema="quick-apply", title=None, goal=None)
         command_plan_init(root, init_args)
-        command_plan_validate(root, SimpleNamespace(change="demo-change"))
 
         nxt = run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", debug=False)
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "x1")
+
+    def test_validate_supports_explicit_file_input(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        workflow = {
+            "workflowId": "by-file",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                    "skill": "openspec-apply-change",
+                }
+            ],
+        }
+        workflow_path = root / "custom.workflow.json"
+        workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
+
+        command_validate(root, SimpleNamespace(schema=None, file=str(workflow_path), json=False))
+
+    def test_validate_rejects_invalid_source_selection(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        with self.assertRaises(SystemExit):
+            command_validate(root, SimpleNamespace(schema=None, file=None, json=False))
+        with self.assertRaises(SystemExit):
+            command_validate(root, SimpleNamespace(schema="SDD", file="custom.workflow.json", json=False))
+
+    def test_validate_json_output_has_error_shape(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        broken = {
+            "workflowId": "broken",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                    "dependsOn": ["missing"],
+                }
+            ],
+        }
+        broken_path = root / "superspec" / "schemas" / "workflows" / "broken.workflow.json"
+        broken_path.write_text(json.dumps(broken, indent=2), encoding="utf-8")
+
+        stdout = StringIO()
+        with self.assertRaises(SystemExit):
+            with redirect_stdout(stdout):
+                command_validate(root, SimpleNamespace(schema="broken", file=None, json=True))
+        payload = json.loads(stdout.getvalue())
+        self.assertFalse(payload["ok"])
+        self.assertIn("errors", payload)
+        self.assertIn("code", payload["errors"][0])
+        self.assertIn("path", payload["errors"][0])
+        self.assertIn("message", payload["errors"][0])
+
+    def test_validate_rejects_unknown_nested_defaults_field(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        broken = {
+            "workflowId": "broken-defaults",
+            "version": "1.0.0",
+            "defaults": {
+                "executor": "skill",
+                "unknown": True,
+            },
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                }
+            ],
+        }
+        broken_path = root / "superspec" / "schemas" / "workflows" / "broken-defaults.workflow.json"
+        broken_path.write_text(json.dumps(broken, indent=2), encoding="utf-8")
+
+        with self.assertRaises(SystemExit):
+            command_validate(root, SimpleNamespace(schema="broken-defaults", file=None, json=False))
+
+    def test_validate_rejects_executor_payload_mismatch(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        broken = {
+            "workflowId": "executor-mismatch",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "run",
+                    "executor": "script",
+                }
+            ],
+        }
+        broken_path = root / "superspec" / "schemas" / "workflows" / "executor-mismatch.workflow.json"
+        broken_path.write_text(json.dumps(broken, indent=2), encoding="utf-8")
+
+        with self.assertRaises(SystemExit):
+            command_validate(root, SimpleNamespace(schema="executor-mismatch", file=None, json=False))
 
 
 if __name__ == "__main__":

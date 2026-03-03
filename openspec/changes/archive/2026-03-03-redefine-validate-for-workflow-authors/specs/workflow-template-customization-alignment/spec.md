@@ -1,9 +1,4 @@
-# workflow-template-customization-alignment Specification
-
-## Purpose
-Define a unified, minimal contract for workflow template customization so schema validation and runtime behavior stay aligned.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Unified customization contract across schema and runtime
 The system MUST enforce the same workflow template customization contract in `workflow.schema.json` validation and runtime workflow processing, and MUST use this same contract for `superspec validate` workflow-author checks.
@@ -34,11 +29,3 @@ The system MUST support only an explicitly documented, finite set of customizati
 - **WHEN** a workflow includes an unrecognized nested field within a constrained customization object
 - **THEN** validation fails with a nested field path error
 - **AND** no partially accepted customization is applied
-
-### Requirement: Deterministic customization merge behavior
-The system MUST apply supported customization fields using a deterministic precedence order during plan generation.
-
-#### Scenario: Customization conflict resolves deterministically
-- **WHEN** the same supported field is defined in base template, workflow customization, and init-time overrides
-- **THEN** generated output follows documented precedence order
-- **AND** repeated runs with identical input produce identical `plan.json` values

@@ -138,7 +138,7 @@ This skill is the execution playbook for:
 ```bash
 superspec change new demo-change
 superspec plan init demo-change --schema SDD
-superspec plan validate demo-change
+superspec validate --schema SDD
 superspec plan next demo-change --owner agent --json
 # execute payload...
 superspec plan complete demo-change a1 --result-json '{"ok":true,"executor":"skill","actionId":"a1"}'

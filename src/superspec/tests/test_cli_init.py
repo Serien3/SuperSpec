@@ -8,11 +8,8 @@ from superspec.cli import command_init
 
 
 class CliInitCommandTest(unittest.TestCase):
-    def test_init_runs_openspec_and_syncs_skills_to_codex(self):
+    def test_init_runs_openspec_and_syncs_packaged_skills_to_codex(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        skills_dir = root / "skills" / "demo-skill"
-        skills_dir.mkdir(parents=True, exist_ok=True)
-        (skills_dir / "SKILL.md").write_text("# demo", encoding="utf-8")
 
         args = SimpleNamespace(agent="codex")
         with patch("superspec.cli.subprocess.run") as mock_run:
@@ -25,28 +22,30 @@ class CliInitCommandTest(unittest.TestCase):
             text=True,
             capture_output=True,
         )
-        self.assertTrue((root / ".codex" / "skills" / "demo-skill" / "SKILL.md").exists())
+        self.assertTrue((root / ".codex" / "skills" / "superspec-agent-driven-loop" / "SKILL.md").exists())
 
-    def test_init_falls_back_to_github_skills_when_skills_dir_missing(self):
+    def test_init_ignores_project_skills_and_uses_packaged_skills(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        skills_dir = root / ".github" / "skills" / "openspec-apply-change"
-        skills_dir.mkdir(parents=True, exist_ok=True)
-        (skills_dir / "SKILL.md").write_text("# apply", encoding="utf-8")
+        project_skill = root / "skills" / "project-only" / "SKILL.md"
+        project_skill.parent.mkdir(parents=True, exist_ok=True)
+        project_skill.write_text("# project-only", encoding="utf-8")
 
         args = SimpleNamespace(agent="codex")
         with patch("superspec.cli.subprocess.run") as mock_run:
             mock_run.return_value = SimpleNamespace(returncode=0, stdout="", stderr="")
             command_init(root, args)
 
-        self.assertTrue((root / ".codex" / "skills" / "openspec-apply-change" / "SKILL.md").exists())
+        self.assertTrue((root / ".codex" / "skills" / "superspec-agent-driven-loop" / "SKILL.md").exists())
+        self.assertFalse((root / ".codex" / "skills" / "project-only" / "SKILL.md").exists())
 
     def test_init_requires_available_skills_source(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         args = SimpleNamespace(agent="codex")
         with patch("superspec.cli.subprocess.run") as mock_run:
             mock_run.return_value = SimpleNamespace(returncode=0, stdout="", stderr="")
-            with self.assertRaises(RuntimeError):
-                command_init(root, args)
+            with patch("superspec.cli._skills_source_dir", side_effect=RuntimeError("missing")):
+                with self.assertRaises(RuntimeError):
+                    command_init(root, args)
 
 
 if __name__ == "__main__":

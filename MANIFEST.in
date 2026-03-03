@@ -1,2 +1,3 @@
 include README.md
 recursive-include src/superspec/schemas *.json
+recursive-include src/superspec/skills SKILL.md

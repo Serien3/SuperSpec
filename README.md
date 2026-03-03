@@ -64,7 +64,7 @@ superspec plan status demo-change --json --full
 
 ## Usage
 ### CLI Commands
-- `superspec init --agent codex`（执行 `openspec init --tools codex` 并同步技能到 `.codex/skills`）
+- `superspec init --agent codex`（执行 `openspec init --tools codex` 并将 SuperSpec 内置 skills 安装到 `.codex/skills`）
 - `superspec change new <change> [--summary ...] [--init-plan --plan-schema sdd]`
 - `superspec plan init <change> --schema sdd [--title ... --goal ...]`
 - `superspec plan validate <change>`

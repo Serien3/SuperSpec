@@ -52,14 +52,11 @@ def _parse_object_json(raw: str, field: str):
 
 
 def _skills_source_dir(repo_root: Path):
-    candidates = [
-        repo_root / "skills",
-        repo_root / ".github" / "skills",
-    ]
-    for candidate in candidates:
-        if candidate.exists() and candidate.is_dir():
-            return candidate
-    raise RuntimeError("No skills directory found. Expected one of: skills, .github/skills")
+    package_skills = Path(__file__).resolve().parent / "skills"
+    if package_skills.exists() and package_skills.is_dir():
+        return package_skills
+
+    raise RuntimeError("No packaged skills directory found.")
 
 
 def _sync_skills_to_codex(repo_root: Path):
@@ -89,8 +86,8 @@ def command_init(repo_root: Path, args):
         raise RuntimeError(result.stderr or result.stdout or "openspec init failed")
     print(result.stdout, end="")
 
-    source, target, copied = _sync_skills_to_codex(repo_root)
-    print(f"Loaded {copied} skill entries from {source} to {target}")
+    _sync_skills_to_codex(repo_root)
+    print(f"SuperSpec initialization succeeded (agent={args.agent}).")
 
 
 def command_change_new(repo_root: Path, args):

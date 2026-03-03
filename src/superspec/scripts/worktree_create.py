@@ -62,6 +62,11 @@ def main() -> int:
     parser.add_argument("--base", default="", help="Base branch/ref, e.g. 'main' or 'origin/main'.")
     parser.add_argument("--branch", default="", help="Branch name to create/use, e.g. 'wt/20260203-fix-player'.")
     parser.add_argument("--path", default="", help="Worktree path (relative to repo root or absolute).")
+    parser.add_argument(
+        "--print-worktree-path",
+        action="store_true",
+        help="Print only the created worktree path to stdout.",
+    )
     args = parser.parse_args()
 
     toplevel = Path(run(["git", "rev-parse", "--show-toplevel"]))
@@ -124,7 +129,10 @@ def main() -> int:
     }
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    print(json.dumps(state, ensure_ascii=False, indent=2))
+    if args.print_worktree_path:
+        print(state["worktree_path"])
+    else:
+        print(json.dumps(state, ensure_ascii=False, indent=2))
     return 0
 
 

@@ -25,9 +25,9 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
      ```
 
 ### Step 2:  Ensure change-scoped plan exists and is valid.
-   - Initialize when `openspec/changes/<change_name>/plan.json` is missing:
+   - Initialize when `openspec/changes/<change_name>/plan.json` is missing (`--schema` is required):
      ```bash
-     superspec plan init "<change_name>" --schema sdd
+     superspec plan init "<change_name>" --schema SDD
      ```
 
 ### Step 3: Run protocol loop until terminal.

@@ -18,8 +18,8 @@ class PlanLifecycleTest(unittest.TestCase):
         base_template_dst.parent.mkdir(parents=True, exist_ok=True)
         base_template_dst.write_text(base_template_src.read_text(encoding="utf-8"), encoding="utf-8")
 
-        workflow_src = repo_root / "src" / "superspec" / "schemas" / "workflows" / "sdd.workflow.json"
-        workflow_dst = root / "superspec" / "schemas" / "workflows" / "sdd.workflow.json"
+        workflow_src = repo_root / "src" / "superspec" / "schemas" / "workflows" / "SDD.workflow.json"
+        workflow_dst = root / "superspec" / "schemas" / "workflows" / "SDD.workflow.json"
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
         workflow_dst.write_text(workflow_src.read_text(encoding="utf-8"), encoding="utf-8")
 
@@ -31,7 +31,7 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_plan_init_with_default_schema_writes_plan_file(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
-        args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+        args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
 
         command_plan_init(root, args)
 
@@ -39,19 +39,19 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertTrue(plan_path.exists())
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["context"]["changeName"], "demo-change")
-        self.assertEqual(plan["metadata"]["schema"]["id"], "sdd")
+        self.assertEqual(plan["metadata"]["schema"]["id"], "SDD")
 
     def test_plan_init_falls_back_to_packaged_default_workflow(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         # No local superspec/schemas/workflows assets are created.
-        args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+        args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
 
         command_plan_init(root, args)
 
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
         self.assertTrue(plan_path.exists())
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        self.assertEqual(plan["metadata"]["schema"]["id"], "sdd")
+        self.assertEqual(plan["metadata"]["schema"]["id"], "SDD")
 
     def test_plan_init_ignores_local_plan_base_template(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -60,7 +60,7 @@ class PlanLifecycleTest(unittest.TestCase):
         local_base = root / "superspec" / "schemas" / "templates" / "plan.base.json"
         local_base.write_text(json.dumps({"schemaVersion": "broken"}, indent=2), encoding="utf-8")
 
-        args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+        args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
         command_plan_init(root, args)
 
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
@@ -163,7 +163,7 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_plan_init_rejects_invalid_change_name(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
-        args = SimpleNamespace(change="../escape", schema="sdd", title=None, goal=None)
+        args = SimpleNamespace(change="../escape", schema="SDD", title=None, goal=None)
 
         with self.assertRaises(ProtocolError) as ctx:
             command_plan_init(root, args)
@@ -173,7 +173,7 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_protocol_actions_reject_context_changedir_outside_changes_root(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
-        init_args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)
+        init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
         command_plan_init(root, init_args)
 
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"

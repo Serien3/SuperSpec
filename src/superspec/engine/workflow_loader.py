@@ -33,7 +33,7 @@ def _deep_merge(base, overlay):
 
 
 def _resolve_workflow_name(workflow: str | None):
-    return workflow or "sdd"
+    return workflow or "SDD"
 
 
 def _load_workflow_schema(repo_root: Path):

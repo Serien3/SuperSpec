@@ -25,23 +25,19 @@ This skill is the execution playbook for:
      ```bash
      superspec change new "<name>"
      ```
-   - Optional one-step create+init:
-     ```bash
-     superspec change new "<name>" --init-plan --plan-schema sdd
-     ```
    - If no name is provided, list changes and ask user to choose:
      ```bash
      openspec list --json
      ```
 
 2. **Initialize plan**
-   - Current contract:
+   - `--schema` is required:
      ```bash
-     superspec plan init "<name>" --schema sdd
+     superspec plan init "<name>" --schema SDD
      ```
    - Optional init-time overrides:
      ```bash
-     superspec plan init "<name>" --schema sdd --title "<title>" --goal "<goal>"
+     superspec plan init "<name>" --schema SDD --title "<title>" --goal "<goal>"
      ```
 
 3. **Loop until terminal state**
@@ -141,7 +137,7 @@ This skill is the execution playbook for:
 
 ```bash
 superspec change new demo-change
-superspec plan init demo-change --schema sdd
+superspec plan init demo-change --schema SDD
 superspec plan validate demo-change
 superspec plan next demo-change --owner agent --json
 # execute payload...

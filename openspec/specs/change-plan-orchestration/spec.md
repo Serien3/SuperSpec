@@ -18,8 +18,8 @@ The system MUST support a change-scoped `plan.json` located at `openspec/changes
 ### Requirement: Plan initialization schema selection
 The system MUST provide a plan initialization option to select a named plan schema/workflow.
 
-#### Scenario: Initialize plan with default schema key
-- **WHEN** a user runs plan initialization with `--schema sdd`
+#### Scenario: Initialize plan with required schema key
+- **WHEN** a user runs plan initialization with `--schema <name>`
 - **THEN** the system writes a valid generated `plan.json` to the change directory
 - **AND** the resulting plan is immediately eligible for plan validation
 

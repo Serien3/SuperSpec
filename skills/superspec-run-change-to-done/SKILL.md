@@ -36,9 +36,9 @@ Prefer installed CLI commands:
      ```
 
 3. Ensure change-scoped plan exists and is valid.
-   - Initialize when `openspec/changes/<change_name>/plan.json` is missing:
+   - Initialize when `openspec/changes/<change_name>/plan.json` is missing (`--schema` is required):
      ```bash
-     superspec plan init "<change_name>" --schema sdd
+     superspec plan init "<change_name>" --schema SDD
      ```
    - Validate before execution:
      ```bash

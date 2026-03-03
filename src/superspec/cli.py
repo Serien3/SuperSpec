@@ -90,12 +90,8 @@ def command_init(repo_root: Path, args):
 
 def command_change_new(repo_root: Path, args):
     _run_openspec_new_change(repo_root, args.change)
-    if args.init_plan:
-        plan_path, selected_schema = _write_plan(repo_root, args.change, args.plan_schema, None, None)
-        print(f"Initialized {plan_path} (schema={selected_schema})")
-        return
     print(f"Plan not initialized for change '{args.change}'.")
-    print(f"Run: superspec plan init {args.change} --schema sdd")
+    print(f"Run: superspec plan init {args.change} --schema <schema>")
 
 
 def command_plan_init(repo_root: Path, args):
@@ -198,15 +194,13 @@ def build_parser():
     change_sub = change.add_subparsers(dest="sub")
     change_new = change_sub.add_parser("new")
     change_new.add_argument("change")
-    change_new.add_argument("--init-plan", action="store_true")
-    change_new.add_argument("--plan-schema", default="sdd")
 
     plan = sub.add_parser("plan")
     plan_sub = plan.add_subparsers(dest="sub")
 
     plan_init = plan_sub.add_parser("init")
     plan_init.add_argument("change")
-    plan_init.add_argument("--schema", default="sdd")
+    plan_init.add_argument("--schema", required=True)
     plan_init.add_argument("--title")
     plan_init.add_argument("--goal")
 

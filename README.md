@@ -74,6 +74,6 @@ After installation, try **SuperSpec** with the following steps:
 
 ## TODO List to v0.6.0
 
-- [] 增加和修改内置工作流
-- [] 重写入口skill
-- [] 增加适合superspec的头脑风暴skill
+- [ ] 增加和修改内置工作流
+- [ ] 重写入口skill
+- [ ] 增加适合superspec的头脑风暴skill

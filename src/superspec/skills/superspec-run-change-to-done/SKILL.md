@@ -13,7 +13,7 @@ Resolve these inputs first:
 - `change_name` (recommended)
 - `owner` for `plan next` (default: `agent`)
 
-If `change_name` is missing, derive a short slug and report it in the final feedback.
+If `change_name` is missing, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
 
 ## End-to-End Workflow
 

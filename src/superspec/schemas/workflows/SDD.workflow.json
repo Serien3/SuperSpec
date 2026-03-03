@@ -11,31 +11,22 @@
   "actions": [
     {
       "id": "a1",
-      "type": "using-worktree",
-      "executor": "script",
-      "script": "cd \"$(python3 -m superspec.scripts.worktree_create --slug \"${context.changeName}\" --print-worktree-path)\" && pwd"
-    },
-    {
-      "id": "a2",
       "type": "proposal+specs+design+tasks",
-      "dependsOn": [
-        "a1"
-      ],
       "skill": "openspec-ff-change"
     },
     {
-      "id": "a3",
+      "id": "a2",
       "type": "openspec.apply",
       "dependsOn": [
-        "a2"
+        "a1"
       ],
       "skill": "openspec-apply-change"
     },
     {
-      "id": "a4",
+      "id": "a3",
       "type": "openspec.verify",
       "dependsOn": [
-        "a3"
+        "a2"
       ],
       "skill": "openspec-verify-change"
     }

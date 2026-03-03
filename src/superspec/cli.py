@@ -1,5 +1,6 @@
 import argparse
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -48,6 +49,48 @@ def _parse_object_json(raw: str, field: str):
     if not isinstance(parsed, dict):
         raise ProtocolError(f"{field} must be a JSON object", code="invalid_payload")
     return parsed
+
+
+def _skills_source_dir(repo_root: Path):
+    candidates = [
+        repo_root / "skills",
+        repo_root / ".github" / "skills",
+    ]
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    raise RuntimeError("No skills directory found. Expected one of: skills, .github/skills")
+
+
+def _sync_skills_to_codex(repo_root: Path):
+    source = _skills_source_dir(repo_root)
+    target = repo_root / ".codex" / "skills"
+    target.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    for item in source.iterdir():
+        dest = target / item.name
+        if item.is_dir():
+            shutil.copytree(item, dest, dirs_exist_ok=True)
+            copied += 1
+        elif item.is_file():
+            shutil.copy2(item, dest)
+            copied += 1
+    return source, target, copied
+
+
+def command_init(repo_root: Path, args):
+    if args.agent != "codex":
+        raise ProtocolError("Unsupported agent. Only 'codex' is supported.", code="invalid_payload")
+
+    cmd = ["openspec", "init", "--tools", args.agent]
+    result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr or result.stdout or "openspec init failed")
+    print(result.stdout, end="")
+
+    source, target, copied = _sync_skills_to_codex(repo_root)
+    print(f"Loaded {copied} skill entries from {source} to {target}")
 
 
 def command_change_new(repo_root: Path, args):
@@ -136,6 +179,9 @@ def build_parser():
     parser = argparse.ArgumentParser(prog="superspec")
     sub = parser.add_subparsers(dest="group")
 
+    init = sub.add_parser("init")
+    init.add_argument("--agent", choices=["codex"], required=True)
+
     change = sub.add_parser("change")
     change_sub = change.add_subparsers(dest="sub")
     change_new = change_sub.add_parser("new")
@@ -193,6 +239,9 @@ def main():
     repo_root = Path.cwd()
 
     try:
+        if args.group == "init":
+            command_init(repo_root, args)
+            return
         if args.group == "change" and args.sub == "new":
             command_change_new(repo_root, args)
             return

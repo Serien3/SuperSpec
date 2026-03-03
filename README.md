@@ -1,112 +1,112 @@
-# SuperSpec (v0.5.0, Protocol-Driven v0.5.0)
+# SuperSpec
 
-SuperSpec is a change-scoped orchestration layer for spec-driven development.
+## Introduction
+SuperSpec 是一个基于协议（protocol-driven）的变更执行编排器。它通过 `plan next -> complete/fail -> status` 的循环，把计划执行与实际执行器（脚本或 Agent-Skill）解耦。
 
-## Implementation Policy
+核心能力：
+- 基于工作流（workflow schema）生成 `plan.json`
+- 使用 CLI 拉取下一步动作并回传执行结果
+- 通过执行状态文件追踪进度、失败与终态
 
-- Primary language: **Python**.
-- Going forward, new SuperSpec engine/CLI features should be implemented in Python first.
-- JS/TS implementations are not the default path unless explicitly requested.
+关键目录：
+- `src/superspec/`：CLI 与执行引擎
+- `src/superspec/schemas/`：计划与工作流 schema
+- `src/superspec/schemas/templates/`：基础计划模板
+- `openspec/changes/<change>/`：每个变更的计划与执行状态
 
-## Plan Generation (v0.5.0)
-
-Plan initialization is now schema/workflow-driven:
-
-- Base template: `superspec/templates/plan.base.json`
-- Workflow definitions: `superspec/schemas/workflows/*.workflow.json`
-- Workflow file schema: `superspec/schemas/workflow.schema.json`
-
-Initialization options:
-
-- `superspec plan init <change> --schema <name>`
-- Optional init-time overrides: `--title`, `--goal`
-
-Merge precedence for generated `plan.json`:
-
-1. Base template
-2. Workflow payload
-3. Init-time overrides
-
-Protected fields always come from the active change context:
-
-- `context.changeName`
-- `context.changeDir`
-
-Execution-relevant defaults in v0.5.0:
-- `executor`
-- `onFail`
-- `retry`
-
-Runtime execution remains unchanged: protocol commands only consume rendered `openspec/changes/<change>/plan.json`.
-
-## Protocol Mode (v0.5.0)
-
-Execution is Agent-driven via pull protocol commands:
-
-- `superspec plan next <change> --json`
-- `superspec plan complete <change> <action_id> --result-json '{...}'`
-- `superspec plan fail <change> <action_id> --error-json '{...}'`
-- `superspec plan status <change> --json`
-- `superspec plan status <change> --json --full` (full action objects)
-- `superspec plan status <change> --json --debug` (includes protocol `contracts`)
-
-The engine selects work; the agent executes and reports outcomes in a single-agent serial loop.
-
-### Action Payload Contract
-
-- `plan next` response contains only: `state`, `changeName`, `action`.
-- Protocol command failures return structured `ProtocolError` JSON payloads (with `error.code`, `error.message`, `error.details`) instead of unstructured generic errors.
-- Script actions return: `actionId`, `executor`, `script_command`, `prompt`.
-- Skill actions return: `actionId`, `executor`, `skillName`, `prompt`.
-- Runtime expression resolution for `next` payload is limited to: `executor`, `script`, `skill`, and `inputs.prompt`.
-- There is no generic deep resolver for arbitrary action fields at runtime; only the fields above are expanded.
-- Runtime expression resolution failures are surfaced as `invalid_expression` protocol errors.
-- Action statuses are: `PENDING`, `READY`, `RUNNING`, `SUCCESS`, `FAILED`.
-- Debug rendered prompt is only included in debug mode (`--debug`).
-- `plan status` omits `contracts` by default; `contracts` are returned only when `status --debug` is set.
-- `plan status --json` defaults to compact action summaries; use `--full` for complete action records.
-
-Execution storage for protocol mode:
-
-- `openspec/changes/<change>/execution/state.json`
-- `openspec/changes/<change>/execution/events.log`
-
-## Removed in v0.5.0
-
-- Lease token flow (`leaseId`, `--lease`, `--lease-ttl-sec`)
-- `superspec plan run`
-- Legacy run-state storage (`run-state.json`, `runs/<run-id>/...`)
-- In-process action handlers/runners (`superspec/actions/*`, `superspec/runners/*`): execution is external-agent only
-
-## Command Contract File
-
-See: `superspec/schemas/protocol.contracts.json`
-
-## Known limits
-
-- No parallel DAG scheduling
-- No cross-change orchestration
-- Skill execution still depends on external agent/runtime wiring
-
-## Agent Guidance Skill
-
-Use the `superspec-agent-driven-loop` skill as the standard playbook for external agents:
-
-- `output/skills/superspec-agent-driven-loop/SKILL.md`
-
-Skill output location policy:
-- All newly produced SuperSpec skills MUST be written under `output/`.
-- Do not place newly produced SuperSpec skills under `.codex/` or `.github/`.
-
-Recommended flow:
-
-1. `superspec change new <change>`
-2. `superspec plan init <change> --schema sdd`
-3. `superspec plan validate <change>`
-4. Loop on `superspec plan next <change> --json` and report with `plan complete` / `plan fail` until `done`
-
-## Tests
+## Installation
+要求：Python 3.10+。
 
 ```bash
-python3 -m unittest discover -s superspec/tests -p "test_*.py"
+python3 -m pip install -e .
+```
+
+可选检查：
+```bash
+superspec --help
+PYTHONPATH=src python3 -m unittest discover -s src/superspec/tests -p "test_*.py"
+```
+
+说明：`superspec change new` 依赖本机可用 `openspec` 命令。
+
+## Getting Start
+1. 初始化仓库（OpenSpec + Codex Skills）：
+```bash
+superspec init --agent codex
+```
+
+2. 创建变更并初始化计划：
+```bash
+superspec change new demo-change --summary "demo" --init-plan --plan-schema sdd
+```
+
+3. 校验计划：
+```bash
+superspec plan validate demo-change
+```
+
+4. 拉取下一步动作：
+```bash
+superspec plan next demo-change --owner agent --json
+```
+
+5. 成功/失败回报：
+```bash
+superspec plan complete demo-change a1 --result-json '{"ok":true,"executor":"skill","actionId":"a1"}'
+superspec plan fail demo-change a1 --error-json '{"code":"skill_failed","message":"...","executor":"skill"}'
+```
+
+6. 查看状态：
+```bash
+superspec plan status demo-change --json
+superspec plan status demo-change --json --full
+```
+
+## Usage
+### CLI Commands
+- `superspec init --agent codex`（执行 `openspec init --tools codex` 并同步技能到 `.codex/skills`）
+- `superspec change new <change> [--summary ...] [--init-plan --plan-schema sdd]`
+- `superspec plan init <change> --schema sdd [--title ... --goal ...]`
+- `superspec plan validate <change>`
+- `superspec plan next <change> --owner <owner> --json [--debug]`
+- `superspec plan complete <change> <action_id> --result-json '{...}'`
+- `superspec plan fail <change> <action_id> --error-json '{...}'`
+- `superspec plan status <change> --json [--full] [--debug] [--action-limit 40]`
+
+### Agent Command
+推荐 Agent 拉取执行循环：
+```bash
+while true; do
+  payload=$(superspec plan next demo-change --owner agent --json)
+  state=$(echo "$payload" | python3 -c 'import sys,json;print(json.load(sys.stdin)["state"])')
+  if [ "$state" = "done" ]; then
+    superspec plan status demo-change --json
+    break
+  fi
+  # 根据 payload.action.executor 执行实际任务
+  # 成功后调用 plan complete，失败调用 plan fail
+  sleep 2
+done
+```
+
+### 自定义工作流（Custom Workflow）
+在仓库创建：`superspec/schemas/workflows/myflow.workflow.json`（项目级覆盖路径，不在 `src/` 下）
+
+最小示例：
+```json
+{
+  "workflowId": "myflow",
+  "version": "1.0.0",
+  "title": "My custom flow",
+  "goal": "Run custom actions",
+  "actions": [
+    { "id": "a1", "type": "custom.step", "executor": "script", "script": "echo hello" }
+  ]
+}
+```
+
+初始化并使用：
+```bash
+superspec plan init demo-change --schema myflow
+superspec plan validate demo-change
 ```

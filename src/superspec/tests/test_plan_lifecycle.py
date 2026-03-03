@@ -11,19 +11,19 @@ from superspec.engine.orchestrator import run_protocol_action_from_cli
 
 class PlanLifecycleTest(unittest.TestCase):
     def _seed_generation_assets(self, root: Path):
-        repo_root = Path(__file__).resolve().parents[2]
+        repo_root = Path(__file__).resolve().parents[3]
 
-        base_template_src = repo_root / "superspec" / "templates" / "plan.base.json"
-        base_template_dst = root / "superspec" / "templates" / "plan.base.json"
+        base_template_src = repo_root / "src" / "superspec" / "schemas" / "templates" / "plan.base.json"
+        base_template_dst = root / "superspec" / "schemas" / "templates" / "plan.base.json"
         base_template_dst.parent.mkdir(parents=True, exist_ok=True)
         base_template_dst.write_text(base_template_src.read_text(encoding="utf-8"), encoding="utf-8")
 
-        workflow_src = repo_root / "superspec" / "schemas" / "workflows" / "sdd.workflow.json"
+        workflow_src = repo_root / "src" / "superspec" / "schemas" / "workflows" / "sdd.workflow.json"
         workflow_dst = root / "superspec" / "schemas" / "workflows" / "sdd.workflow.json"
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
         workflow_dst.write_text(workflow_src.read_text(encoding="utf-8"), encoding="utf-8")
 
-        schema_src = repo_root / "superspec" / "schemas" / "workflow.schema.json"
+        schema_src = repo_root / "src" / "superspec" / "schemas" / "workflow.schema.json"
         schema_dst = root / "superspec" / "schemas" / "workflow.schema.json"
         schema_dst.parent.mkdir(parents=True, exist_ok=True)
         schema_dst.write_text(schema_src.read_text(encoding="utf-8"), encoding="utf-8")
@@ -57,7 +57,7 @@ class PlanLifecycleTest(unittest.TestCase):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         # If local base template were used, init would fail validation.
-        local_base = root / "superspec" / "templates" / "plan.base.json"
+        local_base = root / "superspec" / "schemas" / "templates" / "plan.base.json"
         local_base.write_text(json.dumps({"schemaVersion": "broken"}, indent=2), encoding="utf-8")
 
         args = SimpleNamespace(change="demo-change", schema="sdd", title=None, goal=None)

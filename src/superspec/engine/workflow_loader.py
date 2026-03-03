@@ -41,7 +41,7 @@ def _load_workflow_schema(repo_root: Path):
 
 
 def _load_base_template(repo_root: Path):
-    return _load_json(_package_root() / "templates" / "plan.base.json")
+    return _load_json(_package_root() / "schemas" / "templates" / "plan.base.json")
 
 
 def _load_workflow(repo_root: Path, workflow_name: str):

@@ -12,5 +12,17 @@ dependencies = ["jsonschema>=4.0"]
 [project.scripts]
 superspec = "superspec.cli:main"
 
+[tool.setuptools]
+include-package-data = true
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["superspec*"]
+
+[tool.setuptools.package-data]
+superspec = [
+  "schemas/*.json",
+  "schemas/templates/*.json",
+  "schemas/workflows/*.json",
+]

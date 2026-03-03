@@ -83,12 +83,6 @@ class PlanLifecycleTest(unittest.TestCase):
                     "skill": "openspec-apply-change",
                 }
             ],
-            "plan": {
-                "context": {
-                    "changeName": "bad",
-                    "changeDir": "bad/path",
-                }
-            },
         }
         custom_path = root / "superspec" / "schemas" / "workflows" / "custom-flow.workflow.json"
         custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
@@ -102,6 +96,65 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertEqual(plan["goal"], "Custom goal from workflow")
         self.assertEqual(plan["context"]["changeName"], "demo-change")
         self.assertEqual(plan["context"]["changeDir"], "openspec/changes/demo-change")
+
+    def test_plan_init_rejects_legacy_plan_overlay_field(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        custom = {
+            "workflowId": "legacy-plan",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                    "skill": "openspec-apply-change",
+                }
+            ],
+            "plan": {
+                "context": {
+                    "changeName": "bad",
+                    "changeDir": "bad/path",
+                }
+            },
+        }
+        custom_path = root / "superspec" / "schemas" / "workflows" / "legacy-plan.workflow.json"
+        custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
+
+        args = SimpleNamespace(change="demo-change", schema="legacy-plan", title=None, goal=None)
+        with self.assertRaises(ProtocolError) as ctx:
+            command_plan_init(root, args)
+
+        self.assertEqual(ctx.exception.code, "invalid_plan_schema")
+        self.assertEqual(ctx.exception.details["location"], "plan")
+
+    def test_plan_init_rejects_unknown_top_level_workflow_field(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        custom = {
+            "workflowId": "unknown-field",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                    "skill": "openspec-apply-change",
+                }
+            ],
+            "context": {
+                "changeName": "bad",
+            },
+        }
+        custom_path = root / "superspec" / "schemas" / "workflows" / "unknown-field.workflow.json"
+        custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
+
+        args = SimpleNamespace(change="demo-change", schema="unknown-field", title=None, goal=None)
+        with self.assertRaises(ProtocolError) as ctx:
+            command_plan_init(root, args)
+
+        self.assertEqual(ctx.exception.code, "invalid_plan_schema")
+        self.assertEqual(ctx.exception.details["location"], "context")
 
     def test_plan_init_applies_init_time_overrides(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -119,6 +172,43 @@ class PlanLifecycleTest(unittest.TestCase):
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["title"], "Override title")
         self.assertEqual(plan["goal"], "Override goal")
+
+    def test_plan_init_applies_deterministic_merge_precedence(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        custom = {
+            "workflowId": "with-overrides",
+            "version": "1.0.0",
+            "title": "Workflow title",
+            "goal": "Workflow goal",
+            "defaults": {
+                "onFail": "continue",
+            },
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                    "skill": "openspec-apply-change",
+                }
+            ],
+        }
+        custom_path = root / "superspec" / "schemas" / "workflows" / "with-overrides.workflow.json"
+        custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
+
+        args = SimpleNamespace(
+            change="demo-change",
+            schema="with-overrides",
+            title="CLI title",
+            goal="CLI goal",
+        )
+        command_plan_init(root, args)
+
+        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        self.assertEqual(plan["title"], "CLI title")
+        self.assertEqual(plan["goal"], "CLI goal")
+        self.assertEqual(plan["defaults"]["onFail"], "continue")
 
     def test_plan_init_rejects_unknown_schema(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

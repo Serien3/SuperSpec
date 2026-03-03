@@ -1,9 +1,4 @@
-# plan-generation-from-scheme Specification
-
-## Purpose
-Define how SuperSpec generates change-scoped `plan.json` from a base template plus a selected workflow definition.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Plan rendering from base template and workflow
 The system MUST generate change-scoped `plan.json` by combining a generic base plan template with a selected workflow definition, applying only supported workflow customization fields.
@@ -25,11 +20,3 @@ The system MUST apply a deterministic merge order across generation inputs for a
 - **WHEN** the same field is provided by base template, workflow definition, and init-time overrides
 - **THEN** generation applies precedence in a documented deterministic order
 - **AND** the resulting value in `plan.json` is predictable and reproducible
-
-### Requirement: Protected change context fields
-The system MUST protect change-scoped context values from workflow override.
-
-#### Scenario: Ignore workflow override of change identity
-- **WHEN** a workflow attempts to override change-bound context fields such as `changeName` or `changeDir`
-- **THEN** generation keeps context values derived from the active change
-- **AND** writes a plan bound to the requested change directory

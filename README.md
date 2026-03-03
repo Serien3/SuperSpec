@@ -72,6 +72,24 @@ After installation, try **SuperSpec** with the following steps:
    ```
    Note: The current SuperSpec workflow still relies on OpenSpec programs and skills.
 
+## Workflow Authoring Notes
+
+Custom workflow files are loaded from `superspec/schemas/workflows/<name>.workflow.json`.
+
+Supported top-level fields are:
+- `workflowId`
+- `version`
+- `description`
+- `planId`
+- `title`
+- `goal`
+- `variables`
+- `defaults`
+- `actions`
+- `metadata`
+
+Unknown top-level fields are rejected. The legacy `plan` overlay field is not supported; use the top-level customization fields above.
+
 ## TODO List to v0.6.0
 
 - [x] 增加和修改内置工作流

@@ -33,10 +33,12 @@
       "minLength": 1
     },
     "variables": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true
     },
     "defaults": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true
     },
     "actions": {
       "type": "array",
@@ -61,11 +63,9 @@
       }
     },
     "metadata": {
-      "type": "object"
-    },
-    "plan": {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": true
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

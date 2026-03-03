@@ -5,6 +5,29 @@ from jsonschema import Draft202012Validator
 
 from superspec.engine.errors import ProtocolError
 
+WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
+    "workflowId",
+    "version",
+    "description",
+    "planId",
+    "title",
+    "goal",
+    "variables",
+    "defaults",
+    "actions",
+    "metadata",
+)
+
+WORKFLOW_PLAN_CUSTOMIZATION_FIELDS = (
+    "planId",
+    "title",
+    "goal",
+    "variables",
+    "defaults",
+    "actions",
+    "metadata",
+)
+
 
 def _package_root():
     return Path(__file__).resolve().parents[1]
@@ -61,6 +84,29 @@ def _load_workflow(repo_root: Path, workflow_name: str):
 
 
 def _validate_workflow(repo_root: Path, workflow: dict, workflow_name: str):
+    unknown = [key for key in workflow.keys() if key not in WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS]
+    if unknown:
+        field = unknown[0]
+        if field == "plan":
+            message = (
+                f"Invalid plan schema '{workflow_name}': unsupported field '{field}'. "
+                f"Use top-level customization fields: {', '.join(WORKFLOW_PLAN_CUSTOMIZATION_FIELDS)}"
+            )
+        else:
+            message = (
+                f"Invalid plan schema '{workflow_name}': unsupported field '{field}'. "
+                f"Supported top-level fields: {', '.join(WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS)}"
+            )
+        raise ProtocolError(
+            message,
+            code="invalid_plan_schema",
+            details={
+                "schema": workflow_name,
+                "location": field,
+                "supportedFields": list(WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS),
+            },
+        )
+
     schema = _load_workflow_schema(repo_root)
     validator = Draft202012Validator(schema)
     errors = sorted(validator.iter_errors(workflow), key=lambda e: list(e.path))
@@ -76,13 +122,9 @@ def _validate_workflow(repo_root: Path, workflow: dict, workflow_name: str):
 
 def _workflow_payload(workflow: dict):
     payload = {}
-    for key in ("planId", "title", "goal", "variables", "defaults", "actions", "metadata"):
+    for key in WORKFLOW_PLAN_CUSTOMIZATION_FIELDS:
         if key in workflow:
             payload[key] = workflow[key]
-
-    plan_overlay = workflow.get("plan", {})
-    if isinstance(plan_overlay, dict):
-        payload = _deep_merge(payload, plan_overlay)
 
     # Keep workflow identity in generated metadata for traceability.
     payload.setdefault("metadata", {})

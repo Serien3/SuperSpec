@@ -2,38 +2,34 @@
 
 ## Project Structure & Module Organization
 - Core package: `src/superspec/`.
-- CLI entrypoint: `src/superspec/cli.py` (`superspec` command from `pyproject.toml`).
+- CLI entrypoint: `src/superspec/cli.py` (installed as the `superspec` command via `pyproject.toml`).
 - Runtime engine: `src/superspec/engine/` (protocol, state store, validation, orchestration).
-- Schemas and templates: `src/superspec/schemas/`.
-- Tests: `src/superspec/tests/` (`test_integration.py`, `test_plan_lifecycle.py`).
-- Spec/change artifacts: `openspec/changes/` and `openspec/specs/`.
-- Generated/agent outputs should go under `output/` (not `.codex/` or `.github/`).
+- Schemas/templates: `src/superspec/schemas/`.
+- Tests: `tests/` (notably `test_integration.py`, `test_plan_lifecycle.py`).
+- OpenSpec artifacts: `openspec/changes/` and `openspec/specs/`.
+- Generated agent outputs belong in `output/`.
 
 ## Build, Test, and Development Commands
-- `python3 -m pip install -e .` — install local editable package.
-- `superspec --help` — inspect available CLI groups and flags.
-- `PYTHONPATH=src python3 -m unittest discover -s src/superspec/tests -p "test_*.py"` — run full test suite.
-- `python3 -m unittest superspec.tests.test_integration -v` — run integration tests only.
-- `python3 -m unittest superspec.tests.test_plan_lifecycle -v` — run plan lifecycle tests only.
+- `python3 -m pip install -e .` — install the package in editable mode.
+- `superspec --help` — inspect CLI groups and flags.
+- `PYTHONPATH=src python3 -m unittest discover -s tests -p "test_*.py"` — run the full test suite.
+- `PYTHONPATH=src python3 -m unittest tests.test_integration -v` — run integration tests only.
+- `PYTHONPATH=src python3 -m unittest tests.test_plan_lifecycle -v` — run plan lifecycle tests only.
 
 ## Coding Style & Naming Conventions
-- Language: Python (3.10+), 4-space indentation, UTF-8 text.
-- Prefer small pure functions in `src/superspec/engine/*`; keep CLI logic in `cli.py` thin.
-- Naming: `snake_case` for functions/variables/files, `UPPER_SNAKE_CASE` for constants.
-- Use structured protocol errors (`ProtocolError`) instead of ad-hoc exceptions for user-facing failures.
-- Do not commit generated artifacts: `__pycache__/`, `*.pyc`, `*.egg-info/`.
+- Python 3.10+, UTF-8, 4-space indentation.
+- Keep `cli.py` thin; prefer small pure functions in `src/superspec/engine/*`.
+- Use `snake_case` for functions/variables/files and `UPPER_SNAKE_CASE` for constants.
+- For user-facing failures, raise structured `ProtocolError` instead of ad-hoc exceptions.
+- Do not commit generated artifacts (`__pycache__/`, `*.pyc`, `*.egg-info/`).
 
 ## Testing Guidelines
 - Framework: built-in `unittest`.
-- Add/extend tests in `src/superspec/tests/test_*.py` for any protocol or CLI behavior change.
+- Add or extend tests under `tests/test_*.py` for any behavior change.
 - Prefer behavior-focused assertions (state transitions, payload fields, error codes).
-- Run targeted tests first, then full suite before opening a PR.
+- Run targeted tests first, then the full suite before opening a PR.
 
 ## Commit & Pull Request Guidelines
-- Follow existing history style: `feat: ...`, `fix: ...`, `chore: ...` (short imperative subject).
-- Keep commits scoped (one concern per commit); avoid mixing workflow/spec noise with engine logic.
-- PRs should include:
-  - What changed and why.
-  - Affected commands/files (for example `superspec plan status --json --full`).
-  - Test evidence (commands + pass result).
-  - Sample JSON/CLI output when contracts change.
+- Follow repository commit style: `feat: ...`, `fix: ...`, `chore: ...` (short imperative subject).
+- Keep commits scoped to one concern.
+- PRs should include: purpose, affected commands/files, test evidence (commands + pass result), and sample JSON/CLI output when contracts change.

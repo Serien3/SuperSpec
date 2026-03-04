@@ -12,8 +12,14 @@ from superspec.engine.orchestrator import run_protocol_action_from_cli
 
 
 class PlanLifecycleTest(unittest.TestCase):
+    def _repo_root(self) -> Path:
+        for parent in Path(__file__).resolve().parents:
+            if (parent / "pyproject.toml").exists():
+                return parent
+        raise RuntimeError("Could not locate repository root from test path")
+
     def _seed_generation_assets(self, root: Path):
-        repo_root = Path(__file__).resolve().parents[3]
+        repo_root = self._repo_root()
 
         base_template_src = repo_root / "src" / "superspec" / "schemas" / "templates" / "plan.base.json"
         base_template_dst = root / "superspec" / "schemas" / "templates" / "plan.base.json"

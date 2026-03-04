@@ -43,7 +43,7 @@ The system MUST provide a command for clients to report action failure with stru
 - **AND** each propagated failure includes dependency-failure context identifying the upstream failed action
 
 ### Requirement: Executor-specific payload contract
-The system MUST return normalized execution payloads that distinguish script, skill, and human execution modes.
+The system MUST return normalized execution payloads that distinguish script, skill, and human execution modes, and MUST reject plans whose explicit `executor` value is not one of `skill`, `script`, or `human`.
 
 #### Scenario: Script action payload
 - **WHEN** the next action uses `executor=script`
@@ -68,6 +68,11 @@ The system MUST return normalized execution payloads that distinguish script, sk
 - **WHEN** a skill action fails in an external agent runtime
 - **THEN** the client reports failure using the returned `actionId`
 - **AND** the error payload includes an error code/category and human-readable failure context
+
+#### Scenario: Reject invalid explicit executor values at validation time
+- **WHEN** a plan action declares an explicit `executor` value outside `skill|script|human`
+- **THEN** plan validation fails before protocol execution starts
+- **AND** no next-action payload is generated for that invalid action
 
 ### Requirement: Agent-managed loop semantics
 The protocol MUST support agent-managed execution loops that repeatedly call `next` and report outcomes until terminal state.

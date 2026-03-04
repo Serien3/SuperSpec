@@ -366,6 +366,40 @@ class IntegrationTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_plan(plan)
 
+    def test_validate_rejects_invalid_explicit_executor_value(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "custom.invalid-executor",
+                    "executor": "plugin",
+                }
+            ],
+        )
+
+        with self.assertRaises(ValidationError):
+            validate_plan(plan)
+
+    def test_validate_rejects_non_string_explicit_executor(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "custom.invalid-executor-type",
+                    "executor": 123,
+                }
+            ],
+        )
+
+        with self.assertRaises(ValidationError):
+            validate_plan(plan)
+
     def test_status_snapshot_compact_mode_summarizes_and_truncates_actions(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(

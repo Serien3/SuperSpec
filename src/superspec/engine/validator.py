@@ -3,6 +3,8 @@ import re
 from .constants import SUPPORTED_SCHEMA_VERSION
 from .errors import ValidationError
 
+_VALID_EXECUTORS = {"skill", "script", "human"}
+
 
 def _assert(cond, message, details=None):
     if not cond:
@@ -77,11 +79,16 @@ def validate_plan(plan):
         atype = action.get("type")
         _assert(isinstance(atype, str) and atype, f"Action {aid} type is required")
 
-        if action.get("executor") == "skill":
+        executor = action.get("executor")
+        if executor is not None:
+            _assert(isinstance(executor, str) and executor, f"Action {aid} executor must be a non-empty string")
+            _assert(executor in _VALID_EXECUTORS, f"Action {aid} has invalid executor: {executor}")
+
+        if executor == "skill":
             _assert(isinstance(action.get("skill"), str) and action["skill"], f"Action {aid} must set skill for skill executor")
-        if action.get("executor") == "script":
+        if executor == "script":
             _assert(isinstance(action.get("script"), str) and action["script"], f"Action {aid} must set script for script executor")
-        if action.get("executor") == "human":
+        if executor == "human":
             human = action.get("human")
             _assert(isinstance(human, dict), f"Action {aid} must set human object for human executor")
             _assert(isinstance(human.get("instruction"), str) and human["instruction"], f"Action {aid} human executor requires human.instruction")

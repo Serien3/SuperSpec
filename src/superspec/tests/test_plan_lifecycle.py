@@ -274,6 +274,26 @@ class PlanLifecycleTest(unittest.TestCase):
 
         self.assertEqual(ctx.exception.code, "invalid_path")
 
+    def test_protocol_actions_reject_context_changedir_mismatch_with_target_change(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+        init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
+        command_plan_init(root, init_args)
+
+        other_change_dir = root / "openspec" / "changes" / "other-change"
+        other_change_dir.mkdir(parents=True, exist_ok=True)
+
+        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        plan["context"]["changeDir"] = "openspec/changes/other-change"
+        plan_path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
+
+        with self.assertRaises(ProtocolError) as ctx:
+            run_protocol_action_from_cli(root, "demo-change", "status", debug=False)
+
+        self.assertEqual(ctx.exception.code, "invalid_path")
+        self.assertFalse((other_change_dir / "execution" / "state.json").exists())
+
     def test_custom_workflow_generated_plan_can_run_protocol_after_validate(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)

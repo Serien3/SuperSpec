@@ -29,7 +29,11 @@ Prefer installed CLI commands:
      ```
 
 2. Resolve the target change.
-   - Reuse existing change when present.
+   - List existing changes first:
+     ```bash
+     superspec change list
+     ```
+   - Reuse existing change when the target name already exists in the command output.
    - Create when absent:
      ```bash
      superspec change new "<change_name>"

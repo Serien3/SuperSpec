@@ -18,7 +18,11 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
 ## End-to-End Workflow
 
 ### Step 1: Resolve the target change.
-   - Reuse existing change when present.
+   - List existing changes first:
+     ```bash
+     superspec change list
+     ```
+   - Reuse existing change when the target name already exists in the command output.
    - Create when absent:
      ```bash
      superspec change new "<change_name>"

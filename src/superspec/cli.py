@@ -222,7 +222,15 @@ def command_plan_status(repo_root: Path, args):
         action_limit=int(args.action_limit),
     )
     if args.json:
-        print(to_json(payload))
+        if args.full or args.debug:
+            print(to_json(payload))
+            return
+        minimal = {
+            "changeName": payload["changeName"],
+            "status": payload["status"],
+            "progress": payload["progress"],
+        }
+        print(to_json(minimal))
         return
 
     print(f"Change: {args.change}")

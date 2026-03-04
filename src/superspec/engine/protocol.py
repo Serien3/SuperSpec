@@ -229,7 +229,6 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         _persist(change_dir, state)
         return {
             "state": "done",
-            "changeName": plan["context"]["changeName"],
             "action": None,
         }
 
@@ -256,7 +255,6 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         _persist(change_dir, state)
         return {
             "state": "ready",
-            "changeName": plan["context"]["changeName"],
             "action": payload,
         }
 
@@ -265,13 +263,11 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
     if state["status"] in {"success", "failed"}:
         return {
             "state": "done",
-            "changeName": plan["context"]["changeName"],
             "action": None,
         }
 
     return {
         "state": "blocked",
-        "changeName": plan["context"]["changeName"],
         "action": None,
     }
 
@@ -331,7 +327,7 @@ def _contracts_payload():
     return {
         "next": {
             "states": ["ready", "blocked", "done"],
-            "fields": ["state", "changeName", "action"],
+            "fields": ["state", "action"],
             "errors": ["invalid_expression", "invalid_action_payload"],
         },
         "complete": {
@@ -343,12 +339,13 @@ def _contracts_payload():
             "errors": ["invalid_payload", "unknown_action", "invalid_state"],
         },
         "status": {
-            "fields": ["status", "progress", "lastFailure", "actions"],
+            "fields": ["changeName", "status", "progress"],
             "actionStates": ["PENDING", "READY", "RUNNING", "SUCCESS", "FAILED"],
-            "debugFields": ["contracts"],
+            "debugFields": ["contracts", "lastFailure", "actions", "actionsOmitted", "schemaVersion", "protocolVersion"],
             "modes": {
-                "default": "compact action summaries",
-                "full": "full action objects",
+                "default": "status --json returns minimal fields only",
+                "full": "status --json --full returns full action objects",
+                "debug": "status --json --debug returns contracts and compact action summaries",
             },
         },
         "actionPayload": {

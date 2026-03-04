@@ -9,7 +9,6 @@
       },
       "response": {
         "state": "ready | blocked | done",
-        "changeName": "string",
         "action": "object | null"
       },
       "errors": ["invalid_expression", "invalid_action_payload"]
@@ -54,6 +53,7 @@
         "full": "boolean (optional)"
       },
       "response": {
+        "changeName": "string",
         "status": "running | success | failed",
         "progress": {
           "total": "integer",
@@ -61,14 +61,7 @@
           "failed": "integer",
           "running": "integer",
           "remaining": "integer"
-        },
-        "lastFailure": "object | null",
-        "actions": "array",
-        "actionStatusValues": "PENDING | READY | RUNNING | SUCCESS | FAILED",
-        "contracts": "object (only when debug=true)",
-        "notes": [
-          "Default status JSON returns compact actions unless --full is provided"
-        ]
+        }
       }
     }
   },

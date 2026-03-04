@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Agent-driven Spec-Driven Development (SDD) makes “align first, implement second” an executable engineering loop. Done well, it reduces requirement drift, lowers rework costs, and turns reviews into intent- and constraint-focused discussions—before the code hardens. In parallel, **Agent Skills** have become a popular way to productionize agentic development: packaging repeatable workflows, tool-use patterns, and prompting strategies into composable units that teams can share, evolve, and reuse.
+Vibe-coding has proven that software can be produced quickly with AI in the loop, but making it reliable at scale requires turning an improvised chat-driven process into structured, standardized engineering. In parallel, there has been growing research and practical work on making long-running, minimally supervised AI agents feasible through durable plans, explicit artifacts, repeatable skills, and checkpointable execution.  In parallel, **Agent Skills** have become a popular way to productionize agentic development: packaging repeatable workflows, tool-use patterns, and prompting strategies into composable units that teams can share, evolve, and reuse.
 
 For example :
 - **OpenSpec**: structured SDD artifacts and a spec-first alignment discipline.
@@ -74,6 +74,7 @@ After installation, try **SuperSpec** with the following steps:
 
 ## TODO List to v0.7.0
 
-- [ ] 增加新的skill
-- [ ] 修改plan validate的逻辑
+- [ ] 增加新的skill (code-review相关)
+- [ ] 检查命令输出，精简它们
 - [ ] 新的工作流(“fast-dev”， “review”)
+- [ ] 考虑增加第四种类型的动作——纯粹的提示词/任务Action

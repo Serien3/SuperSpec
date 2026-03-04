@@ -192,7 +192,6 @@ def command_plan_next(repo_root: Path, args):
         args.change,
         "next",
         owner=args.owner,
-        debug=bool(args.debug),
     )
     if args.json:
         print(to_json(payload))
@@ -312,7 +311,6 @@ def build_parser():
     plan_next = plan_sub.add_parser("next")
     plan_next.add_argument("change")
     plan_next.add_argument("--owner", default="agent")
-    plan_next.add_argument("--debug", action="store_true")
     plan_next.add_argument("--json", action="store_true")
 
     plan_complete = plan_sub.add_parser("complete")

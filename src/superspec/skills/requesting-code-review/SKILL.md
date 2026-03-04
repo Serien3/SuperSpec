@@ -23,9 +23,11 @@ Dispatch skill:code-reviewer subagent to catch issues before they cascade.
 
 ## How to Request
 
-**1. Get git SHAs:**
+**1. Set git SHAs:**
 ```bash
-BASE_SHA=$(git rev-parse HEAD~1)  # or origin/main
+# If BASE_SHA is provided by caller/user, use it directly.
+# If not provided, default to HEAD~1.
+BASE_SHA=${BASE_SHA:-$(git rev-parse HEAD~1)}  # or set explicitly, e.g. origin/main
 HEAD_SHA=$(git rev-parse HEAD)
 ```
 
@@ -36,7 +38,7 @@ Use Task tool with skill:code-reviewer type, fill template at `code-reviewer.md`
 **Placeholders:**
 - `{WHAT_WAS_IMPLEMENTED}` - What you just built
 - `{PLAN_OR_REQUIREMENTS}` - What it should do
-- `{BASE_SHA}` - Starting commit
+- `{BASE_SHA}` - Starting commit (provided value if available; otherwise default `HEAD~1`)
 - `{HEAD_SHA}` - Ending commit
 - `{DESCRIPTION}` - Brief summary
 

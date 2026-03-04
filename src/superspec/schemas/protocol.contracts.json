@@ -4,8 +4,7 @@
     "next": {
       "request": {
         "change": "string",
-        "owner": "string (optional)",
-        "debug": "boolean (optional)"
+        "owner": "string (optional)"
       },
       "response": {
         "state": "ready | blocked | done",
@@ -74,10 +73,7 @@
     "skill": {
       "executor": "skill",
       "skillName": "string",
-      "prompt": "string",
-      "debug": {
-        "renderedPrompt": "string (only when debug=true)"
-      }
+      "prompt": "string"
     },
     "human": {
       "executor": "human",
@@ -99,7 +95,8 @@
     ],
     "runtimeExpressionNotes": [
       "No generic recursive runtime resolver for arbitrary action fields",
-      "Only the listed fields are expanded in next-action payload generation"
+      "Only the listed fields are expanded in next-action payload generation",
+      "When inputs.prompt is set, action.prompt uses the rendered inputs.prompt for all executors"
     ]
   },
   "removed": [

@@ -239,19 +239,48 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(terminal["progress"]["remaining"], 1)
         self.assertTrue(all(action["status"] != "SKIPPED" for action in terminal["actions"]))
 
-    def test_next_uses_builtin_default_executor_when_action_has_no_explicit_executor(self):
+    def test_next_infers_executor_from_skill_when_executor_is_missing(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal"}],
+            [{"id": "a1", "type": "openspec.proposal", "skill": "openspec-continue-change"}],
         )
         validate_plan(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["executor"], "skill")
-        self.assertEqual(nxt["action"]["skillName"], "openspec.proposal")
+        self.assertEqual(nxt["action"]["skillName"], "openspec-continue-change")
+
+    def test_validate_rejects_missing_executor_and_no_inferable_payload(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal"}],
+        )
+
+        with self.assertRaises(ValidationError):
+            validate_plan(plan)
+
+    def test_validate_rejects_ambiguous_inferred_executor(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "ambiguous.executor",
+                    "skill": "openspec-continue-change",
+                    "script": "echo hi",
+                }
+            ],
+        )
+
+        with self.assertRaises(ValidationError):
+            validate_plan(plan)
 
     def test_validate_accepts_custom_action_type_and_protocol_executes(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -309,6 +338,32 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "a1")
         self.assertEqual(nxt["action"]["script_command"], "echo one")
+
+    def test_next_uses_inputs_prompt_as_action_prompt_with_runtime_substitution(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "prepare", "executor": "script", "script": "echo one"},
+                {
+                    "id": "a2",
+                    "type": "openspec.specs",
+                    "dependsOn": ["a1"],
+                    "executor": "skill",
+                    "skill": "openspec-continue-change",
+                    "inputs": {"prompt": "Write specs for ${context.changeName}; seed=${actions.a1.outputs.summary}"},
+                },
+            ],
+        )
+        validate_plan(plan)
+        first = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["action"]["actionId"], "a1")
+        complete_action(plan, str(change_dir), "a1", {"ok": True, "summary": "from-a1"})
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["prompt"], f"Write specs for {change_name}; seed=from-a1")
 
     def test_human_executor_blocks_until_completion_and_emits_human_payload(self):
         root, change_name, change_dir = self.setup_temp_change()

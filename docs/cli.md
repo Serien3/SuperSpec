@@ -127,7 +127,6 @@ superspec plan next <change> [options]
 | option    | description    | default |
 | --------- | -------------- | ------- |
 | `--owner` | 执行者标识。   | `agent` |
-| `--debug` | 返回调试字段。 | `false` |
 | `--json`  | JSON 输出。    | `false` |
 
 ### `superspec plan complete`

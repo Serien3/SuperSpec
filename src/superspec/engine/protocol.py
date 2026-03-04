@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from superspec.engine.constants import DEFAULT_EXECUTOR, SUPPORTED_PROTOCOL_VERSION
+from superspec.engine.constants import SUPPORTED_PROTOCOL_VERSION
 from superspec.engine.context import resolve_runtime_action_fields
 from superspec.engine.errors import ProtocolError
 from superspec.engine.state_store import append_event, read_execution_state, write_execution_state
@@ -18,13 +18,13 @@ def _now_iso():
 def _resolve_executor(action):
     if action.get("executor"):
         return action["executor"]
-    if action.get("script"):
-        return "script"
     if action.get("skill"):
         return "skill"
+    if action.get("script"):
+        return "script"
     if action.get("human"):
         return "human"
-    return DEFAULT_EXECUTOR
+    return None
 
 
 def _action_runtime_outputs(state: dict):
@@ -52,8 +52,15 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
         ) from exc
 
 
-def _build_action_payload(action: dict, resolved_action: dict, debug: bool):
+def _build_action_payload(action: dict, resolved_action: dict):
     executor = _resolve_executor(resolved_action)
+    if executor is None:
+        raise ProtocolError(
+            f"Action {action['id']} cannot resolve executor from runtime fields",
+            code="invalid_action_payload",
+        )
+
+    rendered_prompt = (resolved_action.get("inputs") or {}).get("prompt")
     payload = {
         "actionId": action["id"],
         "executor": executor,
@@ -67,7 +74,7 @@ def _build_action_payload(action: dict, resolved_action: dict, debug: bool):
                 code="invalid_action_payload",
             )
         payload["script_command"] = command
-        payload["prompt"] = f"Run script command for action {action['id']}"
+        payload["prompt"] = rendered_prompt or f"Run script command for action {action['id']}"
         return payload
 
     if executor == "human":
@@ -78,17 +85,12 @@ def _build_action_payload(action: dict, resolved_action: dict, debug: bool):
                 code="invalid_action_payload",
             )
         payload["human"] = human
-        payload["prompt"] = human.get("instruction") or f"Wait for human review on action {action['id']}"
+        payload["prompt"] = rendered_prompt or human.get("instruction") or f"Wait for human review on action {action['id']}"
         return payload
 
     skill_name = resolved_action.get("skill") or action.get("skill") or action.get("type")
     payload["skillName"] = skill_name
-    payload["prompt"] = f"Invoke skill {skill_name} for action {action['id']}"
-
-    if debug:
-        prompt = (resolved_action.get("inputs") or {}).get("prompt")
-        if prompt:
-            payload["debug"] = {"renderedPrompt": prompt}
+    payload["prompt"] = rendered_prompt or f"Invoke skill {skill_name} for action {action['id']}"
 
     return payload
 
@@ -221,7 +223,7 @@ def _terminalize_if_done(change_dir: str, state: dict):
         append_event(change_dir, {"event": "state.terminal", "status": state["status"]})
 
 
-def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool = False):
+def next_action(plan: dict, change_dir: str, owner: str = "agent"):
     state = ensure_protocol_state(plan, change_dir)
     _refresh_ready_actions(state)
 
@@ -243,7 +245,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent", debug: bool =
         action_state["status"] = "RUNNING"
         action_state["startedAt"] = _now_iso()
 
-        payload = _build_action_payload(action, resolved_action, debug)
+        payload = _build_action_payload(action, resolved_action)
         append_event(
             change_dir,
             {
@@ -352,7 +354,6 @@ def _contracts_payload():
             "script": ["actionId", "executor", "script_command", "prompt"],
             "skill": ["actionId", "executor", "skillName", "prompt"],
             "human": ["actionId", "executor", "human", "prompt"],
-            "debug": "renderedPrompt returned only when debug=true",
         },
     }
 

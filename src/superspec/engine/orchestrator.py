@@ -28,7 +28,7 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
     change_dir = str(resolved_change_dir)
 
     if action == "next":
-        return next_action(plan, change_dir, owner=kwargs.get("owner", "agent"), debug=kwargs.get("debug", False))
+        return next_action(plan, change_dir, owner=kwargs.get("owner", "agent"))
     if action == "complete":
         return complete_action(plan, change_dir, kwargs["action_id"], kwargs["output_payload"])
     if action == "fail":

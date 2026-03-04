@@ -9,6 +9,7 @@ from unittest.mock import patch
 from superspec.cli import (
     _run_openspec_new_change,
     build_parser,
+    command_changelist,
     command_change_new,
     command_plan_approve,
     command_plan_reject,
@@ -92,6 +93,42 @@ class ChangeNewCommandTest(unittest.TestCase):
         self.assertEqual(args.action_id, "a1")
         self.assertEqual(args.code, "human_rejected")
         self.assertEqual(args.message, "human review rejected")
+
+    def test_changelist_parser_works(self):
+        parser = build_parser()
+        args = parser.parse_args(["change", "list"])
+        self.assertEqual(args.group, "change")
+        self.assertEqual(args.sub, "list")
+
+    def test_command_changelist_prints_sorted_change_names(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        (root / "openspec" / "changes" / "z-last").mkdir(parents=True, exist_ok=True)
+        (root / "openspec" / "changes" / "a-first").mkdir(parents=True, exist_ok=True)
+        (root / "openspec" / "changes" / "README.md").write_text("not a dir", encoding="utf-8")
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            command_changelist(root, SimpleNamespace())
+
+        self.assertEqual(stdout.getvalue().splitlines(), ["a-first", "z-last"])
+
+    def test_command_changelist_prints_empty_message_when_missing(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            command_changelist(root, SimpleNamespace())
+
+        self.assertEqual(stdout.getvalue().strip(), "No changes found.")
+
+    def test_version_flag_prints_version(self):
+        parser = build_parser()
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            with self.assertRaises(SystemExit) as ctx:
+                parser.parse_args(["--version"])
+
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertIn("superspec", stdout.getvalue())
 
     def test_command_plan_approve_maps_to_complete(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

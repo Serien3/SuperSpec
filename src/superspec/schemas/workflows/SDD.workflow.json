@@ -26,12 +26,12 @@
     },
     {
       "id": "a3",
-      "type": "proposal",
+      "type": "specs&design&tasks",
       "dependsOn": [
         "a2"
       ],
       "executor": "skill",
-      "skill": "openspec-continue-change"
+      "skill": "openspec-ff-change"
     },
     {
       "id": "a4",
@@ -44,9 +44,27 @@
     },
     {
       "id": "a5",
-      "type": "openspec.verify",
+      "type": "code-review.request",
       "dependsOn": [
         "a4"
+      ],
+      "executor": "skill",
+      "skill": "requesting-code-review"
+    },
+    {
+      "id": "a6",
+      "type": "code-review.receive",
+      "dependsOn": [
+        "a5"
+      ],
+      "executor": "skill",
+      "skill": "receiving-code-review"
+    },
+    {
+      "id": "a7",
+      "type": "openspec.verify",
+      "dependsOn": [
+        "a6"
       ],
       "executor": "skill",
       "skill": "openspec-verify-change"

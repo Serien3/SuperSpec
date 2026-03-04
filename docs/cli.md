@@ -6,6 +6,7 @@
 | option         | description                                       |
 | -------------- | ------------------------------------------------- |
 | `-h`, `--help` | 显示帮助信息（适用于 `superspec` 及各级子命令）。 |
+| `-v`, `--version` | 显示 SuperSpec 版本号并退出。                  |
 
 ## Init Commands
 
@@ -89,6 +90,20 @@ superspec change new <change>
 | Argument   | description  | default  |
 | ---------- | ------------ | -------- |
 | `<change>` | `change`名称 | Required |
+
+### `superspec change list`
+
+列出当前仓库中已有的 change（读取 `openspec/changes/` 目录）。
+
+```bash
+superspec change list
+```
+
+**Behavior:**
+| 行为 | 说明 |
+| ---- | ---- |
+| 正常 | 按名称排序逐行输出每个 change 目录名。 |
+| 空目录/不存在 | 输出 `No changes found.` |
 
 ## Plan Commands
 

@@ -2,8 +2,10 @@ import argparse
 import json
 import shutil
 import subprocess
+from importlib import metadata
 from pathlib import Path
 
+from superspec import __version__
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import resolve_change_dir
@@ -15,6 +17,13 @@ from superspec.scripts.worktree_finish import finish_worktree_flow
 AGENT_CONFIG_DIR_MAP = {
     "codex": ".codex",
 }
+
+
+def _resolve_version():
+    try:
+        return metadata.version("superspec")
+    except metadata.PackageNotFoundError:
+        return __version__
 
 
 def _copy_children(source: Path, target: Path):
@@ -136,6 +145,21 @@ def command_change_new(repo_root: Path, args):
     _run_openspec_new_change(repo_root, args.change)
     print(f"Plan not initialized for change '{args.change}'.")
     print(f"Run: superspec plan init {args.change} --schema <schema>")
+
+
+def command_changelist(repo_root: Path, args):
+    changes_root = repo_root / "openspec" / "changes"
+    if not changes_root.exists():
+        print("No changes found.")
+        return
+
+    changes = sorted(item.name for item in changes_root.iterdir() if item.is_dir())
+    if not changes:
+        print("No changes found.")
+        return
+
+    for change_name in changes:
+        print(change_name)
 
 
 def command_plan_init(repo_root: Path, args):
@@ -291,6 +315,7 @@ def command_plan_status(repo_root: Path, args):
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="superspec")
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {_resolve_version()}")
     sub = parser.add_subparsers(dest="group")
 
     init = sub.add_parser("init")
@@ -300,6 +325,7 @@ def build_parser():
     change_sub = change.add_subparsers(dest="sub")
     change_new = change_sub.add_parser("new")
     change_new.add_argument("change")
+    change_sub.add_parser("list")
 
     plan = sub.add_parser("plan")
     plan_sub = plan.add_subparsers(dest="sub")
@@ -407,6 +433,9 @@ def main():
             return
         if args.group == "change" and args.sub == "new":
             command_change_new(repo_root, args)
+            return
+        if args.group == "change" and args.sub == "list":
+            command_changelist(repo_root, args)
             return
         if args.group == "plan" and args.sub == "init":
             command_plan_init(repo_root, args)

@@ -22,7 +22,7 @@ Superpowers provides a strong development workflow and a solid skills framework,
 ### Why not planning-in-files?
 Persistent, file-based planning is a powerful foundation for long-running agents, but by itself it does not ship with a built-in software development workflow or prompting playbooks—so teams still need to define “what happens next”, “what artifacts are expected”, and “how to validate progress”.
 
-**SuperSpec** aims to bring these ideas together by combining the strengths of three open-source ecosystems.
+**Superspec** aims to integrate the strengths of these frameworks to create an agent coding framework that can combine skill-based custom workflows and run for extended periods with minimal supervision.
 
 
 1. An SDD workflow plus **CLI-friendly progressive disclosure prompting** (show the right constraints at the right time).
@@ -41,6 +41,7 @@ git clone https://github.com/Serien3/SuperSpec.git && cd SuperSpec/ && pip insta
 - Python >= 3.10 (tested on v3.12.3)
 
 The following tools must be available in your system path :
+- Git
 - OpenSpec >= v1.1.0 (reference [OpenSpec](https://github.com/Fission-AI/OpenSpec))
   - You can quickly download the latest version via `npm install -g @fission-ai/openspec@latest`
 
@@ -74,7 +75,7 @@ After installation, try **SuperSpec** with the following steps:
 
 ## TODO List to v0.7.0
 
-- [ ] 增加新的skill (code-review相关)
-- [ ] 检查命令输出，精简它们
+- [x] 增加新的skill (code-review相关)
+- [x] 检查命令输出，精简它们
 - [ ] 新的工作流(“fast-dev”， “review”)
 - [ ] 考虑增加第四种类型的动作——纯粹的提示词/任务Action

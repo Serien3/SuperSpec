@@ -23,6 +23,8 @@ class CliInitCommandTest(unittest.TestCase):
             capture_output=True,
         )
         self.assertTrue((root / ".codex" / "skills" / "superspec-run-change-to-done" / "SKILL.md").exists())
+        self.assertTrue((root / "agents" / "code-reviewer.toml").exists())
+        self.assertTrue((root / ".codex" / "config.toml").exists())
 
     def test_init_ignores_project_skills_and_uses_packaged_skills(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -37,6 +39,8 @@ class CliInitCommandTest(unittest.TestCase):
 
         self.assertTrue((root / ".codex" / "skills" / "superspec-run-change-to-done" / "SKILL.md").exists())
         self.assertFalse((root / ".codex" / "skills" / "project-only" / "SKILL.md").exists())
+        self.assertTrue((root / "agents" / "code-reviewer.toml").exists())
+        self.assertTrue((root / ".codex" / "config.toml").exists())
 
     def test_init_requires_available_skills_source(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

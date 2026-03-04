@@ -12,6 +12,25 @@ from superspec.engine.validator import validate_plan
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
+AGENT_CONFIG_DIR_MAP = {
+    "codex": ".codex",
+}
+
+
+def _copy_children(source: Path, target: Path):
+    target.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for item in source.iterdir():
+        dest = target / item.name
+        if item.is_dir():
+            shutil.copytree(item, dest, dirs_exist_ok=True)
+            copied += 1
+        elif item.is_file():
+            shutil.copy2(item, dest)
+            copied += 1
+    return copied
+
+
 def _write_plan(repo_root: Path, change_name: str, schema: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
@@ -53,26 +72,53 @@ def _skills_source_dir(repo_root: Path):
     raise RuntimeError("No packaged skills directory found.")
 
 
-def _sync_skills_to_codex(repo_root: Path):
-    source = _skills_source_dir(repo_root)
-    target = repo_root / ".codex" / "skills"
-    target.mkdir(parents=True, exist_ok=True)
+def _agents_source_dir(repo_root: Path):
+    package_agents = Path(__file__).resolve().parent / "agents"
+    if package_agents.exists() and package_agents.is_dir():
+        return package_agents
 
-    copied = 0
-    for item in source.iterdir():
-        dest = target / item.name
-        if item.is_dir():
-            shutil.copytree(item, dest, dirs_exist_ok=True)
-            copied += 1
-        elif item.is_file():
-            shutil.copy2(item, dest)
-            copied += 1
+    raise RuntimeError("No packaged agents directory found.")
+
+
+def _config_source_dir(repo_root: Path):
+    package_config = Path(__file__).resolve().parent / "config"
+    if package_config.exists() and package_config.is_dir():
+        return package_config
+
+    raise RuntimeError("No packaged config directory found.")
+
+
+def _agent_config_dir(repo_root: Path, agent: str):
+    try:
+        config_dir = AGENT_CONFIG_DIR_MAP[agent]
+    except KeyError as exc:
+        raise ProtocolError(f"Unsupported agent. Only {', '.join(sorted(AGENT_CONFIG_DIR_MAP.keys()))} is supported.", code="invalid_payload") from exc
+    return repo_root / config_dir
+
+
+def _sync_skills_for_agent(repo_root: Path, agent: str):
+    source = _skills_source_dir(repo_root)
+    target = _agent_config_dir(repo_root, agent) / "skills"
+    copied = _copy_children(source, target)
+    return source, target, copied
+
+
+def _sync_agents_to_repo_root(repo_root: Path):
+    source = _agents_source_dir(repo_root)
+    target = repo_root / "agents"
+    copied = _copy_children(source, target)
+    return source, target, copied
+
+
+def _sync_config_for_agent(repo_root: Path, agent: str):
+    source = _config_source_dir(repo_root)
+    target = _agent_config_dir(repo_root, agent)
+    copied = _copy_children(source, target)
     return source, target, copied
 
 
 def command_init(repo_root: Path, args):
-    if args.agent != "codex":
-        raise ProtocolError("Unsupported agent. Only 'codex' is supported.", code="invalid_payload")
+    _agent_config_dir(repo_root, args.agent)
 
     cmd = ["openspec", "init", "--tools", args.agent]
     result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
@@ -80,7 +126,9 @@ def command_init(repo_root: Path, args):
         raise RuntimeError(result.stderr or result.stdout or "openspec init failed")
     print(result.stdout, end="")
 
-    _sync_skills_to_codex(repo_root)
+    _sync_skills_for_agent(repo_root, args.agent)
+    _sync_agents_to_repo_root(repo_root)
+    _sync_config_for_agent(repo_root, args.agent)
     print(f"SuperSpec initialization succeeded (agent={args.agent}).")
 
 

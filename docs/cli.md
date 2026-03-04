@@ -2,11 +2,12 @@
 
 ## Global Options
 
+**Options:**
 | option         | description                                       |
 | -------------- | ------------------------------------------------- |
 | `-h`, `--help` | 显示帮助信息（适用于 `superspec` 及各级子命令）。 |
 
-## Human-Only Commands
+## Init Commands
 
 ### `superspec init`
 
@@ -17,7 +18,6 @@ superspec init [options]
 ```
 
 **Options:**
-
 | option    | description                      | default  |
 | --------- | -------------------------------- | -------- |
 | `--agent` | 代理类型（当前仅支持 `codex`）。 | Required |
@@ -31,7 +31,6 @@ superspec validate [options]
 ```
 
 **Options:**
-
 | option     | description                                                             | default |
 | ---------- | ----------------------------------------------------------------------- | ------- |
 | `--schema` | workflow 名称（`superspec/schemas/workflows/<schema>.workflow.json`）。 | `None`  |
@@ -46,6 +45,11 @@ superspec validate [options]
 
 创建 git worktree 并输出状态 JSON。
 
+```bash
+superspec git create-worktree [options]
+```
+
+**Options:**
 | option     | description                       | default  |
 | ---------- | --------------------------------- | -------- |
 | `--slug`   | 分支命名短标识。                  | Required |
@@ -57,6 +61,11 @@ superspec validate [options]
 
 合并和/或清理 worktree，并输出结果 JSON。
 
+```bash
+superspec git finish-worktree [options]
+```
+
+**Options:**
 | option             | description                    | default |
 | ------------------ | ------------------------------ | ------- |
 | `--slug`           | 目标 worktree slug。           | `""`    |
@@ -68,45 +77,133 @@ superspec validate [options]
 
 ## Change Commands
 
+### `superspec change new`
+
+创建一个新的 change 骨架（调用 `openspec new change`），并提示后续执行 `plan init`。
+
+```bash
+superspec change new <change>
+```
+
+**Arguments:**
+| Argument   | description  | default  |
+| ---------- | ------------ | -------- |
+| `<change>` | `change`名称 | Required |
+
 ## Plan Commands
 
-### `superspec plan init <change> --schema <schema>`
+### `superspec plan init`
 
 生成 `openspec/changes/<change>/plan.json`。
 
+```bash
+superspec plan init <change> [options]
+```
+
+**Arguments:**
+| Argument   | description  | default  |
+| ---------- | ------------ | -------- |
+| `<change>` | `change`名称 | Required |
+
+**Options:**
 | option     | description          | default  |
 | ---------- | -------------------- | -------- |
 | `--schema` | plan workflow 名称。 | Required |
 
-### `superspec plan next <change>`
+### `superspec plan next`
 
 拉取下一个可执行 action。
 
+```bash
+superspec plan next <change> [options]
+```
+
+
+**Arguments:**
+| Argument   | description  | default  |
+| ---------- | ------------ | -------- |
+| `<change>` | `change`名称 | Required |
+
+**Options:**
 | option    | description    | default |
 | --------- | -------------- | ------- |
 | `--owner` | 执行者标识。   | `agent` |
 | `--debug` | 返回调试字段。 | `false` |
 | `--json`  | JSON 输出。    | `false` |
 
-### `superspec plan complete <change> <action_id> --output-json <json-object>`
+### `superspec plan complete`
 
 将 action 标记为完成并提交输出 payload。
 
-### `superspec plan fail <change> <action_id> --error-json <json-object>`
+```bash
+superspec plan complete <change> <action_id> --output-json <json-object>
+```
+
+**Arguments:**
+| Argument      | description            | default  |
+| ------------- | ---------------------- | -------- |
+| `<change>`    | `change`名称           | Required |
+| `<action_id>` | 要完成的 action 标识。 | Required |
+
+**Options:**
+| option          | description            | default  |
+| --------------- | ---------------------- | -------- |
+| `--output-json` | 完成输出 JSON 对象。   | Required |
+
+### `superspec plan fail`
 
 将 action 标记为失败并提交错误 payload。
 
-### `superspec plan approve <change> <action_id>`
+```bash
+superspec plan fail <change> <action_id> --error-json <json-object>
+```
+
+**Arguments:**
+| Argument      | description            | default  |
+| ------------- | ---------------------- | -------- |
+| `<change>`    | `change`名称           | Required |
+| `<action_id>` | 要失败的 action 标识。 | Required |
+
+**Options:**
+| option         | description          | default  |
+| -------------- | -------------------- | -------- |
+| `--error-json` | 失败错误 JSON 对象。 | Required |
+
+### `superspec plan approve`
 
 人类审批通过快捷命令（内部映射为 `complete`，`executor=human`）。
+
+```bash
+superspec plan approve <change> <action_id> [options]
+```
+
+**Arguments:**
+| Argument      | description            | default  |
+| ------------- | ---------------------- | -------- |
+| `<change>`    | `change`名称           | Required |
+| `<action_id>` | 要审批的 action 标识。 | Required |
+
+**Options:**
 
 | option      | description | default |
 | ----------- | ----------- | ------- |
 | `--summary` | 审批备注。  | `""`    |
 
-### `superspec plan reject <change> <action_id>`
+### `superspec plan reject`
 
 人类审批拒绝快捷命令（内部映射为 `fail`，`executor=human`）。
+
+```bash
+superspec plan reject <change> <action_id> [options]
+```
+
+**Arguments:**
+| Argument      | description            | default  |
+| ------------- | ---------------------- | -------- |
+| `<change>`    | `change`名称           | Required |
+| `<action_id>` | 要拒绝的 action 标识。 | Required |
+
+**Options:**
 
 | option      | description  | default                 |
 | ----------- | ------------ | ----------------------- |
@@ -117,6 +214,16 @@ superspec validate [options]
 
 查询执行状态、进度和 action 列表。
 
+```bash
+superspec plan status <change> [options]
+```
+
+**Arguments:**
+| Argument   | description  | default  |
+| ---------- | ------------ | -------- |
+| `<change>` | `change`名称 | Required |
+
+**Options:**
 | option           | description                    | default |
 | ---------------- | ------------------------------ | ------- |
 | `--json`         | JSON 输出。                    | `false` |

@@ -6,6 +6,8 @@ from superspec.engine.context import resolve_runtime_action_fields
 from superspec.engine.errors import ProtocolError
 from superspec.engine.state_store import append_event, read_execution_state, write_execution_state
 
+_VALID_EXECUTORS = {"skill", "script", "human"}
+
 
 def _now():
     return datetime.now(timezone.utc)
@@ -16,14 +18,9 @@ def _now_iso():
 
 
 def _resolve_executor(action):
-    if action.get("executor"):
-        return action["executor"]
-    if action.get("skill"):
-        return "skill"
-    if action.get("script"):
-        return "script"
-    if action.get("human"):
-        return "human"
+    executor = action.get("executor")
+    if isinstance(executor, str) and executor:
+        return executor
     return None
 
 
@@ -56,11 +53,21 @@ def _build_action_payload(action: dict, resolved_action: dict):
     executor = _resolve_executor(resolved_action)
     if executor is None:
         raise ProtocolError(
-            f"Action {action['id']} cannot resolve executor from runtime fields",
+            f"Action {action['id']} missing explicit executor in runtime fields",
+            code="invalid_action_payload",
+        )
+    if executor not in _VALID_EXECUTORS:
+        raise ProtocolError(
+            f"Action {action['id']} has unsupported executor '{executor}'",
             code="invalid_action_payload",
         )
 
     rendered_prompt = (resolved_action.get("inputs") or {}).get("prompt")
+    if rendered_prompt is not None and not isinstance(rendered_prompt, str):
+        raise ProtocolError(
+            f"Action {action['id']} inputs.prompt must resolve to string",
+            code="invalid_action_payload",
+        )
     payload = {
         "actionId": action["id"],
         "executor": executor,
@@ -68,7 +75,7 @@ def _build_action_payload(action: dict, resolved_action: dict):
 
     if executor == "script":
         command = resolved_action.get("script")
-        if not command:
+        if not isinstance(command, str) or not command:
             raise ProtocolError(
                 f"Action {action['id']} script executor requires script field",
                 code="invalid_action_payload",
@@ -78,8 +85,8 @@ def _build_action_payload(action: dict, resolved_action: dict):
         return payload
 
     if executor == "human":
-        human = resolved_action.get("human") or action.get("human")
-        if not isinstance(human, dict) or not human.get("instruction"):
+        human = resolved_action.get("human")
+        if not isinstance(human, dict) or not isinstance(human.get("instruction"), str) or not human.get("instruction"):
             raise ProtocolError(
                 f"Action {action['id']} human executor requires human.instruction",
                 code="invalid_action_payload",
@@ -88,7 +95,12 @@ def _build_action_payload(action: dict, resolved_action: dict):
         payload["prompt"] = rendered_prompt or human.get("instruction") or f"Wait for human review on action {action['id']}"
         return payload
 
-    skill_name = resolved_action.get("skill") or action.get("skill") or action.get("type")
+    skill_name = resolved_action.get("skill")
+    if not isinstance(skill_name, str) or not skill_name:
+        raise ProtocolError(
+            f"Action {action['id']} skill executor requires skill field",
+            code="invalid_action_payload",
+        )
     payload["skillName"] = skill_name
     payload["prompt"] = rendered_prompt or f"Invoke skill {skill_name} for action {action['id']}"
 

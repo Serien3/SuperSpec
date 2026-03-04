@@ -8,7 +8,7 @@ The system MUST provide a command to retrieve exactly one executable action for 
 #### Scenario: Retrieve next ready action
 - **WHEN** a client requests the next action for a change with pending runnable work
 - **THEN** the system returns state `ready`
-- **AND** returns only top-level fields `state`, `changeName`, and `action`
+- **AND** returns only top-level fields `state` and `action`
 
 #### Scenario: Next-action expression resolution failure returns protocol error
 - **WHEN** the next runnable action contains an unresolved runtime expression

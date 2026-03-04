@@ -239,19 +239,15 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(terminal["progress"]["remaining"], 1)
         self.assertTrue(all(action["status"] != "SKIPPED" for action in terminal["actions"]))
 
-    def test_next_infers_executor_from_skill_when_executor_is_missing(self):
+    def test_validate_rejects_missing_explicit_executor_even_with_skill_payload(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
             change_name,
             [{"id": "a1", "type": "openspec.proposal", "skill": "openspec-continue-change"}],
         )
-        validate_plan(plan)
-
-        nxt = next_action(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["action"]["executor"], "skill")
-        self.assertEqual(nxt["action"]["skillName"], "openspec-continue-change")
+        with self.assertRaises(ValidationError):
+            validate_plan(plan)
 
     def test_validate_rejects_missing_executor_and_no_inferable_payload(self):
         root, change_name, _ = self.setup_temp_change()
@@ -264,7 +260,7 @@ class IntegrationTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate_plan(plan)
 
-    def test_validate_rejects_ambiguous_inferred_executor(self):
+    def test_validate_rejects_mixed_executor_payloads(self):
         root, change_name, _ = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -272,7 +268,8 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "ambiguous.executor",
+                    "type": "mixed.payloads",
+                    "executor": "skill",
                     "skill": "openspec-continue-change",
                     "script": "echo hi",
                 }
@@ -316,6 +313,54 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertEqual(ctx.exception.code, "invalid_expression")
         self.assertIn("invalid runtime expression", str(ctx.exception))
+
+    def test_next_rejects_non_string_runtime_script_payload(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "runtime.script.type.mismatch",
+                    "executor": "script",
+                    "script": "${variables.command}",
+                }
+            ],
+        )
+        plan["variables"] = {"command": {"cmd": "echo hi"}}
+        validate_plan(plan)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            next_action(plan, str(change_dir), owner="agent-a")
+
+        self.assertEqual(ctx.exception.code, "invalid_action_payload")
+        self.assertIn("script executor requires script field", str(ctx.exception))
+
+    def test_next_rejects_non_string_runtime_human_instruction(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "runtime.human.type.mismatch",
+                    "executor": "human",
+                    "human": {
+                        "instruction": "${variables.instruction}",
+                    },
+                }
+            ],
+        )
+        plan["variables"] = {"instruction": {"text": "review"}}
+        validate_plan(plan)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            next_action(plan, str(change_dir), owner="agent-a")
+
+        self.assertEqual(ctx.exception.code, "invalid_action_payload")
+        self.assertIn("human executor requires human.instruction", str(ctx.exception))
 
     def test_next_ignores_unresolved_expressions_outside_runtime_fields(self):
         root, change_name, change_dir = self.setup_temp_change()

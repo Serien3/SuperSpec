@@ -6,17 +6,6 @@ from .errors import ValidationError
 _VALID_EXECUTORS = {"skill", "script", "human"}
 
 
-def _infer_executor(action: dict):
-    candidates = []
-    if action.get("skill"):
-        candidates.append("skill")
-    if action.get("script"):
-        candidates.append("script")
-    if action.get("human") is not None:
-        candidates.append("human")
-    return candidates
-
-
 def _assert(cond, message, details=None):
     if not cond:
         raise ValidationError(message, details)
@@ -91,33 +80,24 @@ def validate_plan(plan):
         _assert(isinstance(atype, str) and atype, f"Action {aid} type is required")
 
         executor = action.get("executor")
-        inferred = _infer_executor(action)
+        _assert(isinstance(executor, str) and executor, f"Action {aid} executor is required")
+        _assert(executor in _VALID_EXECUTORS, f"Action {aid} has invalid executor: {executor}")
 
-        if executor is not None:
-            _assert(isinstance(executor, str) and executor, f"Action {aid} executor must be a non-empty string")
-            _assert(executor in _VALID_EXECUTORS, f"Action {aid} has invalid executor: {executor}")
-            _assert(
-                executor in inferred,
-                f"Action {aid} executor '{executor}' requires matching payload field",
-            )
-        else:
-            _assert(
-                len(inferred) > 0,
-                f"Action {aid} must define executor or one of skill/script/human for inference",
-            )
-            _assert(
-                len(inferred) == 1,
-                f"Action {aid} infers multiple executors ({', '.join(inferred)}); set explicit executor",
-            )
+        has_skill = "skill" in action
+        has_script = "script" in action
+        has_human = "human" in action
 
         if executor == "skill":
             _assert(isinstance(action.get("skill"), str) and action["skill"], f"Action {aid} must set skill for skill executor")
+            _assert(not has_script and not has_human, f"Action {aid} skill executor cannot define script/human payload")
         if executor == "script":
             _assert(isinstance(action.get("script"), str) and action["script"], f"Action {aid} must set script for script executor")
+            _assert(not has_skill and not has_human, f"Action {aid} script executor cannot define skill/human payload")
         if executor == "human":
             human = action.get("human")
             _assert(isinstance(human, dict), f"Action {aid} must set human object for human executor")
             _assert(isinstance(human.get("instruction"), str) and human["instruction"], f"Action {aid} human executor requires human.instruction")
+            _assert(not has_skill and not has_script, f"Action {aid} human executor cannot define skill/script payload")
 
         exprs = []
         _scan_exprs(action, exprs)

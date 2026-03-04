@@ -43,7 +43,8 @@
         "type": "object",
         "required": [
           "id",
-          "type"
+          "type",
+          "executor"
         ],
         "properties": {
           "id": {
@@ -102,6 +103,9 @@
                 "minLength": 1
               }
             },
+            "required": [
+              "instruction"
+            ],
             "additionalProperties": true
           },
           "inputs": {
@@ -140,6 +144,92 @@
             }
           }
         },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "executor": {
+                  "const": "skill"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "skill"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "script"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "human"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "executor": {
+                  "const": "script"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "script"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "skill"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "human"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "executor": {
+                  "const": "human"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "human"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "skill"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "script"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        ],
         "additionalProperties": false
       }
     },

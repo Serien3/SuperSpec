@@ -82,6 +82,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -110,6 +111,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -141,6 +143,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -189,6 +192,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -305,6 +309,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -332,6 +337,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -361,6 +367,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 {
                     "id": "x1",
                     "type": "openspec.apply",
+                    "executor": "skill",
                     "dependsOn": ["missing"],
                 }
             ],
@@ -423,6 +430,60 @@ class PlanLifecycleTest(unittest.TestCase):
 
         with self.assertRaises(SystemExit):
             command_validate(root, SimpleNamespace(schema="executor-mismatch", file=None, json=False))
+
+    def test_validate_rejects_missing_explicit_executor(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        broken = {
+            "workflowId": "missing-explicit-executor",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "run",
+                    "skill": "openspec-apply-change",
+                }
+            ],
+        }
+        broken_path = root / "superspec" / "schemas" / "workflows" / "missing-explicit-executor.workflow.json"
+        broken_path.write_text(json.dumps(broken, indent=2), encoding="utf-8")
+
+        stdout = StringIO()
+        with self.assertRaises(SystemExit):
+            with redirect_stdout(stdout):
+                command_validate(root, SimpleNamespace(schema="missing-explicit-executor", file=None, json=True))
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["errors"][0]["code"], "missing_required_field")
+        self.assertEqual(payload["errors"][0]["path"], "actions.0.executor")
+
+    def test_validate_rejects_mixed_executor_payloads(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        broken = {
+            "workflowId": "mixed-executor-payloads",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "run",
+                    "executor": "skill",
+                    "skill": "openspec-apply-change",
+                    "script": "echo hi",
+                }
+            ],
+        }
+        broken_path = root / "superspec" / "schemas" / "workflows" / "mixed-executor-payloads.workflow.json"
+        broken_path.write_text(json.dumps(broken, indent=2), encoding="utf-8")
+
+        stdout = StringIO()
+        with self.assertRaises(SystemExit):
+            with redirect_stdout(stdout):
+                command_validate(root, SimpleNamespace(schema="mixed-executor-payloads", file=None, json=True))
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["errors"][0]["code"], "invalid_executor_payload")
+        self.assertEqual(payload["errors"][0]["path"], "actions.0")
 
     def test_validate_accepts_human_executor_payload(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

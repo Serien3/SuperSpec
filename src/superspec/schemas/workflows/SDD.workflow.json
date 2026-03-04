@@ -8,6 +8,7 @@
     {
       "id": "a1",
       "type": "proposal",
+      "executor": "skill",
       "skill": "openspec-continue-change"
     },
     {
@@ -29,6 +30,7 @@
       "dependsOn": [
         "a2"
       ],
+      "executor": "skill",
       "skill": "openspec-continue-change"
     },
     {
@@ -37,6 +39,7 @@
       "dependsOn": [
         "a3"
       ],
+      "executor": "skill",
       "skill": "openspec-apply-change"
     },
     {
@@ -45,6 +48,7 @@
       "dependsOn": [
         "a4"
       ],
+      "executor": "skill",
       "skill": "openspec-verify-change"
     }
   ]

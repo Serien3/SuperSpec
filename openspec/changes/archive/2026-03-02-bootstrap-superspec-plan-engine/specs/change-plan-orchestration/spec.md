@@ -41,12 +41,12 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **THEN** the orchestrator runs the configured script
 - **AND** stores normalized outputs for downstream action references
 
-### Requirement: OpenSpec workflow action support
-The system MUST support the action types `openspec.proposal`, `openspec.specs`, `openspec.design`, `openspec.tasks`, and `openspec.apply` in plan execution.
+### Requirement: Open action type support
+The system MUST allow arbitrary non-empty action `type` values in plan execution.
 
-#### Scenario: Validate allowed action types
-- **WHEN** a plan contains an unsupported action type
-- **THEN** plan validation fails with a clear type error
+#### Scenario: Accept custom action type
+- **WHEN** a plan contains an action with a custom non-empty `type`
+- **THEN** plan validation succeeds for action type semantics
 
 ### Requirement: Resumable execution state
 The system MUST persist execution state to allow interrupted runs to resume safely.

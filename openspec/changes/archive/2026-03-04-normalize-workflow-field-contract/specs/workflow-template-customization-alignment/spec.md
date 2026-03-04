@@ -1,9 +1,4 @@
-# workflow-template-customization-alignment Specification
-
-## Purpose
-Define a unified, minimal contract for workflow template customization so schema validation and runtime behavior stay aligned.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Unified customization contract across schema and runtime
 The system MUST enforce one identical workflow authoring contract across `workflow.schema.json` validation, runtime workflow processing, and `superspec validate`, including explicit action executor declaration and exact executor payload matching.
@@ -39,11 +34,3 @@ The system MUST support only an explicitly documented, finite workflow customiza
 - **WHEN** a workflow action omits `executor` and only defines payload fields such as `skill` or `script`
 - **THEN** validation fails for missing explicit executor
 - **AND** diagnostics guide the author to set `actions[].executor`
-
-### Requirement: Deterministic customization merge behavior
-The system MUST apply supported customization fields using a deterministic precedence order during plan generation.
-
-#### Scenario: Customization conflict resolves deterministically
-- **WHEN** the same supported field is defined in base template, workflow customization, and init-time overrides
-- **THEN** generated output follows documented precedence order
-- **AND** repeated runs with identical input produce identical `plan.json` values

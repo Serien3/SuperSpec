@@ -27,6 +27,8 @@ WORKFLOW_PLAN_CUSTOMIZATION_FIELDS = (
     "metadata",
 )
 
+WORKFLOW_EXECUTORS = ("skill", "script", "human")
+
 
 def _package_root():
     return Path(__file__).resolve().parents[1]
@@ -132,13 +134,36 @@ def _schema_errors(repo_root: Path, workflow: dict):
     errors = sorted(validator.iter_errors(workflow), key=lambda e: list(e.path))
     mapped = []
     for err in errors:
-        mapped.append(
-            _error(
-                "invalid_schema",
-                _dot_path(list(err.path)),
-                err.message,
-            )
-        )
+        path = _dot_path(list(err.path))
+        code = "invalid_schema"
+        message = err.message
+        hint = None
+
+        if err.validator == "required" and isinstance(err.instance, dict):
+            missing = [key for key in err.validator_value if key not in err.instance]
+            if missing:
+                missing_field = str(missing[0])
+                if path.startswith("actions.") and missing_field == "executor":
+                    code = "missing_required_field"
+                    path = f"{path}.executor"
+                    message = "Action must define explicit 'executor'"
+                    hint = f"Set executor to one of: {', '.join(WORKFLOW_EXECUTORS)}"
+                elif path.startswith("actions.") and missing_field in WORKFLOW_EXECUTORS:
+                    code = "invalid_executor_payload"
+                    path = f"{path}.{missing_field}"
+                    message = f"Action executor requires matching '{missing_field}' payload"
+                    hint = "Ensure exactly one matching executor payload is present"
+                elif path.startswith("actions.") and missing_field == "instruction":
+                    code = "invalid_executor_payload"
+                    path = f"{path}.instruction"
+                    message = "Action with executor 'human' must define non-empty 'human.instruction'"
+                    hint = "Set human.instruction to a non-empty string"
+        elif err.validator == "not" and path.startswith("actions."):
+            code = "invalid_executor_payload"
+            message = "Action defines mixed executor payload fields"
+            hint = "Keep only the payload field that matches actions[].executor"
+
+        mapped.append(_error(code, path, message, hint))
     return mapped
 
 
@@ -167,12 +192,38 @@ def _semantic_errors(workflow: dict):
                 by_id[action_id] = idx
 
         executor = action.get("executor")
+        if not isinstance(executor, str) or not executor:
+            errors.append(
+                _error(
+                    "missing_required_field",
+                    f"actions.{idx}.executor",
+                    "Action must define explicit 'executor'",
+                    f"Set executor to one of: {', '.join(WORKFLOW_EXECUTORS)}",
+                )
+            )
+            continue
+        if executor not in WORKFLOW_EXECUTORS:
+            errors.append(
+                _error(
+                    "invalid_executor_payload",
+                    f"actions.{idx}.executor",
+                    f"Unsupported executor '{executor}'",
+                    f"Supported executors: {', '.join(WORKFLOW_EXECUTORS)}",
+                )
+            )
+            continue
+
+        has_skill = "skill" in action
+        has_script = "script" in action
+        has_human = "human" in action
+
         if executor == "skill" and not action.get("skill"):
             errors.append(
                 _error(
                     "invalid_executor_payload",
                     f"actions.{idx}.skill",
                     "Action with executor 'skill' must define a non-empty 'skill' field",
+                    "Set actions[].skill and remove script/human fields",
                 )
             )
         if executor == "script" and not action.get("script"):
@@ -181,6 +232,7 @@ def _semantic_errors(workflow: dict):
                     "invalid_executor_payload",
                     f"actions.{idx}.script",
                     "Action with executor 'script' must define a non-empty 'script' field",
+                    "Set actions[].script and remove skill/human fields",
                 )
             )
         if executor == "human":
@@ -191,6 +243,7 @@ def _semantic_errors(workflow: dict):
                         "invalid_executor_payload",
                         f"actions.{idx}.human",
                         "Action with executor 'human' must define a 'human' object",
+                        "Set actions[].human as an object with non-empty instruction",
                     )
                 )
             elif not isinstance(human.get("instruction"), str) or not human.get("instruction"):
@@ -199,8 +252,37 @@ def _semantic_errors(workflow: dict):
                         "invalid_executor_payload",
                         f"actions.{idx}.human.instruction",
                         "Action with executor 'human' must define non-empty 'human.instruction'",
+                        "Set actions[].human.instruction to a non-empty string",
                     )
                 )
+
+        if executor == "skill" and (has_script or has_human):
+            errors.append(
+                _error(
+                    "invalid_executor_payload",
+                    f"actions.{idx}",
+                    "Action with executor 'skill' cannot define script/human payload fields",
+                    "Keep only actions[].skill for skill executor",
+                )
+            )
+        if executor == "script" and (has_skill or has_human):
+            errors.append(
+                _error(
+                    "invalid_executor_payload",
+                    f"actions.{idx}",
+                    "Action with executor 'script' cannot define skill/human payload fields",
+                    "Keep only actions[].script for script executor",
+                )
+            )
+        if executor == "human" and (has_skill or has_script):
+            errors.append(
+                _error(
+                    "invalid_executor_payload",
+                    f"actions.{idx}",
+                    "Action with executor 'human' cannot define skill/script payload fields",
+                    "Keep only actions[].human for human executor",
+                )
+            )
 
     # Validate dependency references and detect cycles.
     for idx, action in enumerate(actions):

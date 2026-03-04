@@ -75,7 +75,7 @@ The system MUST execute actions in dependency-safe order and reject invalid depe
 - **AND** the run does not leave those dependents indefinitely pending
 
 ### Requirement: Unified action execution contract
-The system MUST support both `skill` and `script` executors using a shared action contract with normalized outputs under serial single-agent execution.
+The system MUST support `skill`, `script`, and `human` executors using a shared action contract with normalized outputs under serial single-agent execution.
 
 #### Scenario: Skill executor action
 - **WHEN** an action declares `executor: skill`
@@ -87,15 +87,24 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **THEN** the execution protocol returns a script action payload containing `script_command` and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
-#### Scenario: Use built-in default executor
-- **WHEN** an action omits explicit `executor`, `script`, and `skill` fields
-- **THEN** the execution protocol resolves executor type from built-in runtime defaults
-- **AND** runtime code uses the `DEFAULT_EXECUTOR` constant as the single source of truth for that fallback
-- **AND** returns a payload shape consistent with the resolved executor type
+#### Scenario: Human executor action
+- **WHEN** an action declares `executor: human`
+- **THEN** the execution protocol returns a human action payload containing `human` review metadata and `prompt`
+- **AND** stores normalized outputs only after explicit completion reporting
+
+#### Scenario: Infer executor from action payload fields
+- **WHEN** an action omits explicit `executor` and defines exactly one of `skill`, `script`, or `human`
+- **THEN** plan validation accepts the action and runtime infers executor from that field
+- **AND** returns a payload shape consistent with the inferred executor type
+
+#### Scenario: Reject non-inferable or ambiguous executor definition
+- **WHEN** an action omits explicit `executor` and defines none or multiple of `skill`, `script`, `human`
+- **THEN** plan validation fails before protocol execution starts
+- **AND** no next-action payload is generated for that invalid action
 
 #### Scenario: Limit runtime expression resolution surface
 - **WHEN** an action includes template expressions
-- **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, and `inputs.prompt`
+- **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, `human.instruction`, `human.approveLabel`, `human.rejectLabel`, and `inputs.prompt`
 - **AND** other action fields do not participate in runtime payload expression expansion
 - **AND** the runtime implementation does not provide a generic recursive resolver for arbitrary action objects
 
@@ -104,12 +113,13 @@ The system MUST support both `skill` and `script` executors using a shared actio
 - **THEN** execution does not fall back to an unstructured generic exception
 - **AND** the engine raises a structured protocol error with code `invalid_expression`
 
-### Requirement: OpenSpec workflow action support
-The system MUST support the action types `openspec.proposal`, `openspec.specs`, `openspec.design`, `openspec.tasks`, and `openspec.apply` in plan execution.
+### Requirement: Open action type support
+The system MUST allow arbitrary non-empty action `type` values instead of enforcing a fixed allowlist.
 
-#### Scenario: Validate allowed action types
-- **WHEN** a plan contains an unsupported action type
-- **THEN** plan validation fails with a clear type error
+#### Scenario: Accept custom action type
+- **WHEN** a plan contains an action with a custom non-empty `type`
+- **THEN** plan validation succeeds for action type semantics
+- **AND** protocol execution can proceed using executor contract rules
 
 ### Requirement: Resumable execution state
 The system MUST persist execution state to allow interrupted runs to resume safely in single-agent mode.
@@ -135,10 +145,10 @@ The system MUST apply terminal fail-fast behavior when any action failure is rep
 - **THEN** the workflow transitions to terminal `failed`
 - **AND** no continuation policy is applied for additional autonomous actions
 
-### Requirement: Retry configuration removal
-The system MUST not expose retry policy configuration in runtime plan semantics.
+### Requirement: Retry fields have no runtime semantics
+The system MUST not apply retry policy semantics from action fields during protocol execution.
 
-#### Scenario: Reject retry fields in plan actions
-- **WHEN** action definitions include retry controls
-- **THEN** plan validation fails
-- **AND** users are guided to fail-fast plus human intervention behavior
+#### Scenario: Ignore retry-like action metadata at runtime
+- **WHEN** action definitions include retry-like metadata fields
+- **THEN** plan validation and execution are governed by current schema and executor rules
+- **AND** protocol runtime does not schedule retries based on those metadata fields

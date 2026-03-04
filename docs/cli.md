@@ -118,7 +118,6 @@ superspec plan init <change> [options]
 superspec plan next <change> [options]
 ```
 
-
 **Arguments:**
 | Argument   | description  | default  |
 | ---------- | ------------ | -------- |
@@ -210,7 +209,7 @@ superspec plan reject <change> <action_id> [options]
 | `--code`    | 拒绝错误码。 | `human_rejected`        |
 | `--message` | 拒绝信息。   | `human review rejected` |
 
-### `superspec plan status <change>`
+### `superspec plan status`
 
 查询执行状态、进度和 action 列表。
 

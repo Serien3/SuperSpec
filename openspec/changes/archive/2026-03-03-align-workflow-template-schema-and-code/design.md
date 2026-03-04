@@ -4,7 +4,7 @@ SuperSpec currently allows workflow template customization through `workflow.jso
 
 Mismatch audit (before this change):
 - Schema allowed unknown top-level fields (`additionalProperties: true`), but runtime only consumed a limited subset.
-- Runtime accepted legacy `plan` overlay semantics while schema did not constrain its shape, allowing ambiguous nested overrides.
+- Runtime accepted legacy `plan` overlay semantics while schema did not constrain its shape, allowing ambiguous nested customizations.
 - Authors could provide fields like `context` that schema accepted but runtime ignored, producing silent no-op behavior.
 
 ## Goals / Non-Goals
@@ -17,7 +17,7 @@ Mismatch audit (before this change):
 
 **Non-Goals:**
 - Introducing a broad plugin-like templating system.
-- Supporting arbitrary deep overrides across all plan fields.
+- Supporting arbitrary deep customization across all plan fields.
 - Changing change-bound context rules (`changeName`, `changeDir`) to be overridable.
 
 ## Decisions
@@ -39,7 +39,7 @@ Why not:
 - Drift has already occurred; tests alone are insufficient without shared constraints.
 
 ### Decision 3: Deterministic merge strategy with protected context
-Plan generation applies a fixed merge order for supported customization fields: base template < workflow defaults/customization < init-time overrides. Protected change context fields always win from active change context and cannot be overridden.
+Plan generation applies a fixed merge order for supported customization fields: base template < workflow defaults/customization. Protected change context fields always win from active change context and cannot be overridden.
 
 Alternative considered:
 - Per-field ad-hoc precedence rules.

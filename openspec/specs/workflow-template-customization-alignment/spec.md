@@ -44,6 +44,6 @@ The system MUST support only an explicitly documented, finite workflow customiza
 The system MUST apply supported customization fields using a deterministic precedence order during plan generation.
 
 #### Scenario: Customization conflict resolves deterministically
-- **WHEN** the same supported field is defined in base template, workflow customization, and init-time overrides
+- **WHEN** the same supported field is defined in base template and workflow customization
 - **THEN** generated output follows documented precedence order
 - **AND** repeated runs with identical input produce identical `plan.json` values

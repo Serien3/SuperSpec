@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the change-scoped plan orchestration behavior for SuperSpec v0.5.0, including plan validation, protocol-driven action execution, and execution state tracking.
+Define the change-scoped plan orchestration behavior for SuperSpec v1.0.0, including plan validation, protocol-driven action execution, and execution state tracking.
 ## Requirements
 ### Requirement: Change-scoped plan definition
 The system MUST support a change-scoped `plan.json` located at `openspec/changes/<change-name>/plan.json` as the authoritative execution definition for that change, and MUST reject execution when the resolved runtime `context.changeDir` does not match the CLI-requested change.

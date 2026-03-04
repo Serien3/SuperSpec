@@ -41,7 +41,7 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertTrue(plan_path.exists())
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["context"]["changeName"], "demo-change")
-        self.assertEqual(plan["metadata"]["schema"]["id"], "SDD")
+        self.assertEqual(plan["metadata"]["workflow"]["id"], "SDD")
 
     def test_plan_init_falls_back_to_packaged_default_workflow(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -53,7 +53,7 @@ class PlanLifecycleTest(unittest.TestCase):
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
         self.assertTrue(plan_path.exists())
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        self.assertEqual(plan["metadata"]["schema"]["id"], "SDD")
+        self.assertEqual(plan["metadata"]["workflow"]["id"], "SDD")
 
     def test_plan_init_ignores_local_plan_base_template(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -67,7 +67,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        self.assertEqual(plan["schemaVersion"], "superspec.plan/v0.3")
+        self.assertEqual(plan["schemaVersion"], "superspec.plan/v1.0.0")
 
     def test_plan_init_supports_explicit_schema_selection(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -161,7 +161,7 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "invalid_plan_schema")
         self.assertEqual(ctx.exception.details["location"], "context")
 
-    def test_plan_init_uses_workflow_defaults_without_cli_overrides(self):
+    def test_plan_init_uses_workflow_defaults_without_cli_inputs(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         args = SimpleNamespace(
@@ -181,7 +181,7 @@ class PlanLifecycleTest(unittest.TestCase):
         self._seed_generation_assets(root)
 
         custom = {
-            "workflowId": "with-overrides",
+            "workflowId": "with-customization",
             "version": "1.0.0",
             "title": "Workflow title",
             "goal": "Workflow goal",
@@ -197,12 +197,12 @@ class PlanLifecycleTest(unittest.TestCase):
                 }
             ],
         }
-        custom_path = root / "superspec" / "schemas" / "workflows" / "with-overrides.workflow.json"
+        custom_path = root / "superspec" / "schemas" / "workflows" / "with-customization.workflow.json"
         custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
 
         args = SimpleNamespace(
             change="demo-change",
-            schema="with-overrides",
+            schema="with-customization",
         )
         command_plan_init(root, args)
 
@@ -251,6 +251,19 @@ class PlanLifecycleTest(unittest.TestCase):
 
         with self.assertRaises(FileNotFoundError):
             run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", debug=False)
+
+    def test_protocol_actions_reject_invalid_plan_json(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = root / "openspec" / "changes" / "demo-change"
+        change_dir.mkdir(parents=True, exist_ok=True)
+        plan_path = change_dir / "plan.json"
+        plan_path.write_text("{invalid", encoding="utf-8")
+
+        with self.assertRaises(ProtocolError) as ctx:
+            run_protocol_action_from_cli(root, "demo-change", "status", debug=False)
+
+        self.assertEqual(ctx.exception.code, "invalid_json")
+        self.assertEqual(ctx.exception.details["path"], str(plan_path))
 
     def test_plan_init_rejects_invalid_change_name(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

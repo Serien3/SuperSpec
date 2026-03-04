@@ -1,5 +1,5 @@
 {
-  "protocolVersion": "superspec.protocol/v0.5.0",
+  "protocolVersion": "superspec.protocol/v1.0.0",
   "commands": {
     "next": {
       "request": {

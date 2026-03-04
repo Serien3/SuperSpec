@@ -133,6 +133,7 @@ def create_worktree_state(
         "git_common_dir": str(git_common_dir),
         "slug": selected_slug,
         "base": selected_base,
+        "merge_target": selected_base,
         "branch": selected_branch,
         "worktree_path": str(worktree_dir),
         "state_path": str(state_path),

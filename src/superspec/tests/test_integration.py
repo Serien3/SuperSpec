@@ -17,7 +17,7 @@ class IntegrationTest(unittest.TestCase):
 
     def build_plan(self, root: Path, change_name: str, actions):
         return {
-            "schemaVersion": "superspec.plan/v0.3",
+            "schemaVersion": "superspec.plan/v1.0.0",
             "planId": "main",
             "title": "Integration Plan",
             "goal": "Test plan execution",
@@ -89,6 +89,26 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue((change_dir / "execution" / "state.json").exists())
         self.assertTrue((change_dir / "execution" / "events.log").exists())
         self.assertFalse((change_dir / "execution" / "leases.json").exists())
+
+    def test_status_rejects_invalid_execution_state_json(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
+        )
+        validate_plan(plan)
+
+        execution_dir = change_dir / "execution"
+        execution_dir.mkdir(parents=True, exist_ok=True)
+        state_path = execution_dir / "state.json"
+        state_path.write_text("{invalid", encoding="utf-8")
+
+        with self.assertRaises(ProtocolError) as ctx:
+            status_snapshot(plan, str(change_dir))
+
+        self.assertEqual(ctx.exception.code, "invalid_json")
+        self.assertEqual(ctx.exception.details["path"], str(state_path))
 
     def test_blocked_polling_preserves_running_action(self):
         root, change_name, change_dir = self.setup_temp_change()

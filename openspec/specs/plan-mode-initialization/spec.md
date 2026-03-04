@@ -16,7 +16,7 @@ The system MUST support workflow-based plan generation when initializing a chang
 The system MUST validate generated plan structure during `plan init` before persisting `plan.json`.
 
 #### Scenario: Reject invalid generated plan during init
-- **WHEN** workflow content plus init-time overrides produce an invalid plan
+- **WHEN** base template plus workflow content produce an invalid plan
 - **THEN** plan initialization fails with a validation error
 - **AND** `plan.json` is not written or modified
 

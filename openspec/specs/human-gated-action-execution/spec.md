@@ -1,7 +1,7 @@
 # human-gated-action-execution Specification
 
 ## Purpose
-TBD - created by archiving change add-human-executor. Update Purpose after archive.
+Define how `executor=human` actions participate in the protocol-driven plan lifecycle, including payload contract and outcome reporting semantics.
 ## Requirements
 ### Requirement: Human executor can gate workflow progress
 The system SHALL support actions with `executor=human` that pause downstream execution until explicit human outcome is reported.

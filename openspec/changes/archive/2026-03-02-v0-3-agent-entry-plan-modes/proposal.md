@@ -1,6 +1,6 @@
 ## Why
 
- SuperSpec v0.2 defines a pull protocol, but there is no standardized agent guidance that tells an external agent exactly how to run the full `next -> execute -> complete|fail` loop end-to-end. At the same time, plan initialization is effectively fixed to a single template, which blocks the intended workflow of creating a change first and then selecting a plan mode explicitly.
+ SuperSpec v1.0.0 defines a pull protocol, but there is no standardized agent guidance that tells an external agent exactly how to run the full `next -> execute -> complete|fail` loop end-to-end. At the same time, plan initialization is effectively fixed to a single template, which blocks the intended workflow of creating a change first and then selecting a plan mode explicitly.
 
 ## What Changes
 

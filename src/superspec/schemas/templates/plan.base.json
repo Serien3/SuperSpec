@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "superspec.plan/v0.3",
+  "schemaVersion": "superspec.plan/v1.0.0",
   "planId": "main",
   "title": "Change delivery plan",
   "goal": "Execute this change in a single-agent serial loop",

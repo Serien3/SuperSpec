@@ -1,6 +1,6 @@
 ## Why
 
-Prior execution assumed the engine directly ran all actions, but skill-based actions require an Agent runtime boundary that is not reliably represented as a local command. We need a pull-based `v0.2` protocol so Agent-driven workflows can execute plans deterministically with clear state transitions.
+Prior execution assumed the engine directly ran all actions, but skill-based actions require an Agent runtime boundary that is not reliably represented as a local command. We need a pull-based `v1.0.0` protocol so Agent-driven workflows can execute plans deterministically with clear state transitions.
 
 ## What Changes
 

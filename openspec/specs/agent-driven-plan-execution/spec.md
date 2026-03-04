@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the protocol-driven, agent-executed action flow for SuperSpec v0.5.0, including pull-based action retrieval, serial reporting, and executor-specific payload contracts.
+Define the protocol-driven, agent-executed action flow for SuperSpec v1.0.0, including pull-based action retrieval, serial reporting, and executor-specific payload contracts.
 ## Requirements
 ### Requirement: Next-action retrieval command
 The system MUST provide a command to retrieve exactly one executable action for a change in structured JSON form.

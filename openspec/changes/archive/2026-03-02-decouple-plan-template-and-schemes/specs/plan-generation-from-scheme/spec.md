@@ -12,7 +12,7 @@ The system MUST generate change-scoped `plan.json` by combining a generic base p
 The system MUST apply a deterministic merge order across generation inputs.
 
 #### Scenario: Resolve conflicting values across sources
-- **WHEN** the same field is provided by base template, scheme, and init-time overrides
+- **WHEN** the same field is provided by base template and scheme
 - **THEN** generation applies precedence in a documented deterministic order
 - **AND** the resulting value in `plan.json` is predictable and reproducible
 

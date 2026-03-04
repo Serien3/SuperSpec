@@ -73,7 +73,7 @@ def _parse_object_json(raw: str, field: str):
     return parsed
 
 
-def _skills_source_dir(repo_root: Path):
+def _skills_source_dir():
     package_skills = Path(__file__).resolve().parent / "skills"
     if package_skills.exists() and package_skills.is_dir():
         return package_skills
@@ -81,7 +81,7 @@ def _skills_source_dir(repo_root: Path):
     raise RuntimeError("No packaged skills directory found.")
 
 
-def _agents_source_dir(repo_root: Path):
+def _agents_source_dir():
     package_agents = Path(__file__).resolve().parent / "agents"
     if package_agents.exists() and package_agents.is_dir():
         return package_agents
@@ -89,7 +89,7 @@ def _agents_source_dir(repo_root: Path):
     raise RuntimeError("No packaged agents directory found.")
 
 
-def _config_source_dir(repo_root: Path):
+def _config_source_dir():
     package_config = Path(__file__).resolve().parent / "config"
     if package_config.exists() and package_config.is_dir():
         return package_config
@@ -106,21 +106,21 @@ def _agent_config_dir(repo_root: Path, agent: str):
 
 
 def _sync_skills_for_agent(repo_root: Path, agent: str):
-    source = _skills_source_dir(repo_root)
+    source = _skills_source_dir()
     target = _agent_config_dir(repo_root, agent) / "skills"
     copied = _copy_children(source, target)
     return source, target, copied
 
 
 def _sync_agents_to_repo_root(repo_root: Path):
-    source = _agents_source_dir(repo_root)
+    source = _agents_source_dir()
     target = repo_root / "agents"
     copied = _copy_children(source, target)
     return source, target, copied
 
 
 def _sync_config_for_agent(repo_root: Path, agent: str):
-    source = _config_source_dir(repo_root)
+    source = _config_source_dir()
     target = _agent_config_dir(repo_root, agent)
     copied = _copy_children(source, target)
     return source, target, copied

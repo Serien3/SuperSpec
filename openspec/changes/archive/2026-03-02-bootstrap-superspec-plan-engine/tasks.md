@@ -1,7 +1,7 @@
 ## 1. Bootstrap SuperSpec plan foundation
 
 - [x] 1.1 Create initial `superspec/` project structure (`engine`, `runners`, `actions`, `schemas`, `templates`).
-- [x] 1.2 Add `plan.schema.json` for `superspec.plan/v0.1` with top-level and action-level validation.
+- [x] 1.2 Add `plan.schema.json` for `superspec.plan/v1.0.0` with top-level and action-level validation.
 - [x] 1.3 Add `plan.template.json` for change-scoped default plan initialization.
 
 ## 2. Build core plan orchestration flow

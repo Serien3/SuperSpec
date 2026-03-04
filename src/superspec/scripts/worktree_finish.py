@@ -39,17 +39,14 @@ def _resolve_state_path_from_git_common_dir(git_common_dir: Path, explicit_slug:
             raise RuntimeError(f"state not found for slug '{slug}': {state_path}")
         return state_path
 
-    legacy_state = state_dir / "state.json"
-    non_legacy_states = sorted(path for path in state_dir.glob("*.json") if path.name != "state.json")
-    if len(non_legacy_states) == 1:
-        return non_legacy_states[0]
-    if len(non_legacy_states) > 1:
-        names = ", ".join(path.stem for path in non_legacy_states)
+    state_files = sorted(path for path in state_dir.glob("*.json") if path.name != "state.json")
+    if len(state_files) == 1:
+        return state_files[0]
+    if len(state_files) > 1:
+        names = ", ".join(path.stem for path in state_files)
         raise RuntimeError(
             f"multiple state files found ({names}). Pass --slug to disambiguate."
         )
-    if legacy_state.exists():
-        return legacy_state
     raise RuntimeError(f"state not found under: {state_dir}")
 
 
@@ -59,7 +56,10 @@ def load_state(explicit_slug: Optional[str]) -> Dict[str, Any]:
         run(["git", "-C", str(toplevel), "rev-parse", "--git-common-dir"])
     )
     state_path = _resolve_state_path_from_git_common_dir(git_common_dir, explicit_slug)
-    return json.loads(state_path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(state_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"invalid JSON in state file: {state_path}") from exc
 
 
 def git_is_clean(repo_root: Path) -> bool:
@@ -89,7 +89,7 @@ def finish_worktree_flow(
     state = load_state(slug or None)
     repo_root = Path(state["repo_root"])
     base = state["base"]
-    merge_target = state.get("merge_target", base)  # backward compat: fall back to base
+    merge_target = state["merge_target"]
     branch = state["branch"]
     worktree_path = Path(state["worktree_path"])
 

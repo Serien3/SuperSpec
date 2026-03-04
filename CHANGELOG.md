@@ -2,9 +2,24 @@
 
 All notable changes to SuperSpec are documented in this file.
 
+## SuperSpec - v1.0.0
+
+Release date: 2026-03-05
+
+🚀 **SuperSpec has officially come into existence!**
+
+### Added
+- Added `code-review` skill support to improve review-oriented execution in the SuperSpec workflow.
+
+### Changed
+- Improved CLI output formatting for clearer runtime and operator feedback.
+- Resolved inconsistencies between protocol files and code handling/validation behavior.
+- Defined `workflow.schemas` field formats and clarified their intended downstream usage.
+- Temporarily unified communication contracts across static protocol artifacts.
+
 ## SuperSpec - v0.6.0
 
-Release date: TBD
+Release date: 2026-03-05
 
 ### Changed
 - Reworked the SuperSpec entry skill to align with the current execution model and operator workflow.

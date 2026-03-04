@@ -62,6 +62,13 @@ def load_plan_from_change(repo_root: str, change_name: str):
     plan_path = plan_path_for_change(repo_root, change_name)
     if not plan_path.exists():
         raise FileNotFoundError(f"Plan file not found: {plan_path}")
-    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    try:
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ProtocolError(
+            f"Invalid JSON in plan file: {plan_path}",
+            code="invalid_json",
+            details={"path": str(plan_path)},
+        ) from exc
     validate_plan(plan)
     return plan, str(plan_path)

@@ -2,6 +2,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from superspec.engine.errors import ProtocolError
+
 
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
@@ -29,7 +31,14 @@ def write_json(path: Path, payload: dict):
 def read_json(path: Path, default=None):
     if not path.exists():
         return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ProtocolError(
+            f"Invalid JSON state file: {path}",
+            code="invalid_json",
+            details={"path": str(path)},
+        ) from exc
 
 
 def append_event(change_dir: str, event: dict):

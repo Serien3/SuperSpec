@@ -1,8 +1,8 @@
 ## Context
 
-SuperSpec v0.2 has the protocol primitives (`next`, `complete`, `fail`, `status`) but leaves loop execution and skill runtime wiring to external agents without a standardized execution playbook. In parallel, current plan initialization behavior is effectively single-template and tightly coupled with `change new`, which conflicts with an explicit lifecycle of `new change -> select plan mode -> validate -> execute`.
+SuperSpec v1.0.0 has the protocol primitives (`next`, `complete`, `fail`, `status`) but leaves loop execution and skill runtime wiring to external agents without a standardized execution playbook. In parallel, current plan initialization behavior is effectively single-template and tightly coupled with `change new`, which conflicts with an explicit lifecycle of `new change -> select plan mode -> validate -> execute`.
 
-This v0.3 iteration introduces a clear entry architecture:
+This v1.0.0 iteration introduces a clear entry architecture:
 - SuperSpec protocol engine remains the source of truth for state, leases, retries, and terminal status.
 - Agent guidance (skill and/or AGENT.md) becomes the execution entrypoint contract that repeatedly drives protocol commands and executor dispatch.
 - Plan initialization becomes mode-aware and explicit, starting with `sdd`.
@@ -42,7 +42,7 @@ This v0.3 iteration introduces a clear entry architecture:
 - Why: avoids hardcoded template behavior and creates a stable extension point for future workflows.
 - Alternatives considered:
   - Keep single static `plan.template.json`: rejected because it blocks product-level workflow evolution.
-  - Allow arbitrary inline templates at init time only: rejected in v0.3 to preserve consistency and validation control.
+  - Allow arbitrary inline templates at init time only: rejected in v1.0.0 to preserve consistency and validation control.
 
 ### 4) Make plan lifecycle explicit
 - Decision: change creation and plan initialization are treated as separate lifecycle steps; protocol commands require an initialized plan.
@@ -66,7 +66,7 @@ This v0.3 iteration introduces a clear entry architecture:
    - guidance-driven full loop with mixed script/skill actions,
    - explicit init mode flow,
    - missing-plan and unsupported-mode failures.
-5. Document v0.3 workflow and deprecate implicit assumptions from v0.2 docs.
+5. Document v1.0.0 workflow and deprecate implicit assumptions from v1.0.0 docs.
 
 Rollback strategy:
 - If guidance-first path is unstable, continue supporting direct protocol command usage.
@@ -76,4 +76,4 @@ Rollback strategy:
 
 - Should `change new` stop writing `plan.json` by default, or keep compatibility via an explicit `--with-default-plan` flag?
 - What is the minimum standardized schema for skill failure payloads (`code`, `message`, `category`, `details`)?
-- Should guidance mandate a default backoff/poll interval for `blocked` state, or leave it agent-specific in v0.3?
+- Should guidance mandate a default backoff/poll interval for `blocked` state, or leave it agent-specific in v1.0.0?

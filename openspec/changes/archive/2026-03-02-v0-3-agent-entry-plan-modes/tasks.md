@@ -16,7 +16,7 @@
 
 - [x] 3.1 Update protocol contracts/docs to formalize external skill execution report requirements.
 - [x] 3.2 Ensure lease-safe reporting behavior is preserved under continuous loop polling.
-- [x] 3.3 Add CLI/help docs for the v0.3 flow: `new change -> plan init --mode sdd -> plan validate -> agent-guided loop`.
+- [x] 3.3 Add CLI/help docs for the v1.0.0 flow: `new change -> plan init --mode sdd -> plan validate -> agent-guided loop`.
 
 ## 4. Verification
 

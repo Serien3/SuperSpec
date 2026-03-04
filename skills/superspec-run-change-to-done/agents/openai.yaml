@@ -1,4 +1,0 @@
-interface:
-  display_name: "SuperSpec Entry Runner"
-  short_description: "Run change to done with protocol loop"
-  default_prompt: "Use $superspec-run-change-to-done to create or select a change, run the full SuperSpec protocol loop to terminal done, and return structured final feedback."

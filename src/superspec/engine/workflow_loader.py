@@ -60,11 +60,11 @@ def _resolve_workflow_name(workflow: str | None):
     return workflow or "SDD"
 
 
-def _load_workflow_schema(repo_root: Path):
+def _load_workflow_schema():
     return _load_json(_package_root() / "schemas" / "workflow.schema.json")
 
 
-def _load_base_template(repo_root: Path):
+def _load_base_template():
     return _load_json(_package_root() / "schemas" / "templates" / "plan.base.json")
 
 
@@ -128,8 +128,8 @@ def _unknown_top_level_field_error(workflow: dict, workflow_name: str):
     return None
 
 
-def _schema_errors(repo_root: Path, workflow: dict):
-    schema = _load_workflow_schema(repo_root)
+def _schema_errors(workflow: dict):
+    schema = _load_workflow_schema()
     validator = Draft202012Validator(schema)
     errors = sorted(validator.iter_errors(workflow), key=lambda e: list(e.path))
     mapped = []
@@ -335,8 +335,8 @@ def _semantic_errors(workflow: dict):
     return errors
 
 
-def _generation_readiness_errors(repo_root: Path, workflow: dict):
-    base = _load_base_template(repo_root)
+def _generation_readiness_errors(workflow: dict):
+    base = _load_base_template()
     generated = _deep_merge(base, _workflow_payload(workflow))
     generated.setdefault("context", {})
     generated["context"]["changeName"] = "validate-only"
@@ -356,7 +356,7 @@ def _validate_workflow_diagnostics(repo_root: Path, workflow: dict, workflow_nam
     if unknown:
         return [unknown]
 
-    schema_errors = _schema_errors(repo_root, workflow)
+    schema_errors = _schema_errors(workflow)
     if schema_errors:
         return schema_errors
 
@@ -364,7 +364,7 @@ def _validate_workflow_diagnostics(repo_root: Path, workflow: dict, workflow_nam
     if semantic_errors:
         return semantic_errors
 
-    return _generation_readiness_errors(repo_root, workflow)
+    return _generation_readiness_errors(workflow)
 
 
 def validate_workflow_source(repo_root: Path, schema: str | None = None, workflow_file: str | None = None):
@@ -440,7 +440,7 @@ def _workflow_payload(workflow: dict):
     payload["metadata"] = _deep_merge(
         payload.get("metadata", {}),
         {
-            "schema": {
+            "workflow": {
                 "id": workflow["workflowId"],
                 "version": workflow["version"],
             }
@@ -449,14 +449,13 @@ def _workflow_payload(workflow: dict):
     return payload
 
 
-def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | None = None, overrides=None):
+def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | None = None):
     selected_workflow = _resolve_workflow_name(schema)
-    base = _load_base_template(repo_root)
+    base = _load_base_template()
     workflow_doc, workflow_path = _load_workflow(repo_root, selected_workflow)
     _validate_workflow(repo_root, workflow_doc, selected_workflow)
 
     generated = _deep_merge(base, _workflow_payload(workflow_doc))
-    generated = _deep_merge(generated, overrides or {})
 
     generated.setdefault("context", {})
     generated["context"]["changeName"] = change_name

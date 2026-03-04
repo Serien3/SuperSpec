@@ -5,7 +5,7 @@
 ## What Changes
 
 - Align schema contract and runtime behavior for workflow template customization so they accept the same fields and enforce the same constraints.
-- Narrow customization scope to a small, explicit set of supported template fields and reject undefined/ambiguous overrides.
+- Narrow customization scope to a small, explicit set of supported template fields and reject undefined or ambiguous customization fields.
 - Make merge and precedence behavior explicit and deterministic for supported template customization fields.
 - Improve validation and error messages so unsupported customization fields fail fast with actionable guidance.
 - Update documentation/examples in workflow artifacts so authored templates match actual runtime behavior.

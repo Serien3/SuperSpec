@@ -37,7 +37,7 @@ Alternatives considered:
 - Per-scheme full template files: easier migration from current state but perpetuates duplication and drift.
 
 ### Decision: Deterministic merge precedence during plan generation
-- Merge order: `base template` < `scheme` < `CLI/init-time overrides`.
+- Merge order: `base template` < `scheme`.
 - Protected fields (`context.changeName`, `context.changeDir`) are always generated from change context and cannot be overwritten by scheme files.
 - Rationale: predictable behavior and safer generated plans.
 
@@ -54,7 +54,7 @@ Alternatives considered:
 - [Risk] Scheme schema too loose leads to invalid or inconsistent plans. -> Mitigation: add explicit scheme schema validation and fail-fast init errors.
 - [Risk] Multiple locations for scheme files create discovery ambiguity. -> Mitigation: define a single default directory with clear precedence rules.
 - [Risk] Backward compatibility confusion for `--mode` users. -> Mitigation: map existing `sdd` mode to a first-party scheme and provide clear deprecation/alias guidance.
-- [Risk] Merge logic complexity introduces subtle override bugs. -> Mitigation: add targeted tests for precedence and protected-field behavior.
+- [Risk] Merge logic complexity introduces subtle precedence bugs. -> Mitigation: add targeted tests for precedence and protected-field behavior.
 
 ## Migration Plan
 

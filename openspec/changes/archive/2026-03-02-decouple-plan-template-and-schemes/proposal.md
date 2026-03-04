@@ -8,7 +8,7 @@ Current plan initialization mixes two concerns in one file: the plan document fo
 - Introduce a generic base plan template that captures structural fields only, separating format from scheme content.
 - Add a scheme directory convention so users can add custom schemes later (for example under a dedicated `schemes/` folder).
 - Update plan initialization flow to render `plan.json` by combining base template + selected scheme + change-scoped variables.
-- Define deterministic merge/override rules for template, scheme, and CLI/runtime-provided values.
+- Define deterministic merge/override rules for template and scheme values.
 
 ## Capabilities
 

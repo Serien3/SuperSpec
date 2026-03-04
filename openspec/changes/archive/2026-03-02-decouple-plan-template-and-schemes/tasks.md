@@ -7,7 +7,7 @@
 ## 2. Base Template And Rendering Pipeline
 
 - [x] 2.1 Split current monolithic plan template into a generic base plan template and first-party scheme content for the default flow.
-- [x] 2.2 Implement deterministic plan rendering that merges base template, scheme payload, and init-time overrides with documented precedence.
+- [x] 2.2 Implement deterministic plan rendering that merges base template and scheme payload with documented precedence.
 - [x] 2.3 Enforce protected change context fields (`changeName`, `changeDir`) so generated plans always bind to the active change.
 - [x] 2.4 Add tests that assert generated `plan.json` shape, merge precedence, and protected-field behavior.
 
@@ -20,5 +20,5 @@
 ## 4. Documentation And Rollout
 
 - [x] 4.1 Document how to create and place custom scheme files for future extension.
-- [x] 4.2 Document generation semantics (base template vs scheme vs overrides) and runtime boundary (`plan.json` is still the only execution input).
+- [x] 4.2 Document generation semantics (base template vs scheme) and runtime boundary (`plan.json` is still the only execution input).
 - [x] 4.3 Validate end-to-end workflow by generating a plan from a custom scheme and confirming `plan validate`/protocol commands still operate normally.

@@ -11,7 +11,7 @@ To support reliable Agent orchestration, execution should become pull-based: the
 - Introduce lease-based action claiming to prevent duplicate execution under concurrency.
 - Define structured action payloads for both `script` and `skill` executors.
 - Keep execution resumable and auditable with explicit state/event persistence.
-- Define protocol mode as the only execution path in `v0.2` (`next`, `complete`, `fail`, `status`).
+- Define protocol mode as the only execution path in `v1.0.0` (`next`, `complete`, `fail`, `status`).
 
 **Non-Goals:**
 - Implement distributed scheduling across multiple repositories.

@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from superspec.scripts.worktree_finish import _resolve_state_path_from_git_common_dir, finish_worktree_flow
+from superspec.scripts.worktree_finish import _resolve_state_path_from_git_common_dir, finish_worktree_flow, load_state
 
 
 class WorktreeFinishScriptTest(unittest.TestCase):
@@ -41,6 +41,7 @@ class WorktreeFinishScriptTest(unittest.TestCase):
         state = {
             "repo_root": "/repo",
             "base": "main",
+            "merge_target": "main",
             "branch": "wt/demo",
             "worktree_path": "/repo/.worktrees/wt-demo",
             "state_path": "/repo/.git/codex-worktree-flow/demo.json",
@@ -53,6 +54,7 @@ class WorktreeFinishScriptTest(unittest.TestCase):
         state = {
             "repo_root": "/repo",
             "base": "main",
+            "merge_target": "main",
             "branch": "wt/demo",
             "worktree_path": "/repo/.worktrees/wt-demo",
             "state_path": "/repo/.git/codex-worktree-flow/demo.json",
@@ -66,6 +68,25 @@ class WorktreeFinishScriptTest(unittest.TestCase):
                     merge=False,
                     prompt_fn=lambda _: "no",
                 )
+
+    def test_load_state_rejects_invalid_json(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        git_common_dir = root / ".git"
+        state_dir = git_common_dir / "codex-worktree-flow"
+        state_dir.mkdir(parents=True, exist_ok=True)
+        bad_state = state_dir / "demo.json"
+        bad_state.write_text("{invalid", encoding="utf-8")
+
+        def fake_run(args, *, cwd=None):
+            if args == ["git", "rev-parse", "--show-toplevel"]:
+                return str(root)
+            if args == ["git", "-C", str(root), "rev-parse", "--git-common-dir"]:
+                return str(git_common_dir)
+            raise AssertionError(f"unexpected run() call: {args}")
+
+        with patch("superspec.scripts.worktree_finish.run", side_effect=fake_run):
+            with self.assertRaises(RuntimeError):
+                load_state("demo")
 
 
 if __name__ == "__main__":

@@ -68,11 +68,13 @@
     "script": {
       "executor": "script",
       "script_command": "string",
+      "inputs": "object (optional)",
       "prompt": "string"
     },
     "skill": {
       "executor": "skill",
       "skillName": "string",
+      "inputs": "object (optional)",
       "prompt": "string"
     },
     "human": {
@@ -82,21 +84,24 @@
         "approveLabel": "string (optional)",
         "rejectLabel": "string (optional)"
       },
+      "inputs": "object (optional)",
       "prompt": "string"
     },
     "runtimeExpressionResolution": [
       "executor",
       "script",
       "skill",
+      "prompt",
       "human.instruction",
       "human.approveLabel",
       "human.rejectLabel",
-      "inputs.prompt"
+      "inputs (recursive)"
     ],
     "runtimeExpressionNotes": [
       "No generic recursive runtime resolver for arbitrary action fields",
       "Only the listed fields are expanded in next-action payload generation",
-      "When inputs.prompt is set, action.prompt uses the rendered inputs.prompt for all executors"
+      "When action.prompt is set, payload.prompt uses rendered action.prompt for all executors",
+      "inputs remains input-definition data and is not used as prompt override source"
     ]
   },
   "removed": [

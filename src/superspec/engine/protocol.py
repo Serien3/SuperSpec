@@ -62,16 +62,24 @@ def _build_action_payload(action: dict, resolved_action: dict):
             code="invalid_action_payload",
         )
 
-    rendered_prompt = (resolved_action.get("inputs") or {}).get("prompt")
+    rendered_prompt = resolved_action.get("prompt")
     if rendered_prompt is not None and not isinstance(rendered_prompt, str):
         raise ProtocolError(
-            f"Action {action['id']} inputs.prompt must resolve to string",
+            f"Action {action['id']} prompt must resolve to string",
+            code="invalid_action_payload",
+        )
+    rendered_inputs = resolved_action.get("inputs")
+    if rendered_inputs is not None and not isinstance(rendered_inputs, dict):
+        raise ProtocolError(
+            f"Action {action['id']} inputs must resolve to object",
             code="invalid_action_payload",
         )
     payload = {
         "actionId": action["id"],
         "executor": executor,
     }
+    if rendered_inputs is not None:
+        payload["inputs"] = rendered_inputs
 
     if executor == "script":
         command = resolved_action.get("script")

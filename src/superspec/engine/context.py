@@ -32,9 +32,19 @@ def resolve_template_string(value, context):
     return re.sub(r"\$\{([^}]+)}", replace, value)
 
 
+def _resolve_template_value(value, context):
+    if isinstance(value, str):
+        return resolve_template_string(value, context)
+    if isinstance(value, list):
+        return [_resolve_template_value(item, context) for item in value]
+    if isinstance(value, dict):
+        return {key: _resolve_template_value(item, context) for key, item in value.items()}
+    return value
+
+
 def resolve_runtime_action_fields(action: dict, context: dict):
     resolved = {}
-    for field in ("executor", "script", "skill"):
+    for field in ("executor", "script", "skill", "prompt"):
         if field in action:
             resolved[field] = resolve_template_string(action[field], context)
 
@@ -48,9 +58,7 @@ def resolve_runtime_action_fields(action: dict, context: dict):
             resolved["human"] = resolved_human
 
     inputs = action.get("inputs")
-    if isinstance(inputs, dict) and "prompt" in inputs:
-        resolved["inputs"] = {
-            "prompt": resolve_template_string(inputs["prompt"], context),
-        }
+    if isinstance(inputs, dict):
+        resolved["inputs"] = _resolve_template_value(inputs, context)
 
     return resolved

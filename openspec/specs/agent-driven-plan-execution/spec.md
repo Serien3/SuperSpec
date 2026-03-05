@@ -48,16 +48,19 @@ The system MUST return normalized execution payloads that distinguish script, sk
 #### Scenario: Script action payload
 - **WHEN** the next action uses `executor=script`
 - **THEN** the payload includes `script_command` and `prompt`
+- **AND** may include rendered `inputs` when action inputs are defined
 
 #### Scenario: Skill action payload
 - **WHEN** the next action uses `executor=skill`
 - **THEN** the payload includes `skillName` and `prompt`
 - **AND** does not include context file maps in the action payload
+- **AND** may include rendered `inputs` when action inputs are defined
 
 #### Scenario: Human action payload
 - **WHEN** the next action uses `executor=human`
 - **THEN** the payload includes `human` review metadata and `prompt`
 - **AND** does not include `script_command` or `skillName`
+- **AND** may include rendered `inputs` when action inputs are defined
 
 #### Scenario: Skill action completion contract
 - **WHEN** a skill action finishes successfully in an external agent runtime

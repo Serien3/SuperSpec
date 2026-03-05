@@ -1,20 +1,19 @@
 --
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements. Or humans demand code review.
+description: Use when completing tasks, implementing major features, before merging to verify work meets requirements or humans demand code review.
 ---
 
 # Requesting Code Review
 
-Dispatch skill:code-reviewer subagent to catch issues before they cascade.
+Dispatch **code-reviewer subagent** to catch issues before they cascade.
 
 **Core principle:** Review early, review often.
 
 ## When to Request Review
 
 **Mandatory:**
-- After each task in subagent-driven development
-- After completing major feature
-- Before merge to main
+- Humans demand code review
+- A complex change is completed
 
 **Optional but valuable:**
 - When stuck (fresh perspective)

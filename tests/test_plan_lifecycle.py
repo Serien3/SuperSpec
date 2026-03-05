@@ -525,6 +525,28 @@ class PlanLifecycleTest(unittest.TestCase):
 
         command_validate(root, SimpleNamespace(schema="human-exec", file=None, json=False))
 
+    def test_validate_accepts_action_prompt_field(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        workflow = {
+            "workflowId": "action-prompt",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "type": "openspec.apply",
+                    "executor": "skill",
+                    "skill": "openspec-apply-change",
+                    "prompt": "Run apply for ${context.changeName}",
+                }
+            ],
+        }
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "action-prompt.workflow.json"
+        workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
+
+        command_validate(root, SimpleNamespace(schema="action-prompt", file=None, json=False))
+
     def test_validate_rejects_human_executor_payload_mismatch(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)

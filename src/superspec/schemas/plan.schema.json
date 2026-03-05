@@ -41,6 +41,7 @@
           "executor": { "enum": ["skill", "script", "human"] },
           "skill": { "type": "string" },
           "script": { "type": "string" },
+          "prompt": { "type": "string" },
           "human": { "type": "object" },
           "inputs": { "type": "object" },
           "outputs": { "type": "object" },

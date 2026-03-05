@@ -404,7 +404,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["action"]["actionId"], "a1")
         self.assertEqual(nxt["action"]["script_command"], "echo one")
 
-    def test_next_uses_inputs_prompt_as_action_prompt_with_runtime_substitution(self):
+    def test_next_uses_action_prompt_with_runtime_substitution(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -417,7 +417,7 @@ class IntegrationTest(unittest.TestCase):
                     "dependsOn": ["a1"],
                     "executor": "skill",
                     "skill": "openspec-continue-change",
-                    "inputs": {"prompt": "Write specs for ${context.changeName}; seed=${actions.a1.outputs.summary}"},
+                    "prompt": "Write specs for ${context.changeName}; seed=${actions.a1.outputs.summary}",
                 },
             ],
         )
@@ -429,6 +429,61 @@ class IntegrationTest(unittest.TestCase):
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["prompt"], f"Write specs for {change_name}; seed=from-a1")
+
+    def test_next_resolves_inputs_templates_recursively(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "type": "openspec.specs",
+                    "executor": "skill",
+                    "skill": "openspec-continue-change",
+                    "inputs": {
+                        "change": "${context.changeName}",
+                        "items": ["${context.changeDir}", "${variables.seed}"],
+                        "nested": {"summary": "seed=${variables.seed}"},
+                    },
+                }
+            ],
+        )
+        plan["variables"] = {"seed": "from-vars"}
+        validate_plan(plan)
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(
+            nxt["action"]["inputs"],
+            {
+                "change": change_name,
+                "items": [f"openspec/changes/{change_name}", "from-vars"],
+                "nested": {"summary": "seed=from-vars"},
+            },
+        )
+
+    def test_next_does_not_treat_inputs_prompt_as_prompt_override(self):
+        root, _, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            "demo-change",
+            [
+                {
+                    "id": "a1",
+                    "type": "openspec.specs",
+                    "executor": "skill",
+                    "skill": "openspec-continue-change",
+                    "inputs": {"prompt": "input-only"},
+                }
+            ],
+        )
+        validate_plan(plan)
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["prompt"], "Invoke skill openspec-continue-change for action a1")
+        self.assertEqual(nxt["action"]["inputs"]["prompt"], "input-only")
 
     def test_human_executor_blocks_until_completion_and_emits_human_payload(self):
         root, change_name, change_dir = self.setup_temp_change()

@@ -37,4 +37,5 @@ Example:
 ## Remember
 - Reference specs(if present) for what needs to be built, design (if present) for how to build it.
 - If neither specs nor design exists, refer to the proposal to determine what to do and how to do it.
+- If not spec-driven development, directly based on human needs and goals .
 - **Each task should be verifiable - you know when it's done.**

@@ -1,6 +1,6 @@
 ---
 name: writing-design
-description: Technical design document with implementation details. Use this skill when the change is cross-cutting (spans multiple services/modules) or introduces a new architectural pattern, a major external dependency or data model change, or notable security/performance/migration complexity. Also use when key technical decisions need to be clarified before coding due to ambiguity.
+description: Technical design document with implementation details.
 ---
 
 # Writing Design Skill

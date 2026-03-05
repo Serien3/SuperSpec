@@ -4,6 +4,7 @@ from pathlib import Path
 
 from superspec.engine.errors import ProtocolError, ValidationError
 from superspec.engine.protocol import complete_action, fail_action, next_action, status_snapshot
+from superspec.engine.state_store import read_execution_state, write_execution_state
 from superspec.engine.validator import validate_plan
 
 
@@ -429,6 +430,40 @@ class IntegrationTest(unittest.TestCase):
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["prompt"], f"Write specs for {change_name}; seed=from-a1")
+
+    def test_next_resolves_templates_using_execution_state_scope(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "type": "prepare", "executor": "script", "script": "echo one"},
+                {
+                    "id": "a2",
+                    "type": "openspec.apply",
+                    "dependsOn": ["a1"],
+                    "executor": "script",
+                    "script": "echo ${state.commit_by_superspec_last.commit_hash}",
+                },
+            ],
+        )
+        validate_plan(plan)
+
+        first = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["action"]["actionId"], "a1")
+        complete_action(plan, str(change_dir), "a1", {"ok": True})
+
+        state = read_execution_state(str(change_dir))
+        state["commit_by_superspec_last"] = {
+            "commit_hash": "abc123",
+            "message": "feat: test",
+        }
+        write_execution_state(str(change_dir), state)
+
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["script_command"], "echo abc123")
 
     def test_next_resolves_inputs_templates_recursively(self):
         root, change_name, change_dir = self.setup_temp_change()

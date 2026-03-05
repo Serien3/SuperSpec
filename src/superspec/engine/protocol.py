@@ -37,6 +37,7 @@ def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
         "context": plan["context"],
         "variables": plan.get("variables", {}),
         "actions": _action_runtime_outputs(state),
+        "state": state,
         "env": dict(os.environ),
     }
     try:

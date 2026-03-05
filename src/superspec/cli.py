@@ -7,6 +7,7 @@ from pathlib import Path
 
 from superspec import __version__
 from superspec.engine.errors import ProtocolError
+from superspec.engine.git_ops import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import resolve_change_dir
 from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
@@ -206,6 +207,15 @@ def command_git_worktree_finish(repo_root: Path, args):
         cleanup=bool(args.cleanup),
         strategy=args.strategy,
         commit_message=args.commit_message,
+    )
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def command_git_commit(repo_root: Path, args):
+    payload = commit_for_change(
+        repo_root=repo_root,
+        change_name=args.change,
+        message=args.message,
     )
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
@@ -418,6 +428,12 @@ def build_parser():
         default="",
         help="Commit message for merge/squash workflow.",
     )
+    git_commit = git_sub.add_parser(
+        "commit",
+        help="Run git commit and persist commit metadata to change execution state.",
+    )
+    git_commit.add_argument("change", help="Target change name whose execution state will be updated.")
+    git_commit.add_argument("--message", required=True, help="Commit message.")
 
     return parser
 
@@ -448,6 +464,9 @@ def main():
             return
         if args.group == "git" and args.sub == "finish-worktree":
             command_git_worktree_finish(repo_root, args)
+            return
+        if args.group == "git" and args.sub == "commit":
+            command_git_commit(repo_root, args)
             return
         if args.group == "plan" and args.sub == "next":
             command_plan_next(repo_root, args)

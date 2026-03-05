@@ -105,6 +105,7 @@ The system MUST support `skill`, `script`, and `human` executors using a shared 
 #### Scenario: Limit runtime expression resolution surface
 - **WHEN** an action includes template expressions
 - **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, `prompt`, `human.instruction`, `human.approveLabel`, `human.rejectLabel`, and `inputs` (recursive)
+- **AND** expression scopes are constrained to `context.*`, `variables.*`, `actions.*`, `state.*`, and `env.*`
 - **AND** other action fields do not participate in runtime payload expression expansion
 - **AND** the runtime implementation does not provide a generic recursive resolver for arbitrary action objects
 

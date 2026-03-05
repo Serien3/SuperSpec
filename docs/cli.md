@@ -76,6 +76,31 @@ superspec git finish-worktree [options]
 | `--strategy`       | 合并策略：`merge` / `squash`。 | `merge` |
 | `--commit-message` | 合并提交信息。                 | `""`    |
 
+### `superspec git commit`
+
+执行一次 `git commit`，并把本次提交信息写入指定 change 的运行态 `execution/state.json`。
+
+```bash
+superspec git commit <change> --message "<commit message>"
+```
+
+**Arguments:**
+| Argument   | description               | default  |
+| ---------- | ------------------------- | -------- |
+| `<change>` | 要写入运行态的 change 名。 | Required |
+
+**Options:**
+| option      | description | default  |
+| ----------- | ----------- | -------- |
+| `--message` | commit 信息 | Required |
+
+**Behavior:**
+| 行为 | 说明 |
+| ---- | ---- |
+| 执行 commit | 在仓库根目录执行 `git commit -m <message>`。 |
+| 写入运行态 | 将 `state.commit_by_superspec_last` 更新为 `{ \"commit_hash\": \"...\", \"message\": \"...\" }`。 |
+| 校验状态 | 若 `execution/state.json` 不存在，或 state 非 `running`，则命令失败。 |
+
 ## Change Commands
 
 ### `superspec change new`

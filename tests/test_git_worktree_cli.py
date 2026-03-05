@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from superspec.cli import build_parser, command_git_worktree_create, command_git_worktree_finish
+from superspec.cli import build_parser, command_git_commit, command_git_worktree_create, command_git_worktree_finish
 
 
 class GitWorktreeCliTest(unittest.TestCase):
@@ -97,12 +97,48 @@ class GitWorktreeCliTest(unittest.TestCase):
         self.assertTrue(parsed.cleanup)
         self.assertEqual(parsed.strategy, "squash")
 
+    def test_command_git_commit_prints_json_payload(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace(
+            change="demo-change",
+            message="feat: add file",
+        )
+        payload = {
+            "change": "demo-change",
+            "commit_by_superspec_last": {
+                "commit_hash": "abc123",
+                "message": "feat: add file",
+            },
+        }
+        output = StringIO()
+        with patch("superspec.cli.commit_for_change", return_value=payload) as mock_commit:
+            with redirect_stdout(output):
+                command_git_commit(root, args)
+
+        mock_commit.assert_called_once_with(
+            repo_root=root,
+            change_name="demo-change",
+            message="feat: add file",
+        )
+        parsed = json.loads(output.getvalue())
+        self.assertEqual(parsed["commit_by_superspec_last"]["commit_hash"], "abc123")
+
+    def test_parser_accepts_git_commit_command(self):
+        parser = build_parser()
+        parsed = parser.parse_args(["git", "commit", "demo-change", "--message", "feat: x"])
+        self.assertEqual(parsed.group, "git")
+        self.assertEqual(parsed.sub, "commit")
+        self.assertEqual(parsed.change, "demo-change")
+        self.assertEqual(parsed.message, "feat: x")
+
     def test_parser_rejects_removed_finish_worktree_options(self):
         parser = build_parser()
         with self.assertRaises(SystemExit):
             parser.parse_args(["git", "finish-worktree", "--state", "/tmp/x.json"])
         with self.assertRaises(SystemExit):
             parser.parse_args(["git", "finish-worktree", "--squash-message", "old"])
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["git", "commit", "demo-change"])
 
 
 if __name__ == "__main__":

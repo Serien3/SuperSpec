@@ -97,6 +97,13 @@
       "human.rejectLabel",
       "inputs (recursive)"
     ],
+    "runtimeExpressionScopes": [
+      "context.*",
+      "variables.*",
+      "actions.*",
+      "state.*",
+      "env.*"
+    ],
     "runtimeExpressionNotes": [
       "No generic recursive runtime resolver for arbitrary action fields",
       "Only the listed fields are expanded in next-action payload generation",

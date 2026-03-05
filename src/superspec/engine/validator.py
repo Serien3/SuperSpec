@@ -51,7 +51,13 @@ def _scan_exprs(value, out):
 
 
 def _valid_scope(expr: str):
-    return expr.startswith("context.") or expr.startswith("variables.") or expr.startswith("actions.") or expr.startswith("env.")
+    return (
+        expr.startswith("context.")
+        or expr.startswith("variables.")
+        or expr.startswith("actions.")
+        or expr.startswith("state.")
+        or expr.startswith("env.")
+    )
 
 
 def validate_plan(plan):

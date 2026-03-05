@@ -12,6 +12,7 @@ Drive one change from setup to terminal outcome using the SuperSpec pull protoco
 Resolve these inputs first:
 - `change_name` (recommended)
 - `owner` for `plan next` (default: `agent`)
+- `plan_schema` for `plan init` (default: `SDD`)
 
 If `change_name` is missing, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
 
@@ -29,9 +30,10 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
      ```
 
 ### Step 2:  Ensure change-scoped plan exists and is valid.
-   - Initialize when `openspec/changes/<change_name>/plan.json` is missing (`--schema` is required):
+   - Resolve `plan_schema` from external input; when missing, set `plan_schema=SDD`.
+   - Initialize when `openspec/changes/<change_name>/plan.json` is missing:
      ```bash
-     superspec plan init "<change_name>" --schema SDD
+     superspec plan init "<change_name>" --schema "<plan_schema>"
      ```
 
 ### Step 3: Run protocol loop until terminal.
@@ -69,7 +71,7 @@ When `next.state=blocked`:
        superspec plan fail "<change_name>" "<actionId>" --error-json '{"code":"script_failed","message":"script execution failed","executor":"script"}'
        ```
    - `skill` executor:
-     - Invoke `action.skillName` and follow `action.prompt`.
+     - Follow `action.prompt` and invoke `action.skillName`.
      - On success:
        ```bash
        superspec plan complete "<change_name>" "<actionId>" --output-json '{"ok":true,"executor":"skill","actionId":"<actionId>","summary":"skill completed"}'

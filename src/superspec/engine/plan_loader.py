@@ -37,7 +37,7 @@ def validate_change_name(change_name: str):
 
 
 def changes_root(repo_root: str | Path) -> Path:
-    return (Path(repo_root).resolve() / "openspec" / "changes").resolve()
+    return (Path(repo_root).resolve() / "superspec" / "changes").resolve()
 
 
 def resolve_change_dir(repo_root: str, change_name: str) -> Path:

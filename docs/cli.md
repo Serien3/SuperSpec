@@ -105,7 +105,7 @@ superspec git commit <change> --message "<commit message>"
 
 ### `superspec change new`
 
-创建一个新的 change 骨架（调用 `openspec new change`），并提示后续执行 `plan init`。
+创建一个新的 change 骨架（由 superspec 直接生成），并提示后续执行 `plan init`。
 
 ```bash
 superspec change new <change>
@@ -118,7 +118,7 @@ superspec change new <change>
 
 ### `superspec change list`
 
-列出当前仓库中已有的 change（读取 `openspec/changes/` 目录）。
+列出当前仓库中已有的 change（读取 `superspec/changes/` 目录）。
 
 ```bash
 superspec change list
@@ -134,7 +134,7 @@ superspec change list
 
 ### `superspec plan init`
 
-生成 `openspec/changes/<change>/plan.json`。
+生成 `superspec/changes/<change>/plan.json`。
 
 ```bash
 superspec plan init <change> [options]

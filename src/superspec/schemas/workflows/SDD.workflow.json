@@ -9,65 +9,70 @@
       "id": "a1",
       "type": "proposal",
       "executor": "skill",
-      "skill": "openspec-continue-change"
+      "skill": "writing-proposal"
     },
     {
       "id": "a2",
-      "type": "proposal.review",
+      "type": "specs",
       "dependsOn": [
         "a1"
       ],
-      "executor": "human",
-      "human": {
-        "instruction": "Please review openspec/changes/${context.changeName}/proposal.md and approve or reject before continuing.",
-        "approveLabel": "Approve proposal",
-        "rejectLabel": "Request changes"
-      }
+      "executor": "skill",
+      "skill": "writing-specs"
     },
     {
       "id": "a3",
-      "type": "specs&design&tasks",
+      "type": "design",
       "dependsOn": [
         "a2"
       ],
       "executor": "skill",
-      "skill": "openspec-ff-change"
+      "skill": "writing-design"
     },
     {
       "id": "a4",
-      "type": "openspec.apply",
+      "type": "tasks",
       "dependsOn": [
         "a3"
       ],
       "executor": "skill",
-      "skill": "openspec-apply-change"
+      "skill": "writing-tasks"
     },
     {
       "id": "a5",
-      "type": "code-review.request",
+      "type": "execute-change",
       "dependsOn": [
         "a4"
+      ],
+      "executor": "skill",
+      "skill": "executing-change"
+    },
+    {
+      "id": "a6",
+      "type": "code-review",
+      "dependsOn": [
+        "a5"
       ],
       "executor": "skill",
       "skill": "requesting-code-review"
     },
     {
-      "id": "a6",
-      "type": "code-review.receive",
+      "id": "a7",
+      "type": "receive-code-review",
       "dependsOn": [
-        "a5"
+        "a6"
       ],
       "executor": "skill",
       "skill": "receiving-code-review"
     },
     {
-      "id": "a7",
-      "type": "openspec.verify",
+      "id": "a8",
+      "type": "finish",
       "dependsOn": [
-        "a6"
+        "a7"
       ],
-      "executor": "skill",
-      "skill": "openspec-verify-change"
+      "executor": "script",
+      "script": "~/.local/share/pipx/venvs/superspec/bin/python -m superspec.scripts.send_email_smtp --host \"smtp.163.com\" --port 465 --ssl --email whhit1825@163.com --password 'AKx5Y39v783DuxDk' --to whdaily1825@outlook.com --subject \"finish work\" --body \"hello from superspec,一个计划完成啦！\""
     }
   ]
 }

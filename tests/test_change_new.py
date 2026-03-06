@@ -7,7 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from superspec.cli import (
-    _run_openspec_new_change,
+    _create_change_scaffold,
     build_parser,
     command_changelist,
     command_change_new,
@@ -17,33 +17,24 @@ from superspec.cli import (
 
 
 class ChangeNewCommandTest(unittest.TestCase):
-    def test_run_openspec_new_change_does_not_pass_summary(self):
+    def test_create_change_scaffold_creates_change_directory_only(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        with patch("superspec.cli.subprocess.run") as mock_run:
-            mock_run.return_value = SimpleNamespace(returncode=0, stdout="ok\n", stderr="")
-            _run_openspec_new_change(root, "demo-change")
+        change_dir = _create_change_scaffold(root, "demo-change")
 
-        mock_run.assert_called_once_with(
-            ["openspec", "new", "change", "demo-change"],
-            cwd=root,
-            text=True,
-            capture_output=True,
-        )
+        self.assertEqual(change_dir, root / "superspec" / "changes" / "demo-change")
+        self.assertTrue(change_dir.is_dir())
 
-    def test_command_change_new_invokes_openspec_without_summary(self):
+    def test_command_change_new_creates_scaffold(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         args = SimpleNamespace(change="demo-change")
 
-        with patch("superspec.cli.subprocess.run") as mock_run:
-            mock_run.return_value = SimpleNamespace(returncode=0, stdout="", stderr="")
+        stdout = StringIO()
+        with redirect_stdout(stdout):
             command_change_new(root, args)
 
-        mock_run.assert_called_once_with(
-            ["openspec", "new", "change", "demo-change"],
-            cwd=root,
-            text=True,
-            capture_output=True,
-        )
+        change_dir = root / "superspec" / "changes" / "demo-change"
+        self.assertTrue(change_dir.is_dir())
+        self.assertIn("Plan not initialized for change 'demo-change'.", stdout.getvalue())
 
     def test_change_new_parser_rejects_summary_flag(self):
         parser = build_parser()
@@ -102,9 +93,9 @@ class ChangeNewCommandTest(unittest.TestCase):
 
     def test_command_changelist_prints_sorted_change_names(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        (root / "openspec" / "changes" / "z-last").mkdir(parents=True, exist_ok=True)
-        (root / "openspec" / "changes" / "a-first").mkdir(parents=True, exist_ok=True)
-        (root / "openspec" / "changes" / "README.md").write_text("not a dir", encoding="utf-8")
+        (root / "superspec" / "changes" / "z-last").mkdir(parents=True, exist_ok=True)
+        (root / "superspec" / "changes" / "a-first").mkdir(parents=True, exist_ok=True)
+        (root / "superspec" / "changes" / "README.md").write_text("not a dir", encoding="utf-8")
 
         stdout = StringIO()
         with redirect_stdout(stdout):

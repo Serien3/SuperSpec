@@ -12,7 +12,7 @@ class IntegrationTest(unittest.TestCase):
     def setup_temp_change(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         change_name = "demo-change"
-        change_dir = root / "openspec" / "changes" / change_name
+        change_dir = root / "superspec" / "changes" / change_name
         change_dir.mkdir(parents=True, exist_ok=True)
         return root, change_name, change_dir
 
@@ -24,9 +24,9 @@ class IntegrationTest(unittest.TestCase):
             "goal": "Test plan execution",
             "context": {
                 "changeName": change_name,
-                "changeDir": f"openspec/changes/{change_name}",
+                "changeDir": f"superspec/changes/{change_name}",
                 "repoRoot": str(root),
-                "specRoot": "openspec",
+                "specRoot": "superspec",
             },
             "actions": actions,
         }
@@ -493,7 +493,7 @@ class IntegrationTest(unittest.TestCase):
             nxt["action"]["inputs"],
             {
                 "change": change_name,
-                "items": [f"openspec/changes/{change_name}", "from-vars"],
+                "items": [f"superspec/changes/{change_name}", "from-vars"],
                 "nested": {"summary": "seed=from-vars"},
             },
         )

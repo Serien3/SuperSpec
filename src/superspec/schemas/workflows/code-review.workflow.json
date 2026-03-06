@@ -22,7 +22,7 @@
             ],
             "executor": "human",
             "human": {
-                "instruction": "Please review openspec/changes/${context.changeName}/proposal.md and approve or reject before continuing.",
+                "instruction": "Please review superspec/changes/${context.changeName}/proposal.md and approve or reject before continuing.",
                 "approveLabel": "Approve proposal",
                 "rejectLabel": "Request changes"
             }

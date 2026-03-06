@@ -43,7 +43,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         command_plan_init(root, args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         self.assertTrue(plan_path.exists())
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["context"]["changeName"], "demo-change")
@@ -56,7 +56,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         command_plan_init(root, args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         self.assertTrue(plan_path.exists())
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["metadata"]["workflow"]["id"], "SDD")
@@ -71,7 +71,7 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
         command_plan_init(root, args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["schemaVersion"], "superspec.plan/v1.0.0")
 
@@ -99,12 +99,12 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(change="demo-change", schema="custom-flow", title=None, goal=None)
         command_plan_init(root, args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["title"], "Custom title from workflow")
         self.assertEqual(plan["goal"], "Custom goal from workflow")
         self.assertEqual(plan["context"]["changeName"], "demo-change")
-        self.assertEqual(plan["context"]["changeDir"], "openspec/changes/demo-change")
+        self.assertEqual(plan["context"]["changeDir"], "superspec/changes/demo-change")
 
     def test_plan_init_rejects_legacy_plan_overlay_field(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -177,7 +177,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         command_plan_init(root, args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["title"], "Main delivery plan")
         self.assertEqual(plan["goal"], "Execute this change in a single-agent serial loop")
@@ -212,7 +212,7 @@ class PlanLifecycleTest(unittest.TestCase):
         )
         command_plan_init(root, args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         self.assertEqual(plan["title"], "Workflow title")
         self.assertEqual(plan["goal"], "Workflow goal")
@@ -252,7 +252,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
     def test_protocol_actions_require_explicit_plan_init(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        change_dir = root / "openspec" / "changes" / "demo-change"
+        change_dir = root / "superspec" / "changes" / "demo-change"
         change_dir.mkdir(parents=True, exist_ok=True)
 
         with self.assertRaises(FileNotFoundError):
@@ -260,7 +260,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
     def test_protocol_actions_reject_invalid_plan_json(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        change_dir = root / "openspec" / "changes" / "demo-change"
+        change_dir = root / "superspec" / "changes" / "demo-change"
         change_dir.mkdir(parents=True, exist_ok=True)
         plan_path = change_dir / "plan.json"
         plan_path.write_text("{invalid", encoding="utf-8")
@@ -287,7 +287,7 @@ class PlanLifecycleTest(unittest.TestCase):
         init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
         command_plan_init(root, init_args)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         plan["context"]["changeDir"] = "../../../tmp/outside"
         plan_path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
@@ -303,12 +303,12 @@ class PlanLifecycleTest(unittest.TestCase):
         init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
         command_plan_init(root, init_args)
 
-        other_change_dir = root / "openspec" / "changes" / "other-change"
+        other_change_dir = root / "superspec" / "changes" / "other-change"
         other_change_dir.mkdir(parents=True, exist_ok=True)
 
-        plan_path = root / "openspec" / "changes" / "demo-change" / "plan.json"
+        plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
-        plan["context"]["changeDir"] = "openspec/changes/other-change"
+        plan["context"]["changeDir"] = "superspec/changes/other-change"
         plan_path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
 
         with self.assertRaises(ProtocolError) as ctx:

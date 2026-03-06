@@ -56,12 +56,17 @@ def _write_plan(repo_root: Path, change_name: str, schema: str | None):
     return plan_path, selected_schema
 
 
-def _run_openspec_new_change(repo_root: Path, change_name: str):
-    cmd = ["openspec", "new", "change", change_name]
-    result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr or result.stdout or "openspec new change failed")
-    print(result.stdout, end="")
+def _create_change_scaffold(repo_root: Path, change_name: str):
+    change_dir = resolve_change_dir(str(repo_root), change_name)
+    if change_dir.exists():
+        raise ProtocolError(
+            f"Change '{change_name}' already exists at {change_dir}",
+            code="change_exists",
+            details={"change": change_name, "path": str(change_dir)},
+        )
+
+    change_dir.mkdir(parents=True, exist_ok=False)
+    return change_dir
 
 
 def _parse_object_json(raw: str, field: str):
@@ -143,13 +148,14 @@ def command_init(repo_root: Path, args):
 
 
 def command_change_new(repo_root: Path, args):
-    _run_openspec_new_change(repo_root, args.change)
+    change_dir = _create_change_scaffold(repo_root, args.change)
+    print(f"Created {change_dir}")
     print(f"Plan not initialized for change '{args.change}'.")
     print(f"Run: superspec plan init {args.change} --schema <schema>")
 
 
 def command_changelist(repo_root: Path, args):
-    changes_root = repo_root / "openspec" / "changes"
+    changes_root = repo_root / "superspec" / "changes"
     if not changes_root.exists():
         print("No changes found.")
         return

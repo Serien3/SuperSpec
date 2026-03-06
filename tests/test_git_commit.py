@@ -26,7 +26,7 @@ class GitCommitTest(unittest.TestCase):
         self._run(["git", "add", "tracked.txt"], root)
         self._run(["git", "commit", "-m", "chore: init"], root)
 
-        change_dir = root / "openspec" / "changes" / "demo-change"
+        change_dir = root / "superspec" / "changes" / "demo-change"
         state_path = change_dir / "execution" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(
@@ -67,7 +67,7 @@ class GitCommitTest(unittest.TestCase):
         self._run(["git", "add", "tracked.txt"], root)
         self._run(["git", "commit", "-m", "chore: init"], root)
 
-        change_dir = root / "openspec" / "changes" / "demo-change"
+        change_dir = root / "superspec" / "changes" / "demo-change"
         state_path = change_dir / "execution" / "state.json"
         state_path.parent.mkdir(parents=True, exist_ok=True)
         state_path.write_text(

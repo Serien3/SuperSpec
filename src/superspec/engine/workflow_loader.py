@@ -340,9 +340,9 @@ def _generation_readiness_errors(workflow: dict):
     generated = _deep_merge(base, _workflow_payload(workflow))
     generated.setdefault("context", {})
     generated["context"]["changeName"] = "validate-only"
-    generated["context"]["changeDir"] = "openspec/changes/validate-only"
+    generated["context"]["changeDir"] = "superspec/changes/validate-only"
     generated["context"].setdefault("repoRoot", ".")
-    generated["context"].setdefault("specRoot", "openspec")
+    generated["context"].setdefault("specRoot", "superspec")
 
     try:
         validate_plan(generated)
@@ -459,8 +459,8 @@ def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | No
 
     generated.setdefault("context", {})
     generated["context"]["changeName"] = change_name
-    generated["context"]["changeDir"] = f"openspec/changes/{change_name}"
+    generated["context"]["changeDir"] = f"superspec/changes/{change_name}"
     generated["context"].setdefault("repoRoot", ".")
-    generated["context"].setdefault("specRoot", "openspec")
+    generated["context"].setdefault("specRoot", "superspec")
 
     return generated, selected_workflow, str(workflow_path)

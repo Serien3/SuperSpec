@@ -8,20 +8,19 @@ from superspec.cli import command_init
 
 
 class CliInitCommandTest(unittest.TestCase):
-    def test_init_runs_openspec_and_syncs_packaged_skills_to_codex(self):
+    def test_init_creates_superspec_dirs_and_syncs_packaged_skills_to_codex(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
 
         args = SimpleNamespace(agent="codex")
-        with patch("superspec.cli.subprocess.run") as mock_run:
-            mock_run.return_value = SimpleNamespace(returncode=0, stdout="ok\n", stderr="")
-            command_init(root, args)
-
-        mock_run.assert_called_once_with(
-            ["openspec", "init", "--tools", "codex"],
-            cwd=root,
-            text=True,
-            capture_output=True,
-        )
+        command_init(root, args)
+        changes_root = root / "superspec" / "changes"
+        archive_dir = changes_root / "archive"
+        specs_root = root / "superspec" / "specs"
+        self.assertTrue(archive_dir.exists())
+        self.assertTrue(specs_root.exists())
+        self.assertEqual(sorted(item.name for item in changes_root.iterdir()), ["archive"])
+        self.assertEqual(list(archive_dir.iterdir()), [])
+        self.assertEqual(list(specs_root.iterdir()), [])
         self.assertTrue((root / ".codex" / "skills" / "superspec-run-change-to-done" / "SKILL.md").exists())
         self.assertTrue((root / "agents" / "code-reviewer.toml").exists())
         self.assertTrue((root / ".codex" / "config.toml").exists())
@@ -33,10 +32,7 @@ class CliInitCommandTest(unittest.TestCase):
         project_skill.write_text("# project-only", encoding="utf-8")
 
         args = SimpleNamespace(agent="codex")
-        with patch("superspec.cli.subprocess.run") as mock_run:
-            mock_run.return_value = SimpleNamespace(returncode=0, stdout="", stderr="")
-            command_init(root, args)
-
+        command_init(root, args)
         self.assertTrue((root / ".codex" / "skills" / "superspec-run-change-to-done" / "SKILL.md").exists())
         self.assertFalse((root / ".codex" / "skills" / "project-only" / "SKILL.md").exists())
         self.assertTrue((root / "agents" / "code-reviewer.toml").exists())
@@ -45,11 +41,9 @@ class CliInitCommandTest(unittest.TestCase):
     def test_init_requires_available_skills_source(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         args = SimpleNamespace(agent="codex")
-        with patch("superspec.cli.subprocess.run") as mock_run:
-            mock_run.return_value = SimpleNamespace(returncode=0, stdout="", stderr="")
-            with patch("superspec.cli._skills_source_dir", side_effect=RuntimeError("missing")):
-                with self.assertRaises(RuntimeError):
-                    command_init(root, args)
+        with patch("superspec.cli._skills_source_dir", side_effect=RuntimeError("missing")):
+            with self.assertRaises(RuntimeError):
+                command_init(root, args)
 
 
 if __name__ == "__main__":

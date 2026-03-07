@@ -1,7 +1,6 @@
 import argparse
 import json
 import shutil
-import subprocess
 from importlib import metadata
 from pathlib import Path
 
@@ -9,7 +8,7 @@ from superspec import __version__
 from superspec.engine.errors import ProtocolError
 from superspec.engine.git_ops import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
-from superspec.engine.plan_loader import resolve_change_dir
+from superspec.engine.plan_loader import resolve_change_dir, validate_change_name
 from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
 from superspec.engine.validator import validate_plan
 from superspec.scripts.worktree_create import create_worktree_state
@@ -56,17 +55,70 @@ def _write_plan(repo_root: Path, change_name: str, schema: str | None):
     return plan_path, selected_schema
 
 
-def _create_change_scaffold(repo_root: Path, change_name: str):
+def _parse_new_selector(raw: str):
+    if not isinstance(raw, str) or not raw.strip():
+        raise ProtocolError(
+            "Invalid --new selector. Expected format: <workflow-type>/<change-name>",
+            code="invalid_selector",
+            details={"selector": raw},
+        )
+    parts = raw.split("/", 1)
+    if len(parts) != 2:
+        raise ProtocolError(
+            "Invalid --new selector. Expected format: <workflow-type>/<change-name>",
+            code="invalid_selector",
+            details={"selector": raw},
+        )
+    workflow_type, local_name = parts[0].strip(), parts[1].strip()
+    if not workflow_type or not local_name:
+        raise ProtocolError(
+            "Invalid --new selector. Expected format: <workflow-type>/<change-name>",
+            code="invalid_selector",
+            details={"selector": raw},
+        )
+    if "/" in local_name:
+        raise ProtocolError(
+            "Invalid --new selector. Expected exactly one slash: <workflow-type>/<change-name>",
+            code="invalid_selector",
+            details={"selector": raw},
+        )
+    validate_change_name(workflow_type)
+    validate_change_name(local_name)
+    return workflow_type, local_name
+
+
+def _bound_workflow_id(change_dir: Path):
+    plan_path = change_dir / "plan.json"
+    if not plan_path.exists():
+        return None
+    try:
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    metadata = plan.get("metadata") if isinstance(plan, dict) else None
+    workflow = metadata.get("workflow") if isinstance(metadata, dict) else None
+    workflow_id = workflow.get("id") if isinstance(workflow, dict) else None
+    return workflow_id if isinstance(workflow_id, str) and workflow_id else None
+
+
+def _create_change_with_workflow(repo_root: Path, selector: str):
+    workflow_type, change_name = _parse_new_selector(selector)
     change_dir = resolve_change_dir(str(repo_root), change_name)
     if change_dir.exists():
+        bound = _bound_workflow_id(change_dir)
+        if bound and bound != workflow_type:
+            raise ProtocolError(
+                f"Change '{change_name}' is already bound to workflow '{bound}', cannot bind to '{workflow_type}'",
+                code="workflow_binding_conflict",
+                details={"change": change_name, "existing": bound, "requested": workflow_type},
+            )
         raise ProtocolError(
             f"Change '{change_name}' already exists at {change_dir}",
             code="change_exists",
             details={"change": change_name, "path": str(change_dir)},
         )
-
-    change_dir.mkdir(parents=True, exist_ok=False)
-    return change_dir
+    plan_path, selected_schema = _write_plan(repo_root, change_name, workflow_type)
+    return change_name, plan_path, selected_schema
 
 
 def _parse_object_json(raw: str, field: str):
@@ -134,12 +186,8 @@ def _sync_config_for_agent(repo_root: Path, agent: str):
 
 def command_init(repo_root: Path, args):
     _agent_config_dir(repo_root, args.agent)
-
-    cmd = ["openspec", "init", "--tools", args.agent]
-    result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr or result.stdout or "openspec init failed")
-    print(result.stdout, end="")
+    (repo_root / "superspec" / "changes" / "archive").mkdir(parents=True, exist_ok=True)
+    (repo_root / "superspec" / "specs").mkdir(parents=True, exist_ok=True)
 
     _sync_skills_for_agent(repo_root, args.agent)
     _sync_agents_to_repo_root(repo_root)
@@ -147,31 +195,22 @@ def command_init(repo_root: Path, args):
     print(f"SuperSpec initialization succeeded (agent={args.agent}).")
 
 
-def command_change_new(repo_root: Path, args):
-    change_dir = _create_change_scaffold(repo_root, args.change)
-    print(f"Created {change_dir}")
-    print(f"Plan not initialized for change '{args.change}'.")
-    print(f"Run: superspec plan init {args.change} --schema <schema>")
-
-
-def command_changelist(repo_root: Path, args):
+def _print_change_list(repo_root: Path):
     changes_root = repo_root / "superspec" / "changes"
     if not changes_root.exists():
         print("No changes found.")
         return
 
-    changes = sorted(item.name for item in changes_root.iterdir() if item.is_dir())
+    changes = sorted(
+        item.name
+        for item in changes_root.iterdir()
+        if item.is_dir() and item.name != "archive"
+    )
     if not changes:
         print("No changes found.")
         return
-
     for change_name in changes:
         print(change_name)
-
-
-def command_plan_init(repo_root: Path, args):
-    plan_path, selected_schema = _write_plan(repo_root, args.change, args.schema)
-    print(f"Initialized {plan_path} (schema={selected_schema})")
 
 
 def command_validate(repo_root: Path, args):
@@ -226,18 +265,40 @@ def command_git_commit(repo_root: Path, args):
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
-def command_plan_next(repo_root: Path, args):
-    payload = run_protocol_action_from_cli(
-        repo_root,
-        args.change,
-        "next",
-        owner=args.owner,
-    )
-    if args.json:
-        print(to_json(payload))
-    else:
-        action = payload.get("action") or {}
-        print(action.get("prompt") or payload.get("state", ""))
+def command_change_advance(repo_root: Path, args):
+    if args.new and args.change:
+        raise ProtocolError(
+            "Provide either --new <workflow-type>/<change-name> or <change-name>, not both.",
+            code="invalid_arguments",
+        )
+    if args.new:
+        change_name, _, _ = _create_change_with_workflow(repo_root, args.new)
+        payload = run_protocol_action_from_cli(
+            repo_root,
+            change_name,
+            "next",
+            owner=args.owner,
+        )
+        if args.json:
+            print(to_json(payload))
+        else:
+            action = payload.get("action") or {}
+            print(action.get("prompt") or payload.get("state", ""))
+        return
+    if args.change:
+        payload = run_protocol_action_from_cli(
+            repo_root,
+            args.change,
+            "next",
+            owner=args.owner,
+        )
+        if args.json:
+            print(to_json(payload))
+        else:
+            action = payload.get("action") or {}
+            print(action.get("prompt") or payload.get("state", ""))
+        return
+    _print_change_list(repo_root)
 
 
 def command_plan_complete(repo_root: Path, args):
@@ -339,21 +400,14 @@ def build_parser():
 
     change = sub.add_parser("change")
     change_sub = change.add_subparsers(dest="sub")
-    change_new = change_sub.add_parser("new")
-    change_new.add_argument("change")
-    change_sub.add_parser("list")
+    change_advance = change_sub.add_parser("advance")
+    change_advance.add_argument("change", nargs="?")
+    change_advance.add_argument("--new")
+    change_advance.add_argument("--owner", default="agent")
+    change_advance.add_argument("--json", action="store_true")
 
     plan = sub.add_parser("plan")
     plan_sub = plan.add_subparsers(dest="sub")
-
-    plan_init = plan_sub.add_parser("init")
-    plan_init.add_argument("change")
-    plan_init.add_argument("--schema", required=True)
-
-    plan_next = plan_sub.add_parser("next")
-    plan_next.add_argument("change")
-    plan_next.add_argument("--owner", default="agent")
-    plan_next.add_argument("--json", action="store_true")
 
     plan_complete = plan_sub.add_parser("complete")
     plan_complete.add_argument("change")
@@ -453,14 +507,8 @@ def main():
         if args.group == "init":
             command_init(repo_root, args)
             return
-        if args.group == "change" and args.sub == "new":
-            command_change_new(repo_root, args)
-            return
-        if args.group == "change" and args.sub == "list":
-            command_changelist(repo_root, args)
-            return
-        if args.group == "plan" and args.sub == "init":
-            command_plan_init(repo_root, args)
+        if args.group == "change" and args.sub == "advance":
+            command_change_advance(repo_root, args)
             return
         if args.group == "validate":
             command_validate(repo_root, args)
@@ -473,9 +521,6 @@ def main():
             return
         if args.group == "git" and args.sub == "commit":
             command_git_commit(repo_root, args)
-            return
-        if args.group == "plan" and args.sub == "next":
-            command_plan_next(repo_root, args)
             return
         if args.group == "plan" and args.sub == "complete":
             command_plan_complete(repo_root, args)

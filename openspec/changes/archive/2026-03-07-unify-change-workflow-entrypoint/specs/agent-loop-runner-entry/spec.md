@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Define standardized agent guidance for running SuperSpec plans end-to-end using the pull protocol loop.
-## Requirements
 ### Requirement: Agent loop execution guidance
 The system MUST provide standardized guidance (via skill and/or AGENT.md) that instructs an external agent to execute the protocol loop for a change until the plan reaches a terminal state.
 
@@ -35,4 +33,3 @@ The agent guidance MUST specify structured progress reporting and terminal outco
 - **WHEN** the loop reaches `done` and `status` reports `failed`
 - **THEN** the guided agent reports terminal failure
 - **AND** surfaces the last failure action and error payload
-

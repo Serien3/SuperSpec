@@ -6,9 +6,10 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
-from superspec.cli import command_plan_init, command_validate
+from superspec.cli import _write_plan, command_validate
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli
+from superspec.engine.plan_loader import resolve_change_dir
 
 
 class PlanLifecycleTest(unittest.TestCase):
@@ -36,12 +37,15 @@ class PlanLifecycleTest(unittest.TestCase):
         schema_dst.parent.mkdir(parents=True, exist_ok=True)
         schema_dst.write_text(schema_src.read_text(encoding="utf-8"), encoding="utf-8")
 
+    def _init_plan(self, root: Path, change: str, schema: str | None):
+        _write_plan(root, change, schema)
+
     def test_plan_init_with_default_schema_writes_plan_file(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
 
-        command_plan_init(root, args)
+        self._init_plan(root, args.change, args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         self.assertTrue(plan_path.exists())
@@ -54,7 +58,7 @@ class PlanLifecycleTest(unittest.TestCase):
         # No local superspec/schemas/workflows assets are created.
         args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
 
-        command_plan_init(root, args)
+        self._init_plan(root, args.change, args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         self.assertTrue(plan_path.exists())
@@ -69,7 +73,7 @@ class PlanLifecycleTest(unittest.TestCase):
         local_base.write_text(json.dumps({"schemaVersion": "broken"}, indent=2), encoding="utf-8")
 
         args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
-        command_plan_init(root, args)
+        self._init_plan(root, args.change, args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -97,7 +101,7 @@ class PlanLifecycleTest(unittest.TestCase):
         custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
 
         args = SimpleNamespace(change="demo-change", schema="custom-flow", title=None, goal=None)
-        command_plan_init(root, args)
+        self._init_plan(root, args.change, args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -133,7 +137,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         args = SimpleNamespace(change="demo-change", schema="legacy-plan", title=None, goal=None)
         with self.assertRaises(ProtocolError) as ctx:
-            command_plan_init(root, args)
+            self._init_plan(root, args.change, args.schema)
 
         self.assertEqual(ctx.exception.code, "invalid_plan_schema")
         self.assertEqual(ctx.exception.details["location"], "plan")
@@ -162,7 +166,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         args = SimpleNamespace(change="demo-change", schema="unknown-field", title=None, goal=None)
         with self.assertRaises(ProtocolError) as ctx:
-            command_plan_init(root, args)
+            self._init_plan(root, args.change, args.schema)
 
         self.assertEqual(ctx.exception.code, "invalid_plan_schema")
         self.assertEqual(ctx.exception.details["location"], "context")
@@ -175,7 +179,7 @@ class PlanLifecycleTest(unittest.TestCase):
             schema=None,
         )
 
-        command_plan_init(root, args)
+        self._init_plan(root, args.change, args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -210,7 +214,7 @@ class PlanLifecycleTest(unittest.TestCase):
             change="demo-change",
             schema="with-customization",
         )
-        command_plan_init(root, args)
+        self._init_plan(root, args.change, args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -224,7 +228,7 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(change="demo-change", schema="missing", title=None, goal=None)
 
         with self.assertRaises(ProtocolError) as ctx:
-            command_plan_init(root, args)
+            self._init_plan(root, args.change, args.schema)
 
         self.assertEqual(ctx.exception.code, "invalid_plan_schema")
 
@@ -246,7 +250,7 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(change="demo-change", schema="broken", title=None, goal=None)
 
         with self.assertRaises(ProtocolError) as ctx:
-            command_plan_init(root, args)
+            self._init_plan(root, args.change, args.schema)
 
         self.assertEqual(ctx.exception.code, "invalid_plan_schema")
 
@@ -277,15 +281,20 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(change="../escape", schema="SDD", title=None, goal=None)
 
         with self.assertRaises(ProtocolError) as ctx:
-            command_plan_init(root, args)
+            self._init_plan(root, args.change, args.schema)
 
         self.assertEqual(ctx.exception.code, "invalid_change_name")
+
+    def test_nested_change_name_is_rejected(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        with self.assertRaises(ProtocolError):
+            _ = resolve_change_dir(str(root), "SDD/add-test")
 
     def test_protocol_actions_reject_context_changedir_outside_changes_root(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
-        command_plan_init(root, init_args)
+        self._init_plan(root, init_args.change, init_args.schema)
 
         plan_path = root / "superspec" / "changes" / "demo-change" / "plan.json"
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
@@ -301,7 +310,7 @@ class PlanLifecycleTest(unittest.TestCase):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
-        command_plan_init(root, init_args)
+        self._init_plan(root, init_args.change, init_args.schema)
 
         other_change_dir = root / "superspec" / "changes" / "other-change"
         other_change_dir.mkdir(parents=True, exist_ok=True)
@@ -339,7 +348,7 @@ class PlanLifecycleTest(unittest.TestCase):
         command_validate(root, SimpleNamespace(schema="quick-apply", file=None, json=False))
 
         init_args = SimpleNamespace(change="demo-change", schema="quick-apply", title=None, goal=None)
-        command_plan_init(root, init_args)
+        self._init_plan(root, init_args.change, init_args.schema)
 
         nxt = run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", debug=False)
         self.assertEqual(nxt["state"], "ready")

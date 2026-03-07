@@ -12,7 +12,7 @@
 
 ### `superspec init`
 
-初始化当前仓库的 SuperSpec/OpenSpec 基础环境，并同步内置 skills 到 `.codex/skills`。
+初始化当前仓库的 SuperSpec 基础环境。
 
 ```bash
 superspec init [options]
@@ -22,6 +22,13 @@ superspec init [options]
 | option    | description                      | default  |
 | --------- | -------------------------------- | -------- |
 | `--agent` | 代理类型（当前仅支持 `codex`）。 | Required |
+
+**Behavior:**
+| 行为 | 说明 |
+| ---- | ---- |
+| 目录初始化 | 创建 `superspec/changes/archive` 与 `superspec/specs`（已存在则复用）。 |
+| 同步技能 | 将内置 skills 同步到 `.codex/skills`。 |
+| 同步代理配置 | 将内置 `agents/*` 同步到仓库根目录 `agents/`，并同步内置 config 到 `.codex/`。 |
 
 ### `superspec validate`
 
@@ -103,71 +110,31 @@ superspec git commit <change> --message "<commit message>"
 
 ## Change Commands
 
-### `superspec change new`
+### `superspec change advance`
 
-创建一个新的 change 骨架（由 superspec 直接生成），并提示后续执行 `plan init`。
-
-```bash
-superspec change new <change>
-```
-
-**Arguments:**
-| Argument   | description  | default  |
-| ---------- | ------------ | -------- |
-| `<change>` | `change`名称 | Required |
-
-### `superspec change list`
-
-列出当前仓库中已有的 change（读取 `superspec/changes/` 目录）。
+统一入口：列出 change、推进现有 change，或创建并推进新 change。
 
 ```bash
-superspec change list
+superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--owner <owner>] [--json]
 ```
 
-**Behavior:**
-| 行为 | 说明 |
-| ---- | ---- |
-| 正常 | 按名称排序逐行输出每个 change 目录名。 |
-| 空目录/不存在 | 输出 `No changes found.` |
+**Modes:**
+| 模式 | 用法 | 说明 |
+| ---- | ---- | ---- |
+| 列表模式 | `superspec change advance` | 列出当前 changes。 |
+| 推进模式 | `superspec change advance <change>` | 拉取下一个可执行 action。 |
+| 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，创建 `superspec/changes/<name>/plan.json` 并立即执行一次 next pull。 |
+
+**Options:**
+| option    | description | default |
+| --------- | ----------- | ------- |
+| `--new`   | 新建选择器，格式 `workflow-type/change-name`。 | `None` |
+| `--owner` | 执行者标识。 | `agent` |
+| `--json`  | JSON 输出。 | `false` |
+
+> 不允许同时提供 `<change>` 和 `--new`。
 
 ## Plan Commands
-
-### `superspec plan init`
-
-生成 `superspec/changes/<change>/plan.json`。
-
-```bash
-superspec plan init <change> [options]
-```
-
-**Arguments:**
-| Argument   | description  | default  |
-| ---------- | ------------ | -------- |
-| `<change>` | `change`名称 | Required |
-
-**Options:**
-| option     | description          | default  |
-| ---------- | -------------------- | -------- |
-| `--schema` | plan workflow 名称。 | Required |
-
-### `superspec plan next`
-
-拉取下一个可执行 action。
-
-```bash
-superspec plan next <change> [options]
-```
-
-**Arguments:**
-| Argument   | description  | default  |
-| ---------- | ------------ | -------- |
-| `<change>` | `change`名称 | Required |
-
-**Options:**
-| option    | description    | default |
-| --------- | -------------- | ------- |
-| `--owner` | 执行者标识。   | `agent` |
-| `--json`  | JSON 输出。    | `false` |
 
 ### `superspec plan complete`
 
@@ -266,5 +233,11 @@ superspec plan status <change> [options]
 | ---------------- | ------------------------------ | ------- |
 | `--json`         | JSON 输出。                    | `false` |
 | `--debug`        | 返回协议调试字段。             | `false` |
-| `--full`         | 返回完整 action 对象。         | `false` |
+| `--full`         | 与 `--json` 一起使用时返回完整 action 对象。 | `false` |
 | `--action-limit` | 精简模式返回 action 摘要上限。 | `40`    |
+
+**JSON 输出规则:**
+| 条件 | 输出 |
+| ---- | ---- |
+| `--json` 且未开启 `--full/--debug` | 精简对象：`changeName/status/progress` |
+| `--json` 且开启 `--full` 或 `--debug` | 完整协议 payload |

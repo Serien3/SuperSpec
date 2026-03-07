@@ -11,8 +11,8 @@ Drive one change from setup to terminal outcome using the SuperSpec pull protoco
 
 Resolve these inputs first:
 - `change_name` (recommended)
-- `owner` for `plan next` (default: `agent`)
-- `plan_schema` for `plan init` (default: `SDD`)
+- `owner` for `change advance` (default: `agent`)
+- `plan_schema` (workflow type for new change, default: `SDD`)
 
 If `change_name` is missing, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
 
@@ -21,42 +21,36 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
 ### Step 1: Resolve the target change.
    - List existing changes first:
      ```bash
-     superspec change list
+     superspec change advance
      ```
    - Reuse existing change when the target name already exists in the command output.
    - Create when absent:
      ```bash
-     superspec change new "<change_name>"
+     superspec change advance --new "<plan_schema>/<change_name>" --owner "<owner>" --json
      ```
+   - New selector format is required: `<workflow-type>/<change-name>` (for example `SDD/add-user-auth`).
 
-### Step 2:  Ensure change-scoped plan exists and is valid.
-   - Resolve `plan_schema` from external input; when missing, set `plan_schema=SDD`.
-   - Initialize when `superspec/changes/<change_name>/plan.json` is missing:
+### Step 2: Run protocol loop until terminal.
+   - Pull next action for existing change:
      ```bash
-     superspec plan init "<change_name>" --schema "<plan_schema>"
-     ```
-
-### Step 3: Run protocol loop until terminal.
-   - Pull next action:
-     ```bash
-     superspec plan next "<change_name>" --owner "<owner>" --json
+     superspec change advance "<change_name>" --owner "<owner>" --json
      ```
    - Handle response state:
      - `ready`: dispatch executor and report `complete` or `fail`.
      - `blocked`: use fixed-interval polling, then poll again.
      - `done`: stop loop and fetch terminal status.
    - Execution loop contract:
-     1. Call `next`.
+     1. Call `change advance`.
      2. If `state=ready`, **goto step4**. Execute exactly one action and report `complete` or `fail`.
-     3. Immediately call `next` again.
-     4. If `state=blocked`, use **blocked polling policy** and call `next` again.
+     3. Immediately call `change advance` again.
+     4. If `state=blocked`, use **blocked polling policy** and call `change advance` again.
      5. Exit only when `state=done`.
 
 #### Blocked Polling Policy
 
-When `next.state=blocked`:
+When `change advance` returns `state=blocked`:
 1. Sleep 2s.
-2. Call `next` again.
+2. Call `change advance` again.
 3. Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
 
 ### Step 4: Dispatch `ready` action by executor.

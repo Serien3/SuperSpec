@@ -9,13 +9,13 @@ Define file-based workflow definitions for plan generation, including identity, 
 The system MUST support declarative workflow files that define workflow metadata and action sequence content.
 
 #### Scenario: Load a valid workflow file
-- **WHEN** a user requests plan initialization with a schema name that exists in the configured workflow directory
+- **WHEN** a user requests change creation with `change advance --new <schema>/<change-name>` and the schema exists in the configured workflow directory
 - **THEN** the system loads that workflow definition
 - **AND** uses its metadata and actions as generation input
 
 #### Scenario: Discover workflow in default filesystem location
 - **WHEN** a user adds a valid workflow file under `superspec/schemas/workflows/` using the `<schema>.workflow.json` naming pattern
-- **THEN** the workflow is discoverable by `plan init --schema <schema>`
+- **THEN** the workflow is discoverable by `change advance --new <schema>/<change-name>`
 - **AND** no SuperSpec source code changes are required
 
 ### Requirement: Workflow identity and metadata validation
@@ -41,5 +41,5 @@ The system MUST allow users to add new workflow files without modifying SuperSpe
 
 #### Scenario: Use a newly added custom workflow
 - **WHEN** a user adds a new valid workflow file to the supported workflow directory
-- **THEN** that workflow becomes selectable for subsequent plan initialization
+- **THEN** that workflow becomes selectable for subsequent `change advance --new` calls
 - **AND** the system can generate a valid plan from it

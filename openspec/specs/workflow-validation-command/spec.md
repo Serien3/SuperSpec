@@ -19,7 +19,7 @@ The `superspec validate` command MUST validate workflow template documents inten
 - **AND** does not require a change name
 
 ### Requirement: Validate command enforces generation readiness
-The `superspec validate` command MUST perform generation-readiness checks in addition to structural schema checks, including core workflow contract checks for explicit executor declaration and exact executor payload matching, so a passing workflow is usable for subsequent `plan init` generation.
+The `superspec validate` command MUST perform generation-readiness checks in addition to structural schema checks, including core workflow contract checks for explicit executor declaration and exact executor payload matching, so a passing workflow is usable for subsequent `change advance --new` plan generation.
 
 #### Scenario: Reject semantically invalid dependency graph
 - **WHEN** a workflow document has an action dependency that references a missing action id

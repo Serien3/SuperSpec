@@ -4,7 +4,6 @@ from pathlib import Path
 
 from superspec.engine.errors import ProtocolError, ValidationError
 from superspec.engine.protocol import complete_action, fail_action, next_action, status_snapshot
-from superspec.engine.state_store import read_execution_state, write_execution_state
 from superspec.engine.validator import validate_plan
 
 
@@ -313,7 +312,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["action"]["actionId"], "a1")
 
-    def test_next_reports_invalid_expression_as_protocol_error(self):
+    def test_next_treats_expression_like_tokens_as_literal_script(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -329,13 +328,11 @@ class IntegrationTest(unittest.TestCase):
         )
         validate_plan(plan)
 
-        with self.assertRaises(ProtocolError) as ctx:
-            next_action(plan, str(change_dir), owner="agent-a")
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["script_command"], "echo ${variables.missingVar}")
 
-        self.assertEqual(ctx.exception.code, "invalid_expression")
-        self.assertIn("invalid runtime expression", str(ctx.exception))
-
-    def test_next_rejects_non_string_runtime_script_payload(self):
+    def test_next_keeps_script_field_literal_without_runtime_resolution(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -352,13 +349,11 @@ class IntegrationTest(unittest.TestCase):
         plan["variables"] = {"command": {"cmd": "echo hi"}}
         validate_plan(plan)
 
-        with self.assertRaises(ProtocolError) as ctx:
-            next_action(plan, str(change_dir), owner="agent-a")
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["script_command"], "${variables.command}")
 
-        self.assertEqual(ctx.exception.code, "invalid_action_payload")
-        self.assertIn("script executor requires script field", str(ctx.exception))
-
-    def test_next_rejects_non_string_runtime_human_instruction(self):
+    def test_next_keeps_human_instruction_literal_without_runtime_resolution(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -377,11 +372,9 @@ class IntegrationTest(unittest.TestCase):
         plan["variables"] = {"instruction": {"text": "review"}}
         validate_plan(plan)
 
-        with self.assertRaises(ProtocolError) as ctx:
-            next_action(plan, str(change_dir), owner="agent-a")
-
-        self.assertEqual(ctx.exception.code, "invalid_action_payload")
-        self.assertIn("human executor requires human.instruction", str(ctx.exception))
+        nxt = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["action"]["human"]["instruction"], "${variables.instruction}")
 
     def test_next_ignores_unresolved_expressions_outside_runtime_fields(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -405,7 +398,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["action"]["actionId"], "a1")
         self.assertEqual(nxt["action"]["script_command"], "echo one")
 
-    def test_next_uses_action_prompt_with_runtime_substitution(self):
+    def test_next_keeps_action_prompt_literal_without_runtime_substitution(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -429,9 +422,9 @@ class IntegrationTest(unittest.TestCase):
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["action"]["prompt"], f"Write specs for {change_name}; seed=from-a1")
+        self.assertEqual(nxt["action"]["prompt"], "Write specs for ${context.changeName}; seed=${actions.a1.outputs.summary}")
 
-    def test_next_resolves_templates_using_execution_state_scope(self):
+    def test_next_keeps_state_expression_literal_in_script_field(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -454,18 +447,11 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(first["action"]["actionId"], "a1")
         complete_action(plan, str(change_dir), "a1", {"ok": True})
 
-        state = read_execution_state(str(change_dir))
-        state["commit_by_superspec_last"] = {
-            "commit_hash": "abc123",
-            "message": "feat: test",
-        }
-        write_execution_state(str(change_dir), state)
-
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["action"]["script_command"], "echo abc123")
+        self.assertEqual(nxt["action"]["script_command"], "echo ${state.commit_by_superspec_last.commit_hash}")
 
-    def test_next_resolves_inputs_templates_recursively(self):
+    def test_next_keeps_inputs_literal_without_runtime_resolution(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -492,9 +478,9 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(
             nxt["action"]["inputs"],
             {
-                "change": change_name,
-                "items": [f"superspec/changes/{change_name}", "from-vars"],
-                "nested": {"summary": "seed=from-vars"},
+                "change": "${context.changeName}",
+                "items": ["${context.changeDir}", "${variables.seed}"],
+                "nested": {"summary": "seed=${variables.seed}"},
             },
         )
 

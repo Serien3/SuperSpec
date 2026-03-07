@@ -48,11 +48,95 @@ def append_event(change_dir: str, event: dict):
         f.write(json.dumps(event_line, ensure_ascii=True) + "\n")
 
 
-def write_execution_state(change_dir: str, payload: dict):
+def _initial_runtime_state(definition: dict):
+    now = _now_iso()
+    return {
+        "schemaVersion": definition["schemaVersion"],
+        "planId": definition["planId"],
+        "changeName": definition["context"]["changeName"],
+        "status": "running",
+        "startedAt": now,
+        "updatedAt": now,
+        "actions": [
+            {
+                "id": action["id"],
+                "type": action["type"],
+                "status": "PENDING",
+                "dependsOn": action.get("dependsOn", []),
+                "startedAt": None,
+                "finishedAt": None,
+                "error": None,
+                "output": None,
+            }
+            for action in definition["actions"]
+        ],
+    }
+
+
+def initialize_execution_snapshot(change_dir: str, definition: dict):
+    layout = ensure_execution_layout(change_dir)
+    workflow_meta = ((definition.get("metadata") or {}).get("workflow") or {})
+    snapshot = {
+        "meta": {
+            "schemaVersion": "superspec.state/v1.0.0",
+            "changeName": definition["context"]["changeName"],
+            "workflowId": workflow_meta.get("id"),
+            "workflowVersion": workflow_meta.get("version"),
+            "createdAt": _now_iso(),
+            "updatedAt": _now_iso(),
+        },
+        "definition": definition,
+        "runtime": _initial_runtime_state(definition),
+    }
+    write_json(layout["state"], snapshot)
+    append_event(change_dir, {"event": "state.initialized", "planId": definition["planId"]})
+    return snapshot
+
+
+def read_execution_snapshot(change_dir: str):
+    layout = ensure_execution_layout(change_dir)
+    return read_json(layout["state"])
+
+
+def write_execution_snapshot(change_dir: str, payload: dict):
     layout = ensure_execution_layout(change_dir)
     write_json(layout["state"], payload)
 
 
+def write_execution_state(change_dir: str, payload: dict):
+    layout = ensure_execution_layout(change_dir)
+    snapshot = read_json(layout["state"])
+    if not isinstance(snapshot, dict):
+        raise ProtocolError(
+            "execution snapshot not found",
+            code="missing_file",
+            details={"path": str(layout["state"])},
+        )
+    snapshot["runtime"] = payload
+    meta = snapshot.get("meta")
+    if isinstance(meta, dict):
+        meta["updatedAt"] = _now_iso()
+    write_json(layout["state"], snapshot)
+
+
 def read_execution_state(change_dir: str):
     layout = ensure_execution_layout(change_dir)
-    return read_json(layout["state"])
+    snapshot = read_json(layout["state"])
+    if snapshot is None:
+        return None
+    if not isinstance(snapshot, dict):
+        raise ProtocolError(
+            f"Invalid execution snapshot file: {layout['state']}",
+            code="invalid_json",
+            details={"path": str(layout["state"])},
+        )
+    runtime = snapshot.get("runtime")
+    if runtime is None:
+        return None
+    if not isinstance(runtime, dict):
+        raise ProtocolError(
+            f"Invalid runtime state in execution snapshot: {layout['state']}",
+            code="invalid_json",
+            details={"path": str(layout["state"])},
+        )
+    return runtime

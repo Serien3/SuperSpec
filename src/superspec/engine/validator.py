@@ -1,5 +1,3 @@
-import re
-
 from .constants import SUPPORTED_SCHEMA_VERSION
 from .errors import ValidationError
 
@@ -36,28 +34,6 @@ def _detect_cycle(actions):
             if cycle:
                 return cycle
     return None
-
-
-def _scan_exprs(value, out):
-    if isinstance(value, str):
-        for match in re.finditer(r"\$\{([^}]+)}", value):
-            out.append(match.group(1).strip())
-    elif isinstance(value, list):
-        for item in value:
-            _scan_exprs(item, out)
-    elif isinstance(value, dict):
-        for item in value.values():
-            _scan_exprs(item, out)
-
-
-def _valid_scope(expr: str):
-    return (
-        expr.startswith("context.")
-        or expr.startswith("variables.")
-        or expr.startswith("actions.")
-        or expr.startswith("state.")
-        or expr.startswith("env.")
-    )
 
 
 def validate_plan(plan):
@@ -104,11 +80,6 @@ def validate_plan(plan):
             _assert(isinstance(human, dict), f"Action {aid} must set human object for human executor")
             _assert(isinstance(human.get("instruction"), str) and human["instruction"], f"Action {aid} human executor requires human.instruction")
             _assert(not has_skill and not has_script, f"Action {aid} human executor cannot define skill/script payload")
-
-        exprs = []
-        _scan_exprs(action, exprs)
-        for expr in exprs:
-            _assert(_valid_scope(expr), f"Action {aid} has invalid expression scope: {expr}")
 
     for action in actions:
         for dep in action.get("dependsOn", []):

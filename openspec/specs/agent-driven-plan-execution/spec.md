@@ -10,11 +10,6 @@ The system MUST provide a command to retrieve exactly one executable action for 
 - **THEN** the system returns state `ready`
 - **AND** returns only top-level fields `state` and `action`
 
-#### Scenario: Next-action expression resolution failure returns protocol error
-- **WHEN** the next runnable action contains an unresolved runtime expression
-- **THEN** next-action retrieval fails with a structured protocol error payload
-- **AND** the error code is `invalid_expression`
-
 #### Scenario: No remaining actions
 - **WHEN** all actions are in terminal states according to execution policy
 - **THEN** the system returns state `done`
@@ -48,34 +43,24 @@ The system MUST return normalized execution payloads that distinguish script, sk
 #### Scenario: Script action payload
 - **WHEN** the next action uses `executor=script`
 - **THEN** the payload includes `script_command` and `prompt`
-- **AND** may include rendered `inputs` when action inputs are defined
+- **AND** may include literal `inputs` when action inputs are defined
 
 #### Scenario: Skill action payload
 - **WHEN** the next action uses `executor=skill`
 - **THEN** the payload includes `skillName` and `prompt`
 - **AND** does not include context file maps in the action payload
-- **AND** may include rendered `inputs` when action inputs are defined
+- **AND** may include literal `inputs` when action inputs are defined
 
 #### Scenario: Human action payload
 - **WHEN** the next action uses `executor=human`
 - **THEN** the payload includes `human` review metadata and `prompt`
 - **AND** does not include `script_command` or `skillName`
-- **AND** may include rendered `inputs` when action inputs are defined
+- **AND** may include literal `inputs` when action inputs are defined
 
-#### Scenario: Skill action completion contract
-- **WHEN** a skill action finishes successfully in an external agent runtime
-- **THEN** the client reports completion using the returned `actionId`
-- **AND** the output payload includes runtime outcome fields sufficient for audit and replay decisions
-
-#### Scenario: Skill action failure contract
-- **WHEN** a skill action fails in an external agent runtime
-- **THEN** the client reports failure using the returned `actionId`
-- **AND** the error payload includes an error code/category and human-readable failure context
-
-#### Scenario: Reject invalid explicit executor values at validation time
-- **WHEN** a plan action declares an explicit `executor` value outside `skill|script|human`
-- **THEN** plan validation fails before protocol execution starts
-- **AND** no next-action payload is generated for that invalid action
+#### Scenario: Runtime fields are not expression-expanded
+- **WHEN** action runtime fields contain `${...}` substrings
+- **THEN** protocol payload generation treats those fields as literal string content
+- **AND** no runtime expression expansion scope is applied
 
 ### Requirement: Agent-managed loop semantics
 The protocol MUST support agent-managed execution loops that repeatedly call `next` and report outcomes until terminal state.
@@ -118,3 +103,4 @@ The system MUST compute progress fields without counting skipped outcomes.
 - **WHEN** `superspec change status <change-name>` is computed for a change
 - **THEN** `progress.done` counts only actions in `SUCCESS`
 - **AND** `progress.failed` counts actions in `FAILED`
+

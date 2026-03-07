@@ -46,11 +46,11 @@ def resolve_change_dir(repo_root: str, change_name: str) -> Path:
     return _ensure_path_under_root(root / change_name, root, field="change")
 
 
-def plan_path_for_change(repo_root: str, change_name: str) -> Path:
-    return resolve_change_dir(repo_root, change_name) / "plan.json"
+def state_path_for_change(repo_root: str, change_name: str) -> Path:
+    return resolve_change_dir(repo_root, change_name) / "execution" / "state.json"
 
 
-def resolve_change_dir_from_plan_context(repo_root: str | Path, change_dir: str) -> Path:
+def resolve_change_dir_from_definition_context(repo_root: str | Path, change_dir: str) -> Path:
     if not isinstance(change_dir, str) or not change_dir.strip():
         raise ProtocolError("context.changeDir must be a non-empty string", code="invalid_path")
     repo = Path(repo_root).resolve()
@@ -58,17 +58,30 @@ def resolve_change_dir_from_plan_context(repo_root: str | Path, change_dir: str)
     return _ensure_path_under_root(target, changes_root(repo), field="context.changeDir")
 
 
-def load_plan_from_change(repo_root: str, change_name: str):
-    plan_path = plan_path_for_change(repo_root, change_name)
-    if not plan_path.exists():
-        raise FileNotFoundError(f"Plan file not found: {plan_path}")
+def load_state_snapshot_from_change(repo_root: str, change_name: str):
+    state_path = state_path_for_change(repo_root, change_name)
+    if not state_path.exists():
+        raise FileNotFoundError(f"Execution snapshot not found: {state_path}")
     try:
-        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        snapshot = json.loads(state_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ProtocolError(
-            f"Invalid JSON in plan file: {plan_path}",
+            f"Invalid JSON in execution snapshot: {state_path}",
             code="invalid_json",
-            details={"path": str(plan_path)},
+            details={"path": str(state_path)},
         ) from exc
-    validate_plan(plan)
-    return plan, str(plan_path)
+    if not isinstance(snapshot, dict):
+        raise ProtocolError(
+            "Execution snapshot must be a JSON object",
+            code="invalid_json",
+            details={"path": str(state_path)},
+        )
+    definition = snapshot.get("definition")
+    if not isinstance(definition, dict):
+        raise ProtocolError(
+            "Execution snapshot missing definition",
+            code="invalid_json",
+            details={"path": str(state_path)},
+        )
+    validate_plan(definition)
+    return snapshot, str(state_path)

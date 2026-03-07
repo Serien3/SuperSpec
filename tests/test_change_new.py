@@ -76,7 +76,7 @@ class ChangeNewCommandTest(unittest.TestCase):
         mock_run.assert_called_once_with(root, "demo", "next", owner="agent")
         self.assertIn('"state": "blocked"', stdout.getvalue())
 
-    def test_command_change_advance_new_creates_change_and_bootstraps_plan(self):
+    def test_command_change_advance_new_creates_change_and_bootstraps_state_snapshot(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         args = SimpleNamespace(change=None, new="SDD/add-test-feature", owner="agent", json=True)
 
@@ -84,8 +84,8 @@ class ChangeNewCommandTest(unittest.TestCase):
         with redirect_stdout(stdout):
             command_change_advance(root, args)
 
-        plan_path = root / "superspec" / "changes" / "add-test-feature" / "plan.json"
-        self.assertTrue(plan_path.exists())
+        state_path = root / "superspec" / "changes" / "add-test-feature" / "execution" / "state.json"
+        self.assertTrue(state_path.exists())
         payload = json.loads(stdout.getvalue())
         self.assertIn(payload["state"], {"ready", "blocked", "done"})
 

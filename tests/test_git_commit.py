@@ -32,11 +32,30 @@ class GitCommitTest(unittest.TestCase):
         state_path.write_text(
             json.dumps(
                 {
-                    "schemaVersion": "superspec.plan/v1.0.0",
-                    "planId": "main",
-                    "changeName": "demo-change",
-                    "status": "running",
-                    "actions": [],
+                    "meta": {
+                        "schemaVersion": "superspec.state/v1.0.0",
+                        "changeName": "demo-change",
+                    },
+                    "definition": {
+                        "schemaVersion": "superspec.plan/v1.0.0",
+                        "planId": "main",
+                        "title": "Test",
+                        "goal": "Test",
+                        "context": {
+                            "changeName": "demo-change",
+                            "changeDir": "superspec/changes/demo-change",
+                            "repoRoot": ".",
+                            "specRoot": "superspec",
+                        },
+                        "actions": [],
+                    },
+                    "runtime": {
+                        "schemaVersion": "superspec.plan/v1.0.0",
+                        "planId": "main",
+                        "changeName": "demo-change",
+                        "status": "running",
+                        "actions": [],
+                    },
                 },
                 indent=2,
             ),
@@ -53,8 +72,8 @@ class GitCommitTest(unittest.TestCase):
         self.assertEqual(payload["commit_by_superspec_last"]["message"], "feat: test commit")
 
         state = json.loads(state_path.read_text(encoding="utf-8"))
-        self.assertEqual(state["commit_by_superspec_last"]["commit_hash"], head)
-        self.assertEqual(state["commit_by_superspec_last"]["message"], "feat: test commit")
+        self.assertEqual(state["runtime"]["commit_by_superspec_last"]["commit_hash"], head)
+        self.assertEqual(state["runtime"]["commit_by_superspec_last"]["message"], "feat: test commit")
 
     def test_commit_for_change_requires_running_state(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -73,8 +92,27 @@ class GitCommitTest(unittest.TestCase):
         state_path.write_text(
             json.dumps(
                 {
-                    "status": "success",
-                    "actions": [],
+                    "meta": {
+                        "schemaVersion": "superspec.state/v1.0.0",
+                        "changeName": "demo-change",
+                    },
+                    "definition": {
+                        "schemaVersion": "superspec.plan/v1.0.0",
+                        "planId": "main",
+                        "title": "Test",
+                        "goal": "Test",
+                        "context": {
+                            "changeName": "demo-change",
+                            "changeDir": "superspec/changes/demo-change",
+                            "repoRoot": ".",
+                            "specRoot": "superspec",
+                        },
+                        "actions": [],
+                    },
+                    "runtime": {
+                        "status": "success",
+                        "actions": [],
+                    },
                 },
                 indent=2,
             ),

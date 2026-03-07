@@ -1,10 +1,13 @@
-import os
 from datetime import datetime, timezone
 
 from superspec.engine.constants import SUPPORTED_PROTOCOL_VERSION
-from superspec.engine.context import resolve_runtime_action_fields
 from superspec.engine.errors import ProtocolError
-from superspec.engine.state_store import append_event, read_execution_state, write_execution_state
+from superspec.engine.state_store import (
+    append_event,
+    initialize_execution_snapshot,
+    read_execution_state,
+    write_execution_state,
+)
 
 _VALID_EXECUTORS = {"skill", "script", "human"}
 
@@ -30,24 +33,6 @@ def _action_runtime_outputs(state: dict):
         if action.get("output") is not None:
             outputs[action["id"]] = {"outputs": action["output"]}
     return outputs
-
-
-def _resolve_action_for_payload(action: dict, state: dict, plan: dict):
-    expr_context = {
-        "context": plan["context"],
-        "variables": plan.get("variables", {}),
-        "actions": _action_runtime_outputs(state),
-        "state": state,
-        "env": dict(os.environ),
-    }
-    try:
-        return resolve_runtime_action_fields(action, expr_context)
-    except ValueError as exc:
-        raise ProtocolError(
-            f"Action {action['id']} has invalid runtime expression: {exc}",
-            code="invalid_expression",
-            details={"actionId": action["id"]},
-        ) from exc
 
 
 def _build_action_payload(action: dict, resolved_action: dict):
@@ -116,37 +101,11 @@ def _build_action_payload(action: dict, resolved_action: dict):
     return payload
 
 
-def _initial_protocol_state(plan: dict):
-    now = _now_iso()
-    return {
-        "schemaVersion": plan["schemaVersion"],
-        "planId": plan["planId"],
-        "changeName": plan["context"]["changeName"],
-        "status": "running",
-        "startedAt": now,
-        "updatedAt": now,
-        "actions": [
-            {
-                "id": action["id"],
-                "type": action["type"],
-                "status": "PENDING",
-                "dependsOn": action.get("dependsOn", []),
-                "startedAt": None,
-                "finishedAt": None,
-                "error": None,
-                "output": None,
-            }
-            for action in plan["actions"]
-        ],
-    }
-
-
 def ensure_protocol_state(plan: dict, change_dir: str):
     state = read_execution_state(change_dir)
     if state is None:
-        state = _initial_protocol_state(plan)
-        write_execution_state(change_dir, state)
-        append_event(change_dir, {"event": "state.initialized", "planId": plan["planId"]})
+        snapshot = initialize_execution_snapshot(change_dir, plan)
+        state = snapshot["runtime"]
     return state
 
 
@@ -262,7 +221,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent"):
         if not action:
             continue
 
-        resolved_action = _resolve_action_for_payload(action, state, plan)
+        resolved_action = action
         action_state["status"] = "RUNNING"
         action_state["startedAt"] = _now_iso()
 
@@ -351,7 +310,7 @@ def _contracts_payload():
         "next": {
             "states": ["ready", "blocked", "done"],
             "fields": ["state", "action"],
-            "errors": ["invalid_expression", "invalid_action_payload"],
+            "errors": ["invalid_action_payload"],
         },
         "complete": {
             "request": ["change", "action-id", "output-json"],

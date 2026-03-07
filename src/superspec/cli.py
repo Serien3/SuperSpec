@@ -8,9 +8,9 @@ from superspec import __version__
 from superspec.engine.errors import ProtocolError
 from superspec.engine.git_ops import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
-from superspec.engine.plan_loader import resolve_change_dir, validate_change_name
+from superspec.engine.plan_loader import resolve_change_dir, state_path_for_change, validate_change_name
+from superspec.engine.state_store import initialize_execution_snapshot
 from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
-from superspec.engine.validator import validate_plan
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
@@ -40,19 +40,17 @@ def _copy_children(source: Path, target: Path):
     return copied
 
 
-def _write_plan(repo_root: Path, change_name: str, schema: str | None):
+def _write_execution_snapshot(repo_root: Path, change_name: str, schema: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
-    plan_path = change_dir / "plan.json"
 
-    plan, selected_schema, _ = build_plan_from_workflow(
+    definition, selected_schema, _ = build_plan_from_workflow(
         repo_root,
         change_name,
         schema=schema,
     )
-    validate_plan(plan)
-    plan_path.write_text(f"{json.dumps(plan, indent=2, ensure_ascii=True)}\n", encoding="utf-8")
-    return plan_path, selected_schema
+    initialize_execution_snapshot(str(change_dir), definition)
+    return state_path_for_change(str(repo_root), change_name), selected_schema
 
 
 def _parse_new_selector(raw: str):
@@ -88,14 +86,15 @@ def _parse_new_selector(raw: str):
 
 
 def _bound_workflow_id(change_dir: Path):
-    plan_path = change_dir / "plan.json"
-    if not plan_path.exists():
+    snapshot_path = change_dir / "execution" / "state.json"
+    if not snapshot_path.exists():
         return None
     try:
-        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return None
-    metadata = plan.get("metadata") if isinstance(plan, dict) else None
+    definition = snapshot.get("definition") if isinstance(snapshot, dict) else None
+    metadata = definition.get("metadata") if isinstance(definition, dict) else None
     workflow = metadata.get("workflow") if isinstance(metadata, dict) else None
     workflow_id = workflow.get("id") if isinstance(workflow, dict) else None
     return workflow_id if isinstance(workflow_id, str) and workflow_id else None
@@ -117,8 +116,8 @@ def _create_change_with_workflow(repo_root: Path, selector: str):
             code="change_exists",
             details={"change": change_name, "path": str(change_dir)},
         )
-    plan_path, selected_schema = _write_plan(repo_root, change_name, workflow_type)
-    return change_name, plan_path, selected_schema
+    state_path, selected_schema = _write_execution_snapshot(repo_root, change_name, workflow_type)
+    return change_name, state_path, selected_schema
 
 
 def _parse_object_json(raw: str, field: str):

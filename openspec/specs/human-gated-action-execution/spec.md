@@ -30,4 +30,4 @@ The system SHALL use existing completion/failure reporting commands for human ac
 #### Scenario: Human rejection reports failure
 - **WHEN** a client submits `fail` for a running human action
 - **THEN** the workflow follows standard fail-fast semantics and becomes terminal `failed`
-- **AND** status output reflects failure without introducing new action states
+- **AND** `superspec change status <change-name>` reflects failure without introducing new action states

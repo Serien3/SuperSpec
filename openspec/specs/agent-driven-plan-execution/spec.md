@@ -94,12 +94,12 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 The system MUST return protocol contract metadata in status responses only when debug mode is explicitly requested.
 
 #### Scenario: Status without debug
-- **WHEN** a client calls status without debug mode
+- **WHEN** a client calls `superspec change status <change-name>` without debug mode
 - **THEN** the response includes execution state and progress fields
 - **AND** does not include `contracts`
 
 #### Scenario: Status with debug enabled
-- **WHEN** a client calls status with debug mode enabled
+- **WHEN** a client calls `superspec change status <change-name>` with debug mode enabled
 - **THEN** the response includes execution state and progress fields
 - **AND** includes `contracts` metadata for protocol inspection
 
@@ -107,7 +107,7 @@ The system MUST return protocol contract metadata in status responses only when 
 The system MUST represent action terminal outcomes using only `SUCCESS` and `FAILED`.
 
 #### Scenario: Report action status snapshot
-- **WHEN** a client requests status during or after execution
+- **WHEN** a client requests `superspec change status <change-name>` during or after execution
 - **THEN** each action status is one of `PENDING`, `READY`, `RUNNING`, `SUCCESS`, or `FAILED`
 - **AND** no action is reported as `SKIPPED`
 
@@ -115,6 +115,6 @@ The system MUST represent action terminal outcomes using only `SUCCESS` and `FAI
 The system MUST compute progress fields without counting skipped outcomes.
 
 #### Scenario: Calculate done and failed counts
-- **WHEN** status is computed for a change
+- **WHEN** `superspec change status <change-name>` is computed for a change
 - **THEN** `progress.done` counts only actions in `SUCCESS`
 - **AND** `progress.failed` counts actions in `FAILED`

@@ -88,7 +88,7 @@ When `change advance` returns `state=blocked`:
 ### Step 5: Produce terminal result and feedback.
    - Read terminal status:
      ```bash
-     superspec plan status "<change_name>" --json
+     superspec change status "<change_name>" --json
      ```
    - Read status after loop exits on `next.state=done` (terminal confirmation), not after each action.
 

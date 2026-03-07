@@ -360,7 +360,7 @@ def command_plan_reject(repo_root: Path, args):
     print(f"Action {args.action_id} rejected.")
 
 
-def command_plan_status(repo_root: Path, args):
+def command_change_status(repo_root: Path, args):
     payload = run_protocol_action_from_cli(
         repo_root,
         args.change,
@@ -405,6 +405,17 @@ def build_parser():
     change_advance.add_argument("--new")
     change_advance.add_argument("--owner", default="agent")
     change_advance.add_argument("--json", action="store_true")
+    change_status = change_sub.add_parser("status")
+    change_status.add_argument("change")
+    change_status.add_argument("--json", action="store_true")
+    change_status.add_argument("--debug", action="store_true")
+    change_status.add_argument("--full", action="store_true", help="Return full action objects in JSON output.")
+    change_status.add_argument(
+        "--action-limit",
+        type=int,
+        default=40,
+        help="Compact JSON mode: max number of action summaries to include.",
+    )
 
     plan = sub.add_parser("plan")
     plan_sub = plan.add_subparsers(dest="sub")
@@ -429,18 +440,6 @@ def build_parser():
     plan_reject.add_argument("action_id")
     plan_reject.add_argument("--code", default="human_rejected")
     plan_reject.add_argument("--message", default="human review rejected")
-
-    plan_status = plan_sub.add_parser("status")
-    plan_status.add_argument("change")
-    plan_status.add_argument("--json", action="store_true")
-    plan_status.add_argument("--debug", action="store_true")
-    plan_status.add_argument("--full", action="store_true", help="Return full action objects in JSON output.")
-    plan_status.add_argument(
-        "--action-limit",
-        type=int,
-        default=40,
-        help="Compact JSON mode: max number of action summaries to include.",
-    )
 
     validate = sub.add_parser("validate")
     validate.add_argument("--schema")
@@ -510,6 +509,9 @@ def main():
         if args.group == "change" and args.sub == "advance":
             command_change_advance(repo_root, args)
             return
+        if args.group == "change" and args.sub == "status":
+            command_change_status(repo_root, args)
+            return
         if args.group == "validate":
             command_validate(repo_root, args)
             return
@@ -534,10 +536,6 @@ def main():
         if args.group == "plan" and args.sub == "reject":
             command_plan_reject(repo_root, args)
             return
-        if args.group == "plan" and args.sub == "status":
-            command_plan_status(repo_root, args)
-            return
-
         parser.print_help()
         raise SystemExit(1)
     except ProtocolError as exc:

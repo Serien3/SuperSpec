@@ -116,10 +116,10 @@ class ChangeNewCommandTest(unittest.TestCase):
         args = parser.parse_args(["plan", "complete", "demo-change", "a1", "--output-json", '{"ok": true}'])
         self.assertEqual(args.output_json, '{"ok": true}')
 
-    def test_plan_status_parser_rejects_retry_flag(self):
+    def test_change_status_parser_rejects_retry_flag(self):
         parser = build_parser()
         with self.assertRaises(SystemExit):
-            parser.parse_args(["plan", "status", "demo-change", "--retry"])
+            parser.parse_args(["change", "status", "demo-change", "--retry"])
 
     def test_plan_approve_parser_defaults(self):
         parser = build_parser()

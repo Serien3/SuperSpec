@@ -134,6 +134,33 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 
 > 不允许同时提供 `<change>` 和 `--new`。
 
+### `superspec change status`
+
+查询执行状态、进度和 action 列表。
+
+```bash
+superspec change status <change> [options]
+```
+
+**Arguments:**
+| Argument   | description  | default  |
+| ---------- | ------------ | -------- |
+| `<change>` | `change`名称 | Required |
+
+**Options:**
+| option           | description                    | default |
+| ---------------- | ------------------------------ | ------- |
+| `--json`         | JSON 输出。                    | `false` |
+| `--debug`        | 返回协议调试字段。             | `false` |
+| `--full`         | 与 `--json` 一起使用时返回完整 action 对象。 | `false` |
+| `--action-limit` | 精简模式返回 action 摘要上限。 | `40`    |
+
+**JSON 输出规则:**
+| 条件 | 输出 |
+| ---- | ---- |
+| `--json` 且未开启 `--full/--debug` | 精简对象：`changeName/status/progress` |
+| `--json` 且开启 `--full` 或 `--debug` | 完整协议 payload |
+
 ## Plan Commands
 
 ### `superspec plan complete`
@@ -214,30 +241,3 @@ superspec plan reject <change> <action_id> [options]
 | ----------- | ------------ | ----------------------- |
 | `--code`    | 拒绝错误码。 | `human_rejected`        |
 | `--message` | 拒绝信息。   | `human review rejected` |
-
-### `superspec plan status`
-
-查询执行状态、进度和 action 列表。
-
-```bash
-superspec plan status <change> [options]
-```
-
-**Arguments:**
-| Argument   | description  | default  |
-| ---------- | ------------ | -------- |
-| `<change>` | `change`名称 | Required |
-
-**Options:**
-| option           | description                    | default |
-| ---------------- | ------------------------------ | ------- |
-| `--json`         | JSON 输出。                    | `false` |
-| `--debug`        | 返回协议调试字段。             | `false` |
-| `--full`         | 与 `--json` 一起使用时返回完整 action 对象。 | `false` |
-| `--action-limit` | 精简模式返回 action 摘要上限。 | `40`    |
-
-**JSON 输出规则:**
-| 条件 | 输出 |
-| ---- | ---- |
-| `--json` 且未开启 `--full/--debug` | 精简对象：`changeName/status/progress` |
-| `--json` 且开启 `--full` 或 `--debug` | 完整协议 payload |

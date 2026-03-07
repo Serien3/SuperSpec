@@ -27,12 +27,11 @@ The agent guidance MUST define dispatch behavior by executor type and report out
 The agent guidance MUST specify structured progress reporting and terminal outcome signaling for success and failure.
 
 #### Scenario: Terminal success signaling
-- **WHEN** the loop reaches `done` and `status` reports `success`
+- **WHEN** the loop reaches `done` and `superspec change status <change-name>` reports `success`
 - **THEN** the guided agent reports terminal success
 - **AND** includes final progress summary
 
 #### Scenario: Terminal failure signaling
-- **WHEN** the loop reaches `done` and `status` reports `failed`
+- **WHEN** the loop reaches `done` and `superspec change status <change-name>` reports `failed`
 - **THEN** the guided agent reports terminal failure
 - **AND** surfaces the last failure action and error payload
-

@@ -110,7 +110,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(ctx.exception.code, "invalid_json")
         self.assertEqual(ctx.exception.details["path"], str(state_path))
 
-    def test_blocked_polling_preserves_running_action(self):
+    def test_next_returns_running_action_until_reported(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -126,8 +126,9 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(first["state"], "ready")
         self.assertEqual(first["action"]["actionId"], "a1")
 
-        blocked = next_action(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(blocked["state"], "blocked")
+        resumed = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(resumed["state"], "ready")
+        self.assertEqual(resumed["action"]["actionId"], "a1")
 
         status = status_snapshot(plan, str(change_dir))
         a1 = next(action for action in status["actions"] if action["id"] == "a1")
@@ -536,8 +537,9 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(first["action"]["human"]["rejectLabel"], "Reject")
         self.assertIn("prompt", first["action"])
 
-        blocked = next_action(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(blocked["state"], "blocked")
+        resumed = next_action(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(resumed["state"], "ready")
+        self.assertEqual(resumed["action"]["actionId"], "a1")
 
         after_complete = complete_action(plan, str(change_dir), "a1", {"ok": True, "executor": "human", "actionId": "a1"})
         by_id = {action["id"]: action for action in after_complete["actions"]}

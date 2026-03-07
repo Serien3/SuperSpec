@@ -35,16 +35,16 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
      ```bash
      superspec change advance "<change_name>" --owner "<owner>" --json
      ```
-   - Handle response state:
-     - `ready`: dispatch executor and report `complete` or `fail`.
-     - `blocked`: use fixed-interval polling, then poll again.
-     - `done`: stop loop and fetch terminal status.
+  - Handle response state:
+    - `ready`: dispatch executor and report `complete` or `fail` (may be newly allocated or resumed in-flight action).
+    - `blocked`: use fixed-interval polling, then poll again.
+    - `done`: stop loop and fetch terminal status.
    - Execution loop contract:
      1. Call `change advance`.
      2. If `state=ready`, **goto step4**. Execute exactly one action and report `complete` or `fail`.
      3. Immediately call `change advance` again.
-     4. If `state=blocked`, use **blocked polling policy** and call `change advance` again.
-     5. Exit only when `state=done`.
+    4. If `state=blocked`, use **blocked polling policy** and call `change advance` again.
+    5. Exit only when `state=done`.
 
 #### Blocked Polling Policy
 
@@ -52,6 +52,9 @@ When `change advance` returns `state=blocked`:
 1. Sleep 2s.
 2. Call `change advance` again.
 3. Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
+
+Note:
+- If there is an in-flight `RUNNING` action, `change advance` may return `state=ready` with that same action for session handoff/resume instead of returning `blocked`.
 
 ### Step 4: Dispatch `ready` action by executor.
    - `script` executor:

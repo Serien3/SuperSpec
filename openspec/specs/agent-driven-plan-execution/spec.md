@@ -71,9 +71,14 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 - **AND** eventually returns `done` when the plan reaches terminal state
 
 #### Scenario: Blocked loop behavior
-- **WHEN** `next` returns `blocked` because no action is currently runnable (for example due to unresolved dependencies or an in-flight `RUNNING` action awaiting report-back)
+- **WHEN** `next` returns `blocked` because no action is currently runnable due to unresolved dependencies and no in-flight `RUNNING` action is available for resume
 - **THEN** the agent can continue polling without invalidating state
 - **AND** serial action ordering remains intact across repeated polling
+
+#### Scenario: Return in-flight running action for session handoff
+- **WHEN** a change has an in-flight `RUNNING` action and a client requests `next`
+- **THEN** the protocol returns state `ready` with that same in-flight action payload
+- **AND** does not allocate a new action until the in-flight action is reported complete or failed
 
 ### Requirement: Status contract visibility in debug mode
 The system MUST return protocol contract metadata in status responses only when debug mode is explicitly requested.
@@ -103,4 +108,3 @@ The system MUST compute progress fields without counting skipped outcomes.
 - **WHEN** `superspec change status <change-name>` is computed for a change
 - **THEN** `progress.done` counts only actions in `SUCCESS`
 - **AND** `progress.failed` counts actions in `FAILED`
-

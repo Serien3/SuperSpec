@@ -215,6 +215,19 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent"):
         }
 
     for action_state in state["actions"]:
+        if action_state["status"] != "RUNNING":
+            continue
+        action = _action_by_id(plan, action_state["id"])
+        if not action:
+            continue
+        payload = _build_action_payload(action, action)
+        _persist(change_dir, state)
+        return {
+            "state": "ready",
+            "action": payload,
+        }
+
+    for action_state in state["actions"]:
         if action_state["status"] != "READY":
             continue
         action = _action_by_id(plan, action_state["id"])

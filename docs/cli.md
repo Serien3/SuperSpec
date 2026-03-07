@@ -123,7 +123,7 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 | ---- | ---- | ---- |
 | 列表模式 | `superspec change advance` | 列出当前 changes。 |
 | 推进模式 | `superspec change advance <change>` | 拉取下一个可执行 action。 |
-| 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，创建 `superspec/changes/<name>/plan.json` 并立即执行一次 next pull。 |
+| 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，初始化 `superspec/changes/<name>/execution/state.json` 与 `events.log` 并立即执行一次 next pull。 |
 
 **Options:**
 | option    | description | default |

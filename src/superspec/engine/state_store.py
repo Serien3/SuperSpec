@@ -50,6 +50,25 @@ def append_event(change_dir: str, event: dict):
 
 def _initial_runtime_state(definition: dict):
     now = _now_iso()
+    runtime_actions = []
+    for action in definition["actions"]:
+        runtime_action = {
+            "id": action["id"],
+            "type": action["type"],
+            "status": "PENDING",
+            "dependsOn": action.get("dependsOn", []),
+            "startedAt": None,
+            "finishedAt": None,
+            "error": None,
+            "output": None,
+        }
+        for field in ("executor", "skill", "script", "prompt", "inputs"):
+            if field in action:
+                runtime_action[field] = action[field]
+        if "human" in action:
+            runtime_action["human"] = action["human"]
+        runtime_actions.append(runtime_action)
+
     return {
         "schemaVersion": definition["schemaVersion"],
         "planId": definition["planId"],
@@ -57,19 +76,7 @@ def _initial_runtime_state(definition: dict):
         "status": "running",
         "startedAt": now,
         "updatedAt": now,
-        "actions": [
-            {
-                "id": action["id"],
-                "type": action["type"],
-                "status": "PENDING",
-                "dependsOn": action.get("dependsOn", []),
-                "startedAt": None,
-                "finishedAt": None,
-                "error": None,
-                "output": None,
-            }
-            for action in definition["actions"]
-        ],
+        "actions": runtime_actions,
     }
 
 
@@ -85,7 +92,6 @@ def initialize_execution_snapshot(change_dir: str, definition: dict):
             "createdAt": _now_iso(),
             "updatedAt": _now_iso(),
         },
-        "definition": definition,
         "runtime": _initial_runtime_state(definition),
     }
     write_json(layout["state"], snapshot)

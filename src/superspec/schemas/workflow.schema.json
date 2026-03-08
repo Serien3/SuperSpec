@@ -20,22 +20,6 @@
     "description": {
       "type": "string"
     },
-    "planId": {
-      "type": "string",
-      "minLength": 1
-    },
-    "title": {
-      "type": "string",
-      "minLength": 1
-    },
-    "goal": {
-      "type": "string",
-      "minLength": 1
-    },
-    "variables": {
-      "type": "object",
-      "additionalProperties": true
-    },
     "actions": {
       "type": "array",
       "minItems": 1,
@@ -43,7 +27,7 @@
         "type": "object",
         "required": [
           "id",
-          "type",
+          "description",
           "executor"
         ],
         "properties": {
@@ -51,15 +35,9 @@
             "type": "string",
             "minLength": 1
           },
-          "type": {
+          "description": {
             "type": "string",
             "minLength": 1
-          },
-          "title": {
-            "type": "string"
-          },
-          "enabled": {
-            "type": "boolean"
           },
           "dependsOn": {
             "type": "array",
@@ -68,9 +46,6 @@
               "minLength": 1
             },
             "uniqueItems": true
-          },
-          "when": {
-            "type": "string"
           },
           "executor": {
             "enum": [
@@ -96,55 +71,12 @@
               "instruction": {
                 "type": "string",
                 "minLength": 1
-              },
-              "approveLabel": {
-                "type": "string",
-                "minLength": 1
-              },
-              "rejectLabel": {
-                "type": "string",
-                "minLength": 1
               }
             },
             "required": [
               "instruction"
             ],
-            "additionalProperties": true
-          },
-          "inputs": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "outputs": {
-            "type": "object",
-            "additionalProperties": true
-          },
-          "approval": {
-            "type": "object",
-            "properties": {
-              "required": {
-                "type": "boolean"
-              },
-              "message": {
-                "type": "string"
-              }
-            },
             "additionalProperties": false
-          },
-          "artifacts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "notes": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         },
         "allOf": [

@@ -51,7 +51,7 @@ def resolve_runtime_action_fields(action: dict, context: dict):
     human = action.get("human")
     if isinstance(human, dict):
         resolved_human = {}
-        for field in ("instruction", "approveLabel", "rejectLabel"):
+        for field in ("instruction",):
             if field in human:
                 resolved_human[field] = resolve_template_string(human[field], context)
         if resolved_human:

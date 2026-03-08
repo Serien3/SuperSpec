@@ -22,11 +22,6 @@ class PlanLifecycleTest(unittest.TestCase):
     def _seed_generation_assets(self, root: Path):
         repo_root = self._repo_root()
 
-        base_template_src = repo_root / "src" / "superspec" / "schemas" / "templates" / "plan.base.json"
-        base_template_dst = root / "superspec" / "schemas" / "templates" / "plan.base.json"
-        base_template_dst.parent.mkdir(parents=True, exist_ok=True)
-        base_template_dst.write_text(base_template_src.read_text(encoding="utf-8"), encoding="utf-8")
-
         workflow_src = repo_root / "src" / "superspec" / "schemas" / "workflows" / "SDD.workflow.json"
         workflow_dst = root / "superspec" / "schemas" / "workflows" / "SDD.workflow.json"
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
@@ -43,11 +38,10 @@ class PlanLifecycleTest(unittest.TestCase):
     def _definition_path(self, root: Path, change: str) -> Path:
         return root / "superspec" / "changes" / change / "execution" / "state.json"
 
-    def _load_definition(self, root: Path, change: str) -> dict:
-        snapshot = json.loads(self._definition_path(root, change).read_text(encoding="utf-8"))
-        return snapshot["definition"]
+    def _load_snapshot(self, root: Path, change: str) -> dict:
+        return json.loads(self._definition_path(root, change).read_text(encoding="utf-8"))
 
-    def test_plan_init_with_default_schema_writes_plan_file(self):
+    def test_plan_init_with_default_schema_writes_state_file(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
@@ -56,9 +50,9 @@ class PlanLifecycleTest(unittest.TestCase):
 
         plan_path = self._definition_path(root, "demo-change")
         self.assertTrue(plan_path.exists())
-        plan = self._load_definition(root, "demo-change")
-        self.assertEqual(plan["context"]["changeName"], "demo-change")
-        self.assertEqual(plan["metadata"]["workflow"]["id"], "SDD")
+        snapshot = self._load_snapshot(root, "demo-change")
+        self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
+        self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
 
     def test_plan_init_falls_back_to_packaged_default_workflow(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -69,21 +63,9 @@ class PlanLifecycleTest(unittest.TestCase):
 
         plan_path = self._definition_path(root, "demo-change")
         self.assertTrue(plan_path.exists())
-        plan = self._load_definition(root, "demo-change")
-        self.assertEqual(plan["metadata"]["workflow"]["id"], "SDD")
-
-    def test_plan_init_ignores_local_plan_base_template(self):
-        root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        self._seed_generation_assets(root)
-        # If local base template were used, init would fail validation.
-        local_base = root / "superspec" / "schemas" / "templates" / "plan.base.json"
-        local_base.write_text(json.dumps({"schemaVersion": "broken"}, indent=2), encoding="utf-8")
-
-        args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
-        self._init_plan(root, args.change, args.schema)
-
-        plan = self._load_definition(root, "demo-change")
-        self.assertEqual(plan["schemaVersion"], "superspec.plan/v1.0.0")
+        snapshot = self._load_snapshot(root, "demo-change")
+        self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
+        self.assertNotIn("definition", snapshot)
 
     def test_plan_init_supports_explicit_schema_selection(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -92,12 +74,12 @@ class PlanLifecycleTest(unittest.TestCase):
         custom = {
             "workflowId": "custom-flow",
             "version": "1.0.0",
-            "title": "Custom title from workflow",
-            "goal": "Custom goal from workflow",
+            "description": "Custom workflow description",
+            "metadata": {"channel": "test"},
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
@@ -109,11 +91,10 @@ class PlanLifecycleTest(unittest.TestCase):
         args = SimpleNamespace(change="demo-change", schema="custom-flow", title=None, goal=None)
         self._init_plan(root, args.change, args.schema)
 
-        plan = self._load_definition(root, "demo-change")
-        self.assertEqual(plan["title"], "Custom title from workflow")
-        self.assertEqual(plan["goal"], "Custom goal from workflow")
-        self.assertEqual(plan["context"]["changeName"], "demo-change")
-        self.assertEqual(plan["context"]["changeDir"], "superspec/changes/demo-change")
+        snapshot = self._load_snapshot(root, "demo-change")
+        self.assertEqual(snapshot["runtime"]["planId"], "main")
+        self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
+        self.assertEqual(snapshot["meta"]["workflowId"], "custom-flow")
 
     def test_plan_init_rejects_legacy_plan_overlay_field(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -125,7 +106,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
@@ -157,7 +138,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
@@ -186,16 +167,16 @@ class PlanLifecycleTest(unittest.TestCase):
 
         self._init_plan(root, args.change, args.schema)
 
-        plan = self._load_definition(root, "demo-change")
-        self.assertEqual(plan["title"], "Main delivery plan")
-        self.assertEqual(plan["goal"], "Execute this change in a single-agent serial loop")
+        snapshot = self._load_snapshot(root, "demo-change")
+        self.assertEqual(snapshot["runtime"]["planId"], "main")
+        self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
 
-    def test_plan_init_uses_workflow_title_and_goal(self):
+    def test_plan_init_rejects_removed_top_level_workflow_customizations(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
 
         custom = {
-            "workflowId": "with-customization",
+            "workflowId": "with-removed-customization",
             "version": "1.0.0",
             "title": "Workflow title",
             "goal": "Workflow goal",
@@ -205,25 +186,18 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
             ],
         }
-        custom_path = root / "superspec" / "schemas" / "workflows" / "with-customization.workflow.json"
+        custom_path = root / "superspec" / "schemas" / "workflows" / "with-removed-customization.workflow.json"
         custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
 
-        args = SimpleNamespace(
-            change="demo-change",
-            schema="with-customization",
-        )
-        self._init_plan(root, args.change, args.schema)
-
-        plan = self._load_definition(root, "demo-change")
-        self.assertEqual(plan["title"], "Workflow title")
-        self.assertEqual(plan["goal"], "Workflow goal")
-        self.assertEqual(plan["variables"]["channel"], "test")
+        with self.assertRaises(ProtocolError) as ctx:
+            self._init_plan(root, "demo-change", "with-removed-customization")
+        self.assertEqual(ctx.exception.code, "invalid_plan_schema")
 
     def test_plan_init_rejects_unknown_schema(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -294,7 +268,7 @@ class PlanLifecycleTest(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             _ = resolve_change_dir(str(root), "SDD/add-test")
 
-    def test_protocol_actions_reject_context_changedir_outside_changes_root(self):
+    def test_protocol_actions_reject_runtime_changename_mismatch(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
         init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
@@ -302,33 +276,13 @@ class PlanLifecycleTest(unittest.TestCase):
 
         plan_path = self._definition_path(root, "demo-change")
         snapshot = json.loads(plan_path.read_text(encoding="utf-8"))
-        snapshot["definition"]["context"]["changeDir"] = "../../../tmp/outside"
+        snapshot["runtime"]["changeName"] = "other-change"
         plan_path.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
 
         with self.assertRaises(ProtocolError) as ctx:
             run_protocol_action_from_cli(root, "demo-change", "status", debug=False)
 
         self.assertEqual(ctx.exception.code, "invalid_path")
-
-    def test_protocol_actions_reject_context_changedir_mismatch_with_target_change(self):
-        root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        self._seed_generation_assets(root)
-        init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
-        self._init_plan(root, init_args.change, init_args.schema)
-
-        other_change_dir = root / "superspec" / "changes" / "other-change"
-        other_change_dir.mkdir(parents=True, exist_ok=True)
-
-        plan_path = self._definition_path(root, "demo-change")
-        snapshot = json.loads(plan_path.read_text(encoding="utf-8"))
-        snapshot["definition"]["context"]["changeDir"] = "superspec/changes/other-change"
-        plan_path.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
-
-        with self.assertRaises(ProtocolError) as ctx:
-            run_protocol_action_from_cli(root, "demo-change", "status", debug=False)
-
-        self.assertEqual(ctx.exception.code, "invalid_path")
-        self.assertFalse((other_change_dir / "execution" / "state.json").exists())
 
     def test_custom_workflow_generated_plan_can_run_protocol_after_validate(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -340,7 +294,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
@@ -368,7 +322,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                 }
@@ -398,7 +352,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "dependsOn": ["missing"],
                 }
@@ -432,7 +386,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                 }
             ],
         }
@@ -452,7 +406,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "run",
+                    "description": "run",
                     "executor": "script",
                 }
             ],
@@ -473,7 +427,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "run",
+                    "description": "run",
                     "skill": "openspec-apply-change",
                 }
             ],
@@ -499,7 +453,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "run",
+                    "description": "run",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                     "script": "echo hi",
@@ -527,7 +481,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "human.review",
+                    "description": "human.review",
                     "executor": "human",
                     "human": {"instruction": "Review and approve"},
                 }
@@ -548,7 +502,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "executor": "skill",
                     "skill": "openspec-apply-change",
                     "prompt": "Run apply for ${context.changeName}",
@@ -560,6 +514,30 @@ class PlanLifecycleTest(unittest.TestCase):
 
         command_validate(root, SimpleNamespace(schema="action-prompt", file=None, json=False))
 
+    def test_validate_rejects_removed_action_optional_fields(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        workflow = {
+            "workflowId": "removed-action-fields",
+            "version": "1.0.0",
+            "actions": [
+                {
+                    "id": "x1",
+                    "description": "openspec.apply",
+                    "executor": "skill",
+                    "skill": "openspec-apply-change",
+                    "title": "not-allowed",
+                    "inputs": {"k": "v"},
+                }
+            ],
+        }
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "removed-action-fields.workflow.json"
+        workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
+
+        with self.assertRaises(SystemExit):
+            command_validate(root, SimpleNamespace(schema="removed-action-fields", file=None, json=False))
+
     def test_validate_rejects_human_executor_payload_mismatch(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
@@ -570,7 +548,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "actions": [
                 {
                     "id": "x1",
-                    "type": "human.review",
+                    "description": "human.review",
                     "executor": "human",
                 }
             ],

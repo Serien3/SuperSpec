@@ -2,34 +2,27 @@
     "workflowId": "code-review",
     "version": "1.0.0",
     "description": "Workflow for requesting and receiving code reviews as part of the spec-driven development process",
-    "title": "Code review process",
-    "goal": "Ensure that code changes are reviewed and approved by peers before being merged into the main codebase",
     "actions": [
         {
             "id": "a1",
-            "type": "request-code-review",
+            "description": "request-code-review",
             "executor": "skill",
-            "skill": "requesting-code-review",
-            "inputs": {
-                "BASE_SHA": "${context.BASE_SHA}"
-            }
+            "skill": "requesting-code-review"
         },
         {
             "id": "a2",
-            "type": "proposal.review",
+            "description": "proposal.review",
             "dependsOn": [
                 "a1"
             ],
             "executor": "human",
             "human": {
-                "instruction": "Please review superspec/changes/${context.changeName}/proposal.md and approve or reject before continuing.",
-                "approveLabel": "Approve proposal",
-                "rejectLabel": "Request changes"
+                "instruction": "Please review superspec/changes/${context.changeName}/proposal.md and approve or reject before continuing."
             }
         },
         {
             "id": "a3",
-            "type": "specs&design&tasks",
+            "description": "specs&design&tasks",
             "dependsOn": [
                 "a2"
             ],
@@ -38,7 +31,7 @@
         },
         {
             "id": "a4",
-            "type": "openspec.apply",
+            "description": "openspec.apply",
             "dependsOn": [
                 "a3"
             ],
@@ -47,7 +40,7 @@
         },
         {
             "id": "a5",
-            "type": "code-review.request",
+            "description": "code-review.request",
             "dependsOn": [
                 "a4"
             ],
@@ -56,7 +49,7 @@
         },
         {
             "id": "a6",
-            "type": "code-review.receive",
+            "description": "code-review.receive",
             "dependsOn": [
                 "a5"
             ],
@@ -65,7 +58,7 @@
         },
         {
             "id": "a7",
-            "type": "openspec.verify",
+            "description": "openspec.verify",
             "dependsOn": [
                 "a6"
             ],

@@ -93,10 +93,8 @@ def _bound_workflow_id(change_dir: Path):
         snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return None
-    definition = snapshot.get("definition") if isinstance(snapshot, dict) else None
-    metadata = definition.get("metadata") if isinstance(definition, dict) else None
-    workflow = metadata.get("workflow") if isinstance(metadata, dict) else None
-    workflow_id = workflow.get("id") if isinstance(workflow, dict) else None
+    meta = snapshot.get("meta") if isinstance(snapshot, dict) else None
+    workflow_id = meta.get("workflowId") if isinstance(meta, dict) else None
     return workflow_id if isinstance(workflow_id, str) and workflow_id else None
 
 

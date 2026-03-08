@@ -3,7 +3,6 @@ import re
 from pathlib import Path
 
 from .errors import ProtocolError
-from .validator import validate_plan
 
 
 _CHANGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -76,12 +75,18 @@ def load_state_snapshot_from_change(repo_root: str, change_name: str):
             code="invalid_json",
             details={"path": str(state_path)},
         )
-    definition = snapshot.get("definition")
-    if not isinstance(definition, dict):
+    runtime = snapshot.get("runtime")
+    if not isinstance(runtime, dict):
         raise ProtocolError(
-            "Execution snapshot missing definition",
+            "Execution snapshot missing runtime",
             code="invalid_json",
             details={"path": str(state_path)},
         )
-    validate_plan(definition)
+    actions = runtime.get("actions")
+    if not isinstance(actions, list):
+        raise ProtocolError(
+            "Execution snapshot runtime.actions must be an array",
+            code="invalid_json",
+            details={"path": str(state_path)},
+        )
     return snapshot, str(state_path)

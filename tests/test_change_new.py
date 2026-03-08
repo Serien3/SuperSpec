@@ -55,16 +55,6 @@ class ChangeNewCommandTest(unittest.TestCase):
 
     def test_command_change_advance_existing_maps_to_next(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        change_dir = root / "superspec" / "changes" / "demo"
-        change_dir.mkdir(parents=True, exist_ok=True)
-        (change_dir / "plan.json").write_text(
-            json.dumps(
-                {
-                    "metadata": {"workflow": {"id": "SDD", "version": "1.0.0"}},
-                }
-            ),
-            encoding="utf-8",
-        )
         args = SimpleNamespace(change="demo", new=None, owner="agent", json=True)
 
         with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:

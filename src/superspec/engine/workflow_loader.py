@@ -3,6 +3,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+from superspec.engine.constants import SUPPORTED_SCHEMA_VERSION
 from superspec.engine.errors import ProtocolError, ValidationError
 from superspec.engine.validator import validate_plan
 
@@ -10,20 +11,16 @@ WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
     "workflowId",
     "version",
     "description",
-    "planId",
-    "title",
-    "goal",
-    "variables",
     "actions",
     "metadata",
 )
 
 WORKFLOW_PLAN_CUSTOMIZATION_FIELDS = (
-    "planId",
-    "title",
-    "goal",
-    "variables",
     "actions",
+    "metadata",
+)
+WORKFLOW_OPTIONAL_TOP_LEVEL_FIELDS = (
+    "description",
     "metadata",
 )
 
@@ -64,8 +61,22 @@ def _load_workflow_schema():
     return _load_json(_package_root() / "schemas" / "workflow.schema.json")
 
 
-def _load_base_template():
-    return _load_json(_package_root() / "schemas" / "templates" / "plan.base.json")
+def _base_definition(change_name: str):
+    return {
+        "schemaVersion": SUPPORTED_SCHEMA_VERSION,
+        "planId": "main",
+        "title": "Change delivery plan",
+        "goal": "Execute this change in a single-agent serial loop",
+        "context": {
+            "changeName": change_name,
+            "changeDir": f"superspec/changes/{change_name}",
+            "repoRoot": ".",
+            "specRoot": "superspec",
+        },
+        "metadata": {
+            "generatedBy": "superspec",
+        },
+    }
 
 
 def _load_workflow(repo_root: Path, workflow_name: str):
@@ -117,7 +128,7 @@ def _unknown_top_level_field_error(workflow: dict, workflow_name: str):
                 "unsupported_field",
                 field,
                 f"Unsupported field '{field}' in workflow '{workflow_name}'",
-                f"Use top-level customization fields: {', '.join(WORKFLOW_PLAN_CUSTOMIZATION_FIELDS)}",
+                f"Use optional top-level fields: {', '.join(WORKFLOW_OPTIONAL_TOP_LEVEL_FIELDS)}",
             )
         return _error(
             "unsupported_field",
@@ -336,13 +347,7 @@ def _semantic_errors(workflow: dict):
 
 
 def _generation_readiness_errors(workflow: dict):
-    base = _load_base_template()
-    generated = _deep_merge(base, _workflow_payload(workflow))
-    generated.setdefault("context", {})
-    generated["context"]["changeName"] = "validate-only"
-    generated["context"]["changeDir"] = "superspec/changes/validate-only"
-    generated["context"].setdefault("repoRoot", ".")
-    generated["context"].setdefault("specRoot", "superspec")
+    generated = _deep_merge(_base_definition("validate-only"), _workflow_payload(workflow))
 
     try:
         validate_plan(generated)
@@ -435,6 +440,19 @@ def _workflow_payload(workflow: dict):
         if key in workflow:
             payload[key] = workflow[key]
 
+    # Workflow actions use "description" as the author-facing field and are
+    # normalized to plan actions' required "type" field at generation time.
+    normalized_actions = []
+    for action in payload.get("actions", []):
+        if isinstance(action, dict):
+            normalized = dict(action)
+            normalized["type"] = normalized.pop("description")
+            normalized_actions.append(normalized)
+        else:
+            normalized_actions.append(action)
+    if normalized_actions:
+        payload["actions"] = normalized_actions
+
     # Keep workflow identity in generated metadata for traceability.
     payload.setdefault("metadata", {})
     payload["metadata"] = _deep_merge(
@@ -451,16 +469,9 @@ def _workflow_payload(workflow: dict):
 
 def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | None = None):
     selected_workflow = _resolve_workflow_name(schema)
-    base = _load_base_template()
     workflow_doc, workflow_path = _load_workflow(repo_root, selected_workflow)
     _validate_workflow(repo_root, workflow_doc, selected_workflow)
 
-    generated = _deep_merge(base, _workflow_payload(workflow_doc))
-
-    generated.setdefault("context", {})
-    generated["context"]["changeName"] = change_name
-    generated["context"]["changeDir"] = f"superspec/changes/{change_name}"
-    generated["context"].setdefault("repoRoot", ".")
-    generated["context"].setdefault("specRoot", "superspec")
+    generated = _deep_merge(_base_definition(change_name), _workflow_payload(workflow_doc))
 
     return generated, selected_workflow, str(workflow_path)

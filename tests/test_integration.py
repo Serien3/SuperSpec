@@ -519,8 +519,6 @@ class IntegrationTest(unittest.TestCase):
                     "executor": "human",
                     "human": {
                         "instruction": "Review generated code and approve to continue",
-                        "approveLabel": "Approve",
-                        "rejectLabel": "Reject",
                     },
                 },
                 {"id": "a2", "type": "openspec.apply", "dependsOn": ["a1"], "executor": "script", "script": "echo go"},
@@ -533,8 +531,6 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(first["action"]["executor"], "human")
         self.assertEqual(first["action"]["actionId"], "a1")
         self.assertEqual(first["action"]["human"]["instruction"], "Review generated code and approve to continue")
-        self.assertEqual(first["action"]["human"]["approveLabel"], "Approve")
-        self.assertEqual(first["action"]["human"]["rejectLabel"], "Reject")
         self.assertIn("prompt", first["action"])
 
         resumed = next_action(plan, str(change_dir), owner="agent-a")

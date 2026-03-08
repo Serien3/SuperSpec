@@ -28,7 +28,7 @@ The system MUST support only an explicitly documented, finite workflow customiza
 #### Scenario: Unknown customization field is rejected
 - **WHEN** a workflow includes a customization field outside the supported set
 - **THEN** workflow validation fails before plan generation
-- **AND** no `plan.json` is written
+- **AND** no `execution/state.json` is written
 
 #### Scenario: Unknown nested customization field is rejected
 - **WHEN** a workflow includes an unrecognized nested field within a constrained customization object
@@ -46,4 +46,4 @@ The system MUST apply supported customization fields using a deterministic prece
 #### Scenario: Customization conflict resolves deterministically
 - **WHEN** the same supported field is defined in base template and workflow customization
 - **THEN** generated output follows documented precedence order
-- **AND** repeated runs with identical input produce identical `plan.json` values
+- **AND** repeated runs with identical input produce identical `execution/state.json.runtime.actions` values

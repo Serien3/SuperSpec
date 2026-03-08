@@ -5,7 +5,7 @@ Define the minimal workflow core contract and separate execution-critical fields
 ## Requirements
 
 ### Requirement: Workflow defines explicit core field contract
-The workflow template SHALL define a minimal core contract with required top-level fields `workflowId`, `version`, and `actions`, and each action SHALL require `id`, `type`, and `executor`.
+The workflow template SHALL define a minimal core contract with required top-level fields `workflowId`, `version`, and `actions`, and each action SHALL require `id`, `description`, and `executor`.
 
 #### Scenario: Missing core action executor is rejected
 - **WHEN** a workflow action omits `executor`
@@ -25,10 +25,10 @@ The system SHALL require exactly one executor payload that matches `actions[].ex
 - **THEN** validation fails for `human.instruction`
 - **AND** command exits non-zero
 
-### Requirement: Annotation fields do not alter execution contract
-The workflow template MAY include annotation fields for readability and documentation, but these fields SHALL NOT satisfy or override core execution requirements.
+### Requirement: Workflow optional fields are explicitly bounded
+The workflow template SHALL allow only explicit optional fields: top-level `description` and `metadata`; and action-level `dependsOn`, `prompt`, plus executor-matching payload fields `skill` or `script` or `human`.
 
-#### Scenario: Annotation-only action still fails core contract
-- **WHEN** an action includes `title`, `notes`, and `tags` but omits required core executor payload
-- **THEN** validation fails on the missing core payload
-- **AND** annotation fields are not treated as execution configuration
+#### Scenario: Removed optional action fields are rejected
+- **WHEN** an action includes unsupported optional fields outside the bounded set
+- **THEN** validation fails with a field-path error
+- **AND** unsupported fields are not carried into generated execution definition

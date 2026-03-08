@@ -80,9 +80,7 @@
     "human": {
       "executor": "human",
       "human": {
-        "instruction": "string",
-        "approveLabel": "string (optional)",
-        "rejectLabel": "string (optional)"
+        "instruction": "string"
       },
       "inputs": "object (optional)",
       "prompt": "string"
@@ -93,8 +91,6 @@
       "skill",
       "prompt",
       "human.instruction",
-      "human.approveLabel",
-      "human.rejectLabel",
       "inputs (recursive)"
     ],
     "runtimeExpressionScopes": [

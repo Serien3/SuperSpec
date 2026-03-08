@@ -2,12 +2,12 @@
 
 Define the change-scoped plan orchestration behavior for SuperSpec v1.0.0, including plan validation, protocol-driven action execution, and execution state tracking.
 ## Requirements
-### Requirement: Change-scoped plan definition
-The system MUST support a change-scoped execution definition snapshot in `openspec/changes/<change-name>/execution/state.json` as the authoritative execution definition for that change.
+### Requirement: Change-scoped runtime snapshot
+The system MUST support a change-scoped runtime snapshot in `openspec/changes/<change-name>/execution/state.json` as the authoritative execution state for that change.
 
-#### Scenario: Load execution definition from state snapshot
+#### Scenario: Load execution runtime from state snapshot
 - **WHEN** a user runs execution for a change
-- **THEN** the system loads workflow definition from `execution/state.json`
+- **THEN** the system loads runtime execution state from `execution/state.json`
 - **AND** rejects execution if the snapshot file is missing
 
 #### Scenario: Unified advance bootstraps state snapshot for new change
@@ -20,7 +20,7 @@ The system MUST provide a workflow schema selector for snapshot generation throu
 
 #### Scenario: Initialize state snapshot with required schema key in unified flow
 - **WHEN** a user runs `superspec change advance --new <schema>/<name>` with a supported schema
-- **THEN** the system writes a valid generated definition snapshot into `execution/state.json`
+- **THEN** the system writes a valid generated runtime snapshot into `execution/state.json`
 - **AND** the resulting snapshot is immediately eligible for execution
 
 #### Scenario: Reject unsupported initialization selector
@@ -29,12 +29,12 @@ The system MUST provide a workflow schema selector for snapshot generation throu
 - **AND** no state snapshot file is created or overwritten
 
 ### Requirement: Schema-aware workflow resolution
-The system MUST resolve initialization content through base-template-plus-workflow composition and persist the resulting definition into the state snapshot.
+The system MUST resolve initialization content through workflow composition and persist the resulting runtime baseline into the state snapshot.
 
-#### Scenario: Resolve generated snapshot definition from schema key
+#### Scenario: Resolve generated snapshot runtime from schema key
 - **WHEN** initialization runs with a supported selector
-- **THEN** the engine resolves the corresponding workflow and base template inputs
-- **AND** writes the resolved definition into `execution/state.json`
+- **THEN** the engine resolves the corresponding workflow input
+- **AND** writes the resolved runtime baseline into `execution/state.json`
 
 ### Requirement: Simplified single-agent starter template
 The system MUST provide a default plan template optimized for single-agent, single-process, serial execution.
@@ -45,10 +45,10 @@ The system MUST provide a default plan template optimized for single-agent, sing
 - **AND** excludes lease-oriented or concurrency-oriented starter fields
 
 ### Requirement: Plan schema version validation
-The system MUST validate the declared execution definition schema version before any action execution begins.
+The system MUST validate the declared execution runtime schema version before any action execution begins.
 
 #### Scenario: Reject unknown schema version
-- **WHEN** snapshot definition contains an unsupported `schemaVersion`
+- **WHEN** snapshot runtime contains an unsupported `schemaVersion`
 - **THEN** the system fails validation
 - **AND** does not execute any actions
 
@@ -87,19 +87,19 @@ The system MUST support `skill`, `script`, and `human` executors using a shared 
 - **THEN** the execution protocol returns a human action payload containing `human` review metadata and `prompt`
 - **AND** stores normalized outputs only after explicit completion reporting
 
-#### Scenario: Infer executor from action payload fields
-- **WHEN** an action omits explicit `executor` and defines exactly one of `skill`, `script`, or `human`
-- **THEN** plan validation accepts the action and runtime infers executor from that field
-- **AND** returns a payload shape consistent with the inferred executor type
+#### Scenario: No implicit executor inference
+- **WHEN** an action omits explicit `executor`
+- **THEN** plan validation fails before protocol execution starts
+- **AND** no next-action payload is generated for that invalid action
 
 #### Scenario: Reject non-inferable or ambiguous executor definition
-- **WHEN** an action omits explicit `executor` and defines none or multiple of `skill`, `script`, `human`
+- **WHEN** an action defines ambiguous executor payload fields
 - **THEN** plan validation fails before protocol execution starts
 - **AND** no next-action payload is generated for that invalid action
 
 #### Scenario: Limit runtime expression resolution surface
 - **WHEN** an action includes template expressions
-- **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, `prompt`, `human.instruction`, `human.approveLabel`, `human.rejectLabel`, and `inputs` (recursive)
+- **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, `prompt`, `human.instruction`, and `inputs` (recursive)
 - **AND** expression scopes are constrained to `context.*`, `variables.*`, `actions.*`, `state.*`, and `env.*`
 - **AND** other action fields do not participate in runtime payload expression expansion
 - **AND** the runtime implementation does not provide a generic recursive resolver for arbitrary action objects
@@ -148,4 +148,3 @@ The system MUST not apply retry policy semantics from action fields during proto
 - **WHEN** action definitions include retry-like metadata fields
 - **THEN** plan validation and execution are governed by current schema and executor rules
 - **AND** protocol runtime does not schedule retries based on those metadata fields
-

@@ -79,11 +79,11 @@ Note:
        ```
    - `human` executor:
      - Present `action.human.instruction` and wait for human decision.
-     - Treat reviewer input equal to `action.human.approveLabel` as approval. Run
+     - If human approves, run
        ```bash
        superspec plan approve "<change_name>" "<actionId>"  --summary "human review approved"
        ```
-     - Treat reviewer input equal to `action.human.rejectLabel` as rejection. Run
+     - If human rejects, run
        ```bash
        superspec plan reject "<change_name>" "<actionId>" --code "human_rejected" --message "human review rejected"
        ```

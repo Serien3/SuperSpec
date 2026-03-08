@@ -6,7 +6,7 @@ Define the human-facing workflow validation command contract so workflow authors
 ## Requirements
 
 ### Requirement: Validate command targets workflow templates
-The `superspec validate` command MUST validate workflow template documents intended for plan generation, and MUST NOT require a change-scoped `plan.json` input.
+The `superspec validate` command MUST validate workflow template documents intended for plan generation, and MUST NOT require a change-scoped `execution/state.json` input.
 
 #### Scenario: Validate local workflow by schema name
 - **WHEN** a user runs `superspec validate --schema custom-flow`

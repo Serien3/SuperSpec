@@ -35,8 +35,8 @@ def _action_runtime_outputs(state: dict):
     return outputs
 
 
-def _build_action_payload(action: dict, resolved_action: dict):
-    executor = _resolve_executor(resolved_action)
+def _build_action_payload(action: dict):
+    executor = _resolve_executor(action)
     if executor is None:
         raise ProtocolError(
             f"Action {action['id']} missing explicit executor in runtime fields",
@@ -48,13 +48,13 @@ def _build_action_payload(action: dict, resolved_action: dict):
             code="invalid_action_payload",
         )
 
-    rendered_prompt = resolved_action.get("prompt")
+    rendered_prompt = action.get("prompt")
     if rendered_prompt is not None and not isinstance(rendered_prompt, str):
         raise ProtocolError(
             f"Action {action['id']} prompt must resolve to string",
             code="invalid_action_payload",
         )
-    rendered_inputs = resolved_action.get("inputs")
+    rendered_inputs = action.get("inputs")
     if rendered_inputs is not None and not isinstance(rendered_inputs, dict):
         raise ProtocolError(
             f"Action {action['id']} inputs must resolve to object",
@@ -68,7 +68,7 @@ def _build_action_payload(action: dict, resolved_action: dict):
         payload["inputs"] = rendered_inputs
 
     if executor == "script":
-        command = resolved_action.get("script")
+        command = action.get("script")
         if not isinstance(command, str) or not command:
             raise ProtocolError(
                 f"Action {action['id']} script executor requires script field",
@@ -79,7 +79,7 @@ def _build_action_payload(action: dict, resolved_action: dict):
         return payload
 
     if executor == "human":
-        human = resolved_action.get("human")
+        human = action.get("human")
         if not isinstance(human, dict) or not isinstance(human.get("instruction"), str) or not human.get("instruction"):
             raise ProtocolError(
                 f"Action {action['id']} human executor requires human.instruction",
@@ -89,7 +89,7 @@ def _build_action_payload(action: dict, resolved_action: dict):
         payload["prompt"] = rendered_prompt or human.get("instruction") or f"Wait for human review on action {action['id']}"
         return payload
 
-    skill_name = resolved_action.get("skill")
+    skill_name = action.get("skill")
     if not isinstance(skill_name, str) or not skill_name:
         raise ProtocolError(
             f"Action {action['id']} skill executor requires skill field",
@@ -101,9 +101,14 @@ def _build_action_payload(action: dict, resolved_action: dict):
     return payload
 
 
-def ensure_protocol_state(plan: dict, change_dir: str):
+def ensure_protocol_state(plan: dict | None, change_dir: str):
     state = read_execution_state(change_dir)
     if state is None:
+        if not isinstance(plan, dict):
+            raise ProtocolError(
+                "execution state not initialized and no definition provided",
+                code="missing_file",
+            )
         snapshot = initialize_execution_snapshot(change_dir, plan)
         state = snapshot["runtime"]
     return state
@@ -139,13 +144,6 @@ def _refresh_ready_actions(state: dict):
             action_state["status"] = "READY"
         else:
             action_state["status"] = "PENDING"
-
-
-def _action_by_id(plan: dict, action_id: str):
-    for action in plan["actions"]:
-        if action["id"] == action_id:
-            return action
-    return None
 
 
 def _action_state_by_id(state: dict, action_id: str):
@@ -217,10 +215,7 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent"):
     for action_state in state["actions"]:
         if action_state["status"] != "RUNNING":
             continue
-        action = _action_by_id(plan, action_state["id"])
-        if not action:
-            continue
-        payload = _build_action_payload(action, action)
+        payload = _build_action_payload(action_state)
         _persist(change_dir, state)
         return {
             "state": "ready",
@@ -230,15 +225,11 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent"):
     for action_state in state["actions"]:
         if action_state["status"] != "READY":
             continue
-        action = _action_by_id(plan, action_state["id"])
-        if not action:
-            continue
 
-        resolved_action = action
         action_state["status"] = "RUNNING"
         action_state["startedAt"] = _now_iso()
 
-        payload = _build_action_payload(action, resolved_action)
+        payload = _build_action_payload(action_state)
         append_event(
             change_dir,
             {
@@ -299,7 +290,7 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
     state = ensure_protocol_state(plan, change_dir)
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
-    if not action_state or not _action_by_id(plan, action_id):
+    if not action_state:
         raise ProtocolError(f"Unknown action id: {action_id}", code="unknown_action")
     if action_state["status"] != "RUNNING":
         raise ProtocolError(f"Action {action_id} not fail-reportable from status {action_state['status']}", code="invalid_state")
@@ -384,8 +375,8 @@ def status_snapshot(
             break
 
     payload = {
-        "changeName": plan["context"]["changeName"],
-        "schemaVersion": plan["schemaVersion"],
+        "changeName": state.get("changeName"),
+        "schemaVersion": state.get("schemaVersion"),
         "protocolVersion": SUPPORTED_PROTOCOL_VERSION,
         "status": state["status"],
         "progress": {

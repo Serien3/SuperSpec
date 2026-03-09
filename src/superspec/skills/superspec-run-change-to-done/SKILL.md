@@ -79,7 +79,7 @@ Note:
        superspec change stepFail "<change_name>" "<stepId>"
        ```
    - `human` executor:
-     - Present `step.human.instruction` and wait for human decision.
+     - Present `step.prompt` and the `step.human.approveLabel` / `step.human.rejectLabel` choices, then wait for human decision.
      - If human approves, run
        ```bash
        superspec change stepComplete "<change_name>" "<stepId>"

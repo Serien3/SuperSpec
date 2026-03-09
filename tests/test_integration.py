@@ -354,7 +354,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["script_command"], "${variables.command}")
 
-    def test_next_keeps_human_instruction_literal_without_runtime_resolution(self):
+    def test_next_keeps_human_labels_literal_without_runtime_resolution(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -365,17 +365,19 @@ class IntegrationTest(unittest.TestCase):
                     "description": "runtime.human.type.mismatch",
                     "executor": "human",
                     "human": {
-                        "instruction": "${variables.instruction}",
+                        "approveLabel": "${variables.approve}",
+                        "rejectLabel": "${variables.reject}",
                     },
                 }
             ],
         )
-        plan["variables"] = {"instruction": {"text": "review"}}
+        plan["variables"] = {"approve": {"text": "yes"}, "reject": {"text": "no"}}
         validate_runtime_seed(plan)
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["step"]["human"]["instruction"], "${variables.instruction}")
+        self.assertEqual(nxt["step"]["human"]["approveLabel"], "${variables.approve}")
+        self.assertEqual(nxt["step"]["human"]["rejectLabel"], "${variables.reject}")
 
     def test_next_ignores_unresolved_expressions_outside_runtime_fields(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -463,8 +465,10 @@ class IntegrationTest(unittest.TestCase):
                     "description": "human.review",
                     "executor": "human",
                     "human": {
-                        "instruction": "Review generated code and approve to continue",
+                        "approveLabel": "Approve",
+                        "rejectLabel": "Reject",
                     },
+                    "prompt": "Review generated code and decide whether to continue",
                 },
                 {"id": "a2", "description": "openspec.apply", "dependsOn": ["a1"], "executor": "script", "script": "echo go"},
             ],
@@ -475,8 +479,9 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(first["state"], "ready")
         self.assertEqual(first["step"]["executor"], "human")
         self.assertEqual(first["step"]["stepId"], "a1")
-        self.assertEqual(first["step"]["human"]["instruction"], "Review generated code and approve to continue")
-        self.assertIn("prompt", first["step"])
+        self.assertEqual(first["step"]["human"]["approveLabel"], "Approve")
+        self.assertEqual(first["step"]["human"]["rejectLabel"], "Reject")
+        self.assertEqual(first["step"]["prompt"], "Review generated code and decide whether to continue")
 
         resumed = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(resumed["state"], "ready")
@@ -487,7 +492,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(by_id["a1"]["status"], "SUCCESS")
         self.assertEqual(by_id["a2"]["status"], "READY")
 
-    def test_validate_rejects_human_executor_without_instruction(self):
+    def test_validate_rejects_human_executor_without_labels(self):
         root, change_name, _ = self.setup_temp_change()
         plan = self.build_plan(
             root,

@@ -518,7 +518,7 @@ class PlanLifecycleTest(unittest.TestCase):
                     "id": "x1",
                     "description": "human.review",
                     "executor": "human",
-                    "human": {"instruction": "Review and approve"},
+                    "human": {"approveLabel": "Approve", "rejectLabel": "Reject"},
                 }
             ],
         }

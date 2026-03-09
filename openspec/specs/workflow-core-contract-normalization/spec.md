@@ -20,9 +20,9 @@ The system SHALL require exactly one executor payload that matches `steps[].exec
 - **THEN** validation fails for the step payload contract
 - **AND** diagnostics identify the invalid mixed executor payload
 
-#### Scenario: Human executor without instruction is rejected
-- **WHEN** an step sets `executor: "human"` and omits `human.instruction`
-- **THEN** validation fails for `human.instruction`
+#### Scenario: Human executor without approve/reject labels is rejected
+- **WHEN** an step sets `executor: "human"` and omits `human.approveLabel` or `human.rejectLabel`
+- **THEN** validation fails for the missing human review label field
 - **AND** command exits non-zero
 
 ### Requirement: Workflow optional fields are explicitly bounded

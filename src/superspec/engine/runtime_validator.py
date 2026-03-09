@@ -76,7 +76,8 @@ def validate_runtime_seed(seed):
         if executor == "human":
             human = step.get("human")
             _assert(isinstance(human, dict), f"Step {aid} must set human object for human executor")
-            _assert(isinstance(human.get("instruction"), str) and human["instruction"], f"Step {aid} human executor requires human.instruction")
+            _assert(isinstance(human.get("approveLabel"), str) and human["approveLabel"], f"Step {aid} human executor requires human.approveLabel")
+            _assert(isinstance(human.get("rejectLabel"), str) and human["rejectLabel"], f"Step {aid} human executor requires human.rejectLabel")
             _assert(not has_skill and not has_script, f"Step {aid} human executor cannot define skill/script payload")
 
     for step in steps:

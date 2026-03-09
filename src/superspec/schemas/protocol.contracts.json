@@ -59,7 +59,8 @@
     "human": {
       "executor": "human",
       "human": {
-        "instruction": "string"
+        "approveLabel": "string",
+        "rejectLabel": "string"
       },
       "prompt": "string"
     },

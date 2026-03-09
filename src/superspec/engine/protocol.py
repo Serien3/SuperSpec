@@ -79,13 +79,19 @@ def _build_step_payload(step: dict):
 
     if executor == "human":
         human = step.get("human")
-        if not isinstance(human, dict) or not isinstance(human.get("instruction"), str) or not human.get("instruction"):
+        if (
+            not isinstance(human, dict)
+            or not isinstance(human.get("approveLabel"), str)
+            or not human.get("approveLabel")
+            or not isinstance(human.get("rejectLabel"), str)
+            or not human.get("rejectLabel")
+        ):
             raise ProtocolError(
-                f"Invalid step '{step['id']}': human executor requires a non-empty instruction.",
+                f"Invalid step '{step['id']}': human executor requires non-empty approve/reject labels.",
                 code="invalid_step_payload",
             )
         payload["human"] = human
-        payload["prompt"] = rendered_prompt or human.get("instruction") or f"Wait for human review on step {step['id']}"
+        payload["prompt"] = rendered_prompt or f"Wait for human review on step {step['id']}"
         return payload
 
     skill_name = step.get("skill")

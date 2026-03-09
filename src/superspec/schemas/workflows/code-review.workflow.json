@@ -16,8 +16,10 @@
                 "a1"
             ],
             "executor": "human",
+            "prompt": "Please review superspec/changes/${context.changeName}/proposal.md and approve or reject before continuing.",
             "human": {
-                "instruction": "Please review superspec/changes/${context.changeName}/proposal.md and approve or reject before continuing."
+                "approveLabel": "Approve",
+                "rejectLabel": "Reject"
             }
         },
         {

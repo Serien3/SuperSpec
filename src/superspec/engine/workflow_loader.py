@@ -138,11 +138,11 @@ def _schema_errors(workflow: dict):
                     path = f"{path}.{missing_field}"
                     message = f"Step executor requires matching '{missing_field}' payload"
                     hint = "Ensure exactly one matching executor payload is present"
-                elif path.startswith("steps.") and missing_field == "instruction":
+                elif path.startswith("steps.") and missing_field in {"approveLabel", "rejectLabel"}:
                     code = "invalid_executor_payload"
-                    path = f"{path}.instruction"
-                    message = "Step with executor 'human' must define non-empty 'human.instruction'"
-                    hint = "Set human.instruction to a non-empty string"
+                    path = f"{path}.{missing_field}"
+                    message = f"Step with executor 'human' must define non-empty 'human.{missing_field}'"
+                    hint = "Set human.approveLabel and human.rejectLabel to non-empty strings"
         elif err.validator == "not" and path.startswith("steps."):
             code = "invalid_executor_payload"
             message = "Step defines mixed executor payload fields"
@@ -228,16 +228,25 @@ def _semantic_errors(workflow: dict):
                         "invalid_executor_payload",
                         f"steps.{idx}.human",
                         "Step with executor 'human' must define a 'human' object",
-                        "Set steps[].human as an object with non-empty instruction",
+                        "Set steps[].human as an object with non-empty approveLabel/rejectLabel",
                     )
                 )
-            elif not isinstance(human.get("instruction"), str) or not human.get("instruction"):
+            elif not isinstance(human.get("approveLabel"), str) or not human.get("approveLabel"):
                 errors.append(
                     _error(
                         "invalid_executor_payload",
-                        f"steps.{idx}.human.instruction",
-                        "Step with executor 'human' must define non-empty 'human.instruction'",
-                        "Set steps[].human.instruction to a non-empty string",
+                        f"steps.{idx}.human.approveLabel",
+                        "Step with executor 'human' must define non-empty 'human.approveLabel'",
+                        "Set steps[].human.approveLabel to a non-empty string",
+                    )
+                )
+            elif not isinstance(human.get("rejectLabel"), str) or not human.get("rejectLabel"):
+                errors.append(
+                    _error(
+                        "invalid_executor_payload",
+                        f"steps.{idx}.human.rejectLabel",
+                        "Step with executor 'human' must define non-empty 'human.rejectLabel'",
+                        "Set steps[].human.rejectLabel to a non-empty string",
                     )
                 )
 

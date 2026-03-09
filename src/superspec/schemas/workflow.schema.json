@@ -67,13 +67,18 @@
           "human": {
             "type": "object",
             "properties": {
-              "instruction": {
+              "approveLabel": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rejectLabel": {
                 "type": "string",
                 "minLength": 1
               }
             },
             "required": [
-              "instruction"
+              "approveLabel",
+              "rejectLabel"
             ],
             "additionalProperties": false
           }

@@ -40,10 +40,10 @@ The system MUST support only an explicitly documented, finite workflow customiza
 - **THEN** validation fails for missing explicit executor
 - **AND** diagnostics guide the author to set `actions[].executor`
 
-### Requirement: Deterministic customization merge behavior
-The system MUST apply supported customization fields using a deterministic precedence order during plan generation.
+### Requirement: Deterministic customization rendering behavior
+The system MUST render supported workflow customization fields into runtime snapshot actions deterministically during generation.
 
 #### Scenario: Customization conflict resolves deterministically
-- **WHEN** the same supported field is defined in base template and workflow customization
-- **THEN** generated output follows documented precedence order
+- **WHEN** change initialization runs repeatedly with identical workflow input and change selector
+- **THEN** generated output is identical across runs
 - **AND** repeated runs with identical input produce identical `execution/state.json.runtime.actions` values

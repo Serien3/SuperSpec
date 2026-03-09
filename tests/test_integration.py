@@ -4,7 +4,7 @@ from pathlib import Path
 
 from superspec.engine.errors import ProtocolError, ValidationError
 from superspec.engine.protocol import complete_action, fail_action, next_action, status_snapshot
-from superspec.engine.validator import validate_plan
+from superspec.engine.runtime_validator import validate_runtime_seed
 
 
 class IntegrationTest(unittest.TestCase):
@@ -17,8 +17,6 @@ class IntegrationTest(unittest.TestCase):
 
     def build_plan(self, root: Path, change_name: str, actions):
         return {
-            "schemaVersion": "superspec.plan/v1.0.0",
-            "planId": "main",
             "title": "Integration Plan",
             "goal": "Test plan execution",
             "context": {
@@ -36,12 +34,12 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "skill", "skill": "openspec-continue-change", "inputs": {"prompt": "draft specs"}},
-                {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+                {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "skill", "skill": "openspec-continue-change", "inputs": {"prompt": "draft specs"}},
+                {"id": "a3", "description": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         completed = 0
         while True:
@@ -63,9 +61,9 @@ class IntegrationTest(unittest.TestCase):
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
+            [{"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"}],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         with self.assertRaises(ProtocolError) as ctx:
             complete_action(plan, str(change_dir), "a1", {"ok": True})
@@ -77,9 +75,9 @@ class IntegrationTest(unittest.TestCase):
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
+            [{"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"}],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent")
         complete_action(plan, str(change_dir), "a1", {"ok": True})
@@ -95,9 +93,9 @@ class IntegrationTest(unittest.TestCase):
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"}],
+            [{"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"}],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         execution_dir = change_dir / "execution"
         execution_dir.mkdir(parents=True, exist_ok=True)
@@ -116,11 +114,11 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+                {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["state"], "ready")
@@ -145,11 +143,11 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+                {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["state"], "ready")
@@ -167,13 +165,13 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "openspec.proposal",
+                    "description": "openspec.proposal",
                     "executor": "script",
                     "script": "echo one",
                 }
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         _ = next_action(plan, str(change_dir), owner="agent-a")
         status_after_fail = fail_action(plan, str(change_dir), "a1", {"code": "boom", "message": "failed"})
@@ -193,12 +191,12 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
-                {"id": "b1", "type": "openspec.tasks", "executor": "script", "script": "echo independent"},
+                {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+                {"id": "b1", "description": "openspec.tasks", "executor": "script", "script": "echo independent"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["state"], "ready")
@@ -226,13 +224,13 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "type": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
-                {"id": "a3", "type": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
-                {"id": "b1", "type": "openspec.tasks", "executor": "script", "script": "echo independent"},
+                {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "script", "script": "echo two"},
+                {"id": "a3", "description": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+                {"id": "b1", "description": "openspec.tasks", "executor": "script", "script": "echo independent"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["state"], "ready")
@@ -265,21 +263,21 @@ class IntegrationTest(unittest.TestCase):
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal", "skill": "openspec-continue-change"}],
+            [{"id": "a1", "description": "openspec.proposal", "skill": "openspec-continue-change"}],
         )
         with self.assertRaises(ValidationError):
-            validate_plan(plan)
+            validate_runtime_seed(plan)
 
     def test_validate_rejects_missing_executor_and_no_inferable_payload(self):
         root, change_name, _ = self.setup_temp_change()
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "openspec.proposal"}],
+            [{"id": "a1", "description": "openspec.proposal"}],
         )
 
         with self.assertRaises(ValidationError):
-            validate_plan(plan)
+            validate_runtime_seed(plan)
 
     def test_validate_rejects_mixed_executor_payloads(self):
         root, change_name, _ = self.setup_temp_change()
@@ -289,7 +287,7 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "mixed.payloads",
+                    "description": "mixed.payloads",
                     "executor": "skill",
                     "skill": "openspec-continue-change",
                     "script": "echo hi",
@@ -298,16 +296,16 @@ class IntegrationTest(unittest.TestCase):
         )
 
         with self.assertRaises(ValidationError):
-            validate_plan(plan)
+            validate_runtime_seed(plan)
 
     def test_validate_accepts_custom_action_type_and_protocol_executes(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(
             root,
             change_name,
-            [{"id": "a1", "type": "custom.anything", "executor": "script", "script": "echo one"}],
+            [{"id": "a1", "description": "custom.anything", "executor": "script", "script": "echo one"}],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -321,13 +319,13 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "openspec.proposal",
+                    "description": "openspec.proposal",
                     "executor": "script",
                     "script": "echo ${variables.missingVar}",
                 }
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -341,14 +339,14 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "runtime.script.type.mismatch",
+                    "description": "runtime.script.type.mismatch",
                     "executor": "script",
                     "script": "${variables.command}",
                 }
             ],
         )
         plan["variables"] = {"command": {"cmd": "echo hi"}}
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -362,7 +360,7 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "runtime.human.type.mismatch",
+                    "description": "runtime.human.type.mismatch",
                     "executor": "human",
                     "human": {
                         "instruction": "${variables.instruction}",
@@ -371,7 +369,7 @@ class IntegrationTest(unittest.TestCase):
             ],
         )
         plan["variables"] = {"instruction": {"text": "review"}}
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -385,14 +383,14 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "custom.unresolved-field",
+                    "description": "custom.unresolved-field",
                     "executor": "script",
                     "script": "echo one",
                     "notes": "${variables.never_defined}",
                 }
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -405,10 +403,10 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "prepare", "executor": "script", "script": "echo one"},
+                {"id": "a1", "description": "prepare", "executor": "script", "script": "echo one"},
                 {
                     "id": "a2",
-                    "type": "openspec.specs",
+                    "description": "openspec.specs",
                     "dependsOn": ["a1"],
                     "executor": "skill",
                     "skill": "openspec-continue-change",
@@ -416,7 +414,7 @@ class IntegrationTest(unittest.TestCase):
                 },
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["action"]["actionId"], "a1")
         complete_action(plan, str(change_dir), "a1", {"ok": True, "summary": "from-a1"})
@@ -431,17 +429,17 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "prepare", "executor": "script", "script": "echo one"},
+                {"id": "a1", "description": "prepare", "executor": "script", "script": "echo one"},
                 {
                     "id": "a2",
-                    "type": "openspec.apply",
+                    "description": "openspec.apply",
                     "dependsOn": ["a1"],
                     "executor": "script",
                     "script": "echo ${state.commit_by_superspec_last.commit_hash}",
                 },
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["state"], "ready")
@@ -460,7 +458,7 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "openspec.specs",
+                    "description": "openspec.specs",
                     "executor": "skill",
                     "skill": "openspec-continue-change",
                     "inputs": {
@@ -472,7 +470,7 @@ class IntegrationTest(unittest.TestCase):
             ],
         )
         plan["variables"] = {"seed": "from-vars"}
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -493,14 +491,14 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "openspec.specs",
+                    "description": "openspec.specs",
                     "executor": "skill",
                     "skill": "openspec-continue-change",
                     "inputs": {"prompt": "input-only"},
                 }
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         nxt = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
@@ -515,16 +513,16 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "human.review",
+                    "description": "human.review",
                     "executor": "human",
                     "human": {
                         "instruction": "Review generated code and approve to continue",
                     },
                 },
-                {"id": "a2", "type": "openspec.apply", "dependsOn": ["a1"], "executor": "script", "script": "echo go"},
+                {"id": "a2", "description": "openspec.apply", "dependsOn": ["a1"], "executor": "script", "script": "echo go"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         first = next_action(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["state"], "ready")
@@ -550,7 +548,7 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "human.review",
+                    "description": "human.review",
                     "executor": "human",
                     "human": {},
                 }
@@ -558,7 +556,7 @@ class IntegrationTest(unittest.TestCase):
         )
 
         with self.assertRaises(ValidationError):
-            validate_plan(plan)
+            validate_runtime_seed(plan)
 
     def test_validate_rejects_invalid_explicit_executor_value(self):
         root, change_name, _ = self.setup_temp_change()
@@ -568,14 +566,14 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "custom.invalid-executor",
+                    "description": "custom.invalid-executor",
                     "executor": "plugin",
                 }
             ],
         )
 
         with self.assertRaises(ValidationError):
-            validate_plan(plan)
+            validate_runtime_seed(plan)
 
     def test_validate_rejects_non_string_explicit_executor(self):
         root, change_name, _ = self.setup_temp_change()
@@ -585,14 +583,14 @@ class IntegrationTest(unittest.TestCase):
             [
                 {
                     "id": "a1",
-                    "type": "custom.invalid-executor-type",
+                    "description": "custom.invalid-executor-type",
                     "executor": 123,
                 }
             ],
         )
 
         with self.assertRaises(ValidationError):
-            validate_plan(plan)
+            validate_runtime_seed(plan)
 
     def test_status_snapshot_compact_mode_summarizes_and_truncates_actions(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -600,12 +598,12 @@ class IntegrationTest(unittest.TestCase):
             root,
             change_name,
             [
-                {"id": "a1", "type": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "type": "openspec.specs", "executor": "script", "script": "echo two"},
-                {"id": "a3", "type": "openspec.design", "executor": "script", "script": "echo three"},
+                {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "openspec.specs", "executor": "script", "script": "echo two"},
+                {"id": "a3", "description": "openspec.design", "executor": "script", "script": "echo three"},
             ],
         )
-        validate_plan(plan)
+        validate_runtime_seed(plan)
 
         compact = status_snapshot(plan, str(change_dir), compact=True, action_limit=2)
         self.assertEqual(len(compact["actions"]), 2)

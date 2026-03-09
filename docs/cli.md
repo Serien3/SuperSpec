@@ -8,7 +8,7 @@
 | `-h`, `--help` | 显示帮助信息（适用于 `superspec` 及各级子命令）。 |
 | `-v`, `--version` | 显示 SuperSpec 版本号并退出。                  |
 
-## Init Commands
+## Core Commands
 
 ### `superspec init`
 
@@ -61,7 +61,7 @@ superspec git create-worktree [options]
 | option     | description                       | default  |
 | ---------- | --------------------------------- | -------- |
 | `--slug`   | 分支命名短标识。                  | Required |
-| `--base`   | 基线分支/引用。                   | `""`     |
+| `--base`   | 基线分支/引用。未提供时自动推断当前分支。 | 当前分支（自动推断） |
 | `--branch` | 显式分支名。                      | `""`     |
 | `--path`   | worktree 路径（绝对或仓库相对）。 | `""`     |
 
@@ -81,7 +81,15 @@ superspec git finish-worktree [options]
 | `--merge`          | 执行合并流程。                 | `false` |
 | `--cleanup`        | 执行清理流程。                 | `false` |
 | `--strategy`       | 合并策略：`merge` / `squash`。 | `merge` |
-| `--commit-message` | 合并提交信息。                 | `""`    |
+| `--commit-message` | 合并提交信息（执行合并时必填）。 | `""`    |
+
+**Behavior:**
+| 行为 | 说明 |
+| ---- | ---- |
+| 预览执行 | 未提供 `--yes` 时仅输出计划，不执行。 |
+| 合并前检查 | `--merge` 执行前要求主工作区无未提交改动。 |
+| 提交信息约束 | `--merge` 且策略为 `merge` 或 `squash` 时，`--commit-message` 不能为空。 |
+| 清理确认 | `--yes --cleanup` 且未启用 `--merge` 时，执行期会二次确认。 |
 
 ### `superspec git commit`
 
@@ -105,7 +113,7 @@ superspec git commit <change> --message "<commit message>"
 | 行为 | 说明 |
 | ---- | ---- |
 | 执行 commit | 在仓库根目录执行 `git commit -m <message>`。 |
-| 写入运行态 | 将 `state.commit_by_superspec_last` 更新为 `{ \"commit_hash\": \"...\", \"message\": \"...\" }`。 |
+| 写入运行态 | 将 `state.json.runtime.commit_by_superspec_last` 更新为 `{ \"commit_hash\": \"...\", \"message\": \"...\" }`。 |
 | 校验状态 | 若 `execution/state.json` 不存在，或 state 非 `running`，则命令失败。 |
 
 ## Change Commands

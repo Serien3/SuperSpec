@@ -8,7 +8,7 @@ The system MUST generate a change-scoped execution runtime baseline from a selec
 
 #### Scenario: Generate state snapshot runtime baseline with selected workflow
 - **WHEN** a user initializes a change with a valid schema key
-- **THEN** the generated `execution/state.json.runtime.actions` contains workflow-derived action execution fields
+- **THEN** the generated `execution/state.json.runtime.actions` contains workflow-derived action execution fields (`id`, `description`, `executor`, dependencies, and executor payload fields)
 
 #### Scenario: Ignore unsupported customization by failing validation first
 - **WHEN** a workflow contains unsupported template customization fields
@@ -23,9 +23,9 @@ The system MUST apply deterministic generation rules for all supported customiza
 - **THEN** generated runtime action baseline is identical and reproducible
 
 ### Requirement: Protected change context fields
-The system MUST protect change-scoped context values from workflow override.
+The system MUST protect change-scoped identity values from workflow override.
 
-#### Scenario: Ignore workflow override of change identity
-- **WHEN** a workflow attempts to override change-bound context fields such as `changeName` or `changeDir`
-- **THEN** generation keeps context values derived from the active change
-- **AND** writes a snapshot runtime bound to the requested change directory
+#### Scenario: Keep runtime change identity from CLI selector
+- **WHEN** a workflow is selected via `superspec change advance --new <schema>/<change-name>`
+- **THEN** generation keeps `runtime.changeName` equal to `<change-name>`
+- **AND** writes a snapshot runtime bound to that requested change

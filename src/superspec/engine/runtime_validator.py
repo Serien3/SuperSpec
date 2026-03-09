@@ -1,4 +1,3 @@
-from .constants import SUPPORTED_SCHEMA_VERSION
 from .errors import ValidationError
 
 _VALID_EXECUTORS = {"skill", "script", "human"}
@@ -36,17 +35,16 @@ def _detect_cycle(actions):
     return None
 
 
-def validate_plan(plan):
-    _assert(isinstance(plan, dict), "Plan must be an object")
-    _assert(plan.get("schemaVersion") == SUPPORTED_SCHEMA_VERSION, f"Unsupported schemaVersion: {plan.get('schemaVersion')}")
-    _assert(isinstance(plan.get("planId"), str) and plan["planId"], "planId is required")
-    _assert(isinstance(plan.get("title"), str) and plan["title"], "title is required")
-    _assert(isinstance(plan.get("goal"), str) and plan["goal"], "goal is required")
-    context = plan.get("context")
-    _assert(isinstance(context, dict), "context is required")
-    _assert(isinstance(context.get("changeName"), str) and context["changeName"], "context.changeName is required")
+def validate_runtime_seed(seed):
+    _assert(isinstance(seed, dict), "Runtime seed must be an object")
+    context = seed.get("context")
+    _assert(isinstance(context, dict), "Missing runtime seed context")
+    _assert(
+        isinstance(context.get("changeName"), str) and context["changeName"],
+        "Missing change name in runtime seed context",
+    )
 
-    actions = plan.get("actions")
+    actions = seed.get("actions")
     _assert(isinstance(actions, list) and len(actions) > 0, "actions must be a non-empty array")
 
     ids = set()
@@ -58,8 +56,8 @@ def validate_plan(plan):
         ids.add(aid)
         by_id[aid] = action
 
-        atype = action.get("type")
-        _assert(isinstance(atype, str) and atype, f"Action {aid} type is required")
+        description = action.get("description")
+        _assert(isinstance(description, str) and description, f"Action {aid} description is required")
 
         executor = action.get("executor")
         _assert(isinstance(executor, str) and executor, f"Action {aid} executor is required")

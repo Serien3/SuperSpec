@@ -35,7 +35,7 @@ def read_json(path: Path, default=None):
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ProtocolError(
-            f"Invalid JSON state file: {path}",
+            f"Invalid JSON in state file: {path}.",
             code="invalid_json",
             details={"path": str(path)},
         ) from exc
@@ -48,13 +48,13 @@ def append_event(change_dir: str, event: dict):
         f.write(json.dumps(event_line, ensure_ascii=True) + "\n")
 
 
-def _initial_runtime_state(definition: dict):
+def _initial_runtime_state(runtime_blueprint: dict):
     now = _now_iso()
     runtime_actions = []
-    for action in definition["actions"]:
+    for action in runtime_blueprint["actions"]:
         runtime_action = {
             "id": action["id"],
-            "type": action["type"],
+            "description": action["description"],
             "status": "PENDING",
             "dependsOn": action.get("dependsOn", []),
             "startedAt": None,
@@ -70,9 +70,7 @@ def _initial_runtime_state(definition: dict):
         runtime_actions.append(runtime_action)
 
     return {
-        "schemaVersion": definition["schemaVersion"],
-        "planId": definition["planId"],
-        "changeName": definition["context"]["changeName"],
+        "changeName": runtime_blueprint["changeName"],
         "status": "running",
         "startedAt": now,
         "updatedAt": now,
@@ -80,22 +78,19 @@ def _initial_runtime_state(definition: dict):
     }
 
 
-def initialize_execution_snapshot(change_dir: str, definition: dict):
+def initialize_execution_snapshot(change_dir: str, runtime_blueprint: dict, workflow_schema_version: str | None = None):
     layout = ensure_execution_layout(change_dir)
-    workflow_meta = ((definition.get("metadata") or {}).get("workflow") or {})
+    workflow_meta = runtime_blueprint.get("workflow") or {}
     snapshot = {
         "meta": {
-            "schemaVersion": "superspec.state/v1.0.0",
-            "changeName": definition["context"]["changeName"],
+            "schemaVersion": workflow_schema_version or "workflow.schema/unknown",
             "workflowId": workflow_meta.get("id"),
-            "workflowVersion": workflow_meta.get("version"),
-            "createdAt": _now_iso(),
-            "updatedAt": _now_iso(),
+            "workflowDescription": workflow_meta.get("description"),
         },
-        "runtime": _initial_runtime_state(definition),
+        "runtime": _initial_runtime_state(runtime_blueprint),
     }
     write_json(layout["state"], snapshot)
-    append_event(change_dir, {"event": "state.initialized", "planId": definition["planId"]})
+    append_event(change_dir, {"event": "state.initialized", "changeName": runtime_blueprint["changeName"]})
     return snapshot
 
 
@@ -114,14 +109,11 @@ def write_execution_state(change_dir: str, payload: dict):
     snapshot = read_json(layout["state"])
     if not isinstance(snapshot, dict):
         raise ProtocolError(
-            "execution snapshot not found",
+            "Execution state file not found or unreadable.",
             code="missing_file",
             details={"path": str(layout["state"])},
-        )
+    )
     snapshot["runtime"] = payload
-    meta = snapshot.get("meta")
-    if isinstance(meta, dict):
-        meta["updatedAt"] = _now_iso()
     write_json(layout["state"], snapshot)
 
 
@@ -132,7 +124,7 @@ def read_execution_state(change_dir: str):
         return None
     if not isinstance(snapshot, dict):
         raise ProtocolError(
-            f"Invalid execution snapshot file: {layout['state']}",
+            f"Invalid execution state file: {layout['state']}.",
             code="invalid_json",
             details={"path": str(layout["state"])},
         )
@@ -141,7 +133,7 @@ def read_execution_state(change_dir: str):
         return None
     if not isinstance(runtime, dict):
         raise ProtocolError(
-            f"Invalid runtime state in execution snapshot: {layout['state']}",
+            f"Invalid runtime section in state file: {layout['state']}.",
             code="invalid_json",
             details={"path": str(layout["state"])},
         )

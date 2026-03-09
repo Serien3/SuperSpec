@@ -53,6 +53,10 @@ class PlanLifecycleTest(unittest.TestCase):
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
+        self.assertEqual(snapshot["meta"]["workflowDescription"], "Default spec-driven development workflow")
+        self.assertNotIn("workflowVersion", snapshot["meta"])
+        self.assertNotIn("createdAt", snapshot["meta"])
+        self.assertNotIn("updatedAt", snapshot["meta"])
 
     def test_plan_init_falls_back_to_packaged_default_workflow(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -65,6 +69,7 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertTrue(plan_path.exists())
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
+        self.assertEqual(snapshot["meta"]["workflowDescription"], "Default spec-driven development workflow")
         self.assertNotIn("definition", snapshot)
 
     def test_plan_init_supports_explicit_schema_selection(self):
@@ -92,9 +97,9 @@ class PlanLifecycleTest(unittest.TestCase):
         self._init_plan(root, args.change, args.schema)
 
         snapshot = self._load_snapshot(root, "demo-change")
-        self.assertEqual(snapshot["runtime"]["planId"], "main")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "custom-flow")
+        self.assertEqual(snapshot["meta"]["workflowDescription"], "Custom workflow description")
 
     def test_plan_init_rejects_legacy_plan_overlay_field(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -168,7 +173,6 @@ class PlanLifecycleTest(unittest.TestCase):
         self._init_plan(root, args.change, args.schema)
 
         snapshot = self._load_snapshot(root, "demo-change")
-        self.assertEqual(snapshot["runtime"]["planId"], "main")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
 
     def test_plan_init_rejects_removed_top_level_workflow_customizations(self):

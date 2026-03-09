@@ -17,7 +17,7 @@ def _run_git(repo_root: Path, args: list[str]) -> str:
     )
     if proc.returncode != 0:
         raise ProtocolError(
-            f"git {' '.join(args)} failed",
+            f"Git command failed: {' '.join(args)}.",
             code="git_command_failed",
             details={
                 "command": ["git", "-C", str(repo_root), *args],
@@ -32,21 +32,21 @@ def _run_git(repo_root: Path, args: list[str]) -> str:
 def commit_for_change(repo_root: Path, change_name: str, message: str) -> dict:
     normalized_message = message.strip()
     if not normalized_message:
-        raise ProtocolError("message must be a non-empty string", code="invalid_payload")
+        raise ProtocolError("Invalid commit message: expected a non-empty string.", code="invalid_payload")
 
     change_dir = resolve_change_dir(str(repo_root), change_name)
     state = read_execution_state(str(change_dir))
     if not isinstance(state, dict):
         state_path = execution_dir(str(change_dir)) / "state.json"
         raise ProtocolError(
-            "execution state not found for change",
+            "Execution state not found for this change.",
             code="missing_file",
             details={"path": str(state_path), "change": change_name},
         )
 
     if state.get("status") != "running":
         raise ProtocolError(
-            "execution state is not running",
+            "Change is not in a running state.",
             code="invalid_state",
             details={"change": change_name, "status": state.get("status")},
         )

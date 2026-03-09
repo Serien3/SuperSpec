@@ -27,6 +27,21 @@ def _resolve_executor(action):
     return None
 
 
+def _runtime_blueprint_from_seed(runtime_seed: dict):
+    context = runtime_seed.get("context") if isinstance(runtime_seed, dict) else None
+    change_name = context.get("changeName") if isinstance(context, dict) else None
+    if not isinstance(change_name, str) or not change_name:
+        raise ProtocolError(
+            "Missing change name in runtime seed. Provide a non-empty change name when initializing execution state.",
+            code="invalid_payload",
+        )
+    return {
+        "changeName": change_name,
+        "workflow": {},
+        "actions": runtime_seed.get("actions", []),
+    }
+
+
 def _action_runtime_outputs(state: dict):
     outputs = {}
     for action in state["actions"]:
@@ -39,25 +54,25 @@ def _build_action_payload(action: dict):
     executor = _resolve_executor(action)
     if executor is None:
         raise ProtocolError(
-            f"Action {action['id']} missing explicit executor in runtime fields",
+            f"Invalid action '{action['id']}': missing executor.",
             code="invalid_action_payload",
         )
     if executor not in _VALID_EXECUTORS:
         raise ProtocolError(
-            f"Action {action['id']} has unsupported executor '{executor}'",
+            f"Invalid action '{action['id']}': unsupported executor '{executor}'.",
             code="invalid_action_payload",
         )
 
     rendered_prompt = action.get("prompt")
     if rendered_prompt is not None and not isinstance(rendered_prompt, str):
         raise ProtocolError(
-            f"Action {action['id']} prompt must resolve to string",
+            f"Invalid action '{action['id']}': prompt must be a string.",
             code="invalid_action_payload",
         )
     rendered_inputs = action.get("inputs")
     if rendered_inputs is not None and not isinstance(rendered_inputs, dict):
         raise ProtocolError(
-            f"Action {action['id']} inputs must resolve to object",
+            f"Invalid action '{action['id']}': inputs must be an object.",
             code="invalid_action_payload",
         )
     payload = {
@@ -71,7 +86,7 @@ def _build_action_payload(action: dict):
         command = action.get("script")
         if not isinstance(command, str) or not command:
             raise ProtocolError(
-                f"Action {action['id']} script executor requires script field",
+                f"Invalid action '{action['id']}': script executor requires a non-empty script command.",
                 code="invalid_action_payload",
             )
         payload["script_command"] = command
@@ -82,7 +97,7 @@ def _build_action_payload(action: dict):
         human = action.get("human")
         if not isinstance(human, dict) or not isinstance(human.get("instruction"), str) or not human.get("instruction"):
             raise ProtocolError(
-                f"Action {action['id']} human executor requires human.instruction",
+                f"Invalid action '{action['id']}': human executor requires a non-empty instruction.",
                 code="invalid_action_payload",
             )
         payload["human"] = human
@@ -92,7 +107,7 @@ def _build_action_payload(action: dict):
     skill_name = action.get("skill")
     if not isinstance(skill_name, str) or not skill_name:
         raise ProtocolError(
-            f"Action {action['id']} skill executor requires skill field",
+            f"Invalid action '{action['id']}': skill executor requires a non-empty skill name.",
             code="invalid_action_payload",
         )
     payload["skillName"] = skill_name
@@ -101,15 +116,15 @@ def _build_action_payload(action: dict):
     return payload
 
 
-def ensure_protocol_state(plan: dict | None, change_dir: str):
+def ensure_protocol_state(runtime_seed: dict | None, change_dir: str):
     state = read_execution_state(change_dir)
     if state is None:
-        if not isinstance(plan, dict):
+        if not isinstance(runtime_seed, dict):
             raise ProtocolError(
-                "execution state not initialized and no definition provided",
+                "Execution state not found. Initialize the change first.",
                 code="missing_file",
             )
-        snapshot = initialize_execution_snapshot(change_dir, plan)
+        snapshot = initialize_execution_snapshot(change_dir, _runtime_blueprint_from_seed(runtime_seed))
         state = snapshot["runtime"]
     return state
 
@@ -201,8 +216,8 @@ def _terminalize_if_done(change_dir: str, state: dict):
         append_event(change_dir, {"event": "state.terminal", "status": state["status"]})
 
 
-def next_action(plan: dict, change_dir: str, owner: str = "agent"):
-    state = ensure_protocol_state(plan, change_dir)
+def next_action(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
+    state = ensure_protocol_state(runtime_seed, change_dir)
     _refresh_ready_actions(state)
 
     if state["status"] in {"success", "failed"}:
@@ -260,18 +275,21 @@ def next_action(plan: dict, change_dir: str, owner: str = "agent"):
 
 def _validate_report_shape(payload: dict, key: str):
     if not isinstance(payload, dict):
-        raise ProtocolError(f"{key} payload must be a JSON object", code="invalid_payload")
+        raise ProtocolError(f"Invalid {key} payload: expected a JSON object.", code="invalid_payload")
 
 
-def complete_action(plan: dict, change_dir: str, action_id: str, output_payload: dict):
+def complete_action(runtime_seed: dict | None, change_dir: str, action_id: str, output_payload: dict):
     _validate_report_shape(output_payload, "output")
-    state = ensure_protocol_state(plan, change_dir)
+    state = ensure_protocol_state(runtime_seed, change_dir)
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
     if not action_state:
-        raise ProtocolError(f"Unknown action id: {action_id}", code="unknown_action")
+        raise ProtocolError(f"Unknown action: '{action_id}'.", code="unknown_action")
     if action_state["status"] != "RUNNING":
-        raise ProtocolError(f"Action {action_id} not completable from status {action_state['status']}", code="invalid_state")
+        raise ProtocolError(
+            f"Action '{action_id}' cannot be completed from status '{action_state['status']}'.",
+            code="invalid_state",
+        )
 
     action_state["status"] = "SUCCESS"
     action_state["output"] = output_payload
@@ -282,18 +300,21 @@ def complete_action(plan: dict, change_dir: str, action_id: str, output_payload:
     _refresh_ready_actions(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
-    return status_snapshot(plan, change_dir)
+    return status_snapshot(runtime_seed, change_dir)
 
 
-def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict):
+def fail_action(runtime_seed: dict | None, change_dir: str, action_id: str, error_payload: dict):
     _validate_report_shape(error_payload, "error")
-    state = ensure_protocol_state(plan, change_dir)
+    state = ensure_protocol_state(runtime_seed, change_dir)
 
     action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
     if not action_state:
-        raise ProtocolError(f"Unknown action id: {action_id}", code="unknown_action")
+        raise ProtocolError(f"Unknown action: '{action_id}'.", code="unknown_action")
     if action_state["status"] != "RUNNING":
-        raise ProtocolError(f"Action {action_id} not fail-reportable from status {action_state['status']}", code="invalid_state")
+        raise ProtocolError(
+            f"Action '{action_id}' cannot be failed from status '{action_state['status']}'.",
+            code="invalid_state",
+        )
 
     action_state["error"] = error_payload
     action_state["finishedAt"] = _now_iso()
@@ -306,7 +327,7 @@ def fail_action(plan: dict, change_dir: str, action_id: str, error_payload: dict
     _refresh_ready_actions(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
-    return status_snapshot(plan, change_dir)
+    return status_snapshot(runtime_seed, change_dir)
 
 
 def _contracts_payload():
@@ -327,7 +348,7 @@ def _contracts_payload():
         "status": {
             "fields": ["changeName", "status", "progress"],
             "actionStates": ["PENDING", "READY", "RUNNING", "SUCCESS", "FAILED"],
-            "debugFields": ["contracts", "lastFailure", "actions", "actionsOmitted", "schemaVersion", "protocolVersion"],
+            "debugFields": ["contracts", "lastFailure", "actions", "actionsOmitted", "protocolVersion"],
             "modes": {
                 "default": "status --json returns minimal fields only",
                 "full": "status --json --full returns full action objects",
@@ -357,13 +378,13 @@ def _compact_action_entry(action: dict):
 
 
 def status_snapshot(
-    plan: dict,
+    runtime_seed: dict | None,
     change_dir: str,
     debug: bool = False,
     compact: bool = False,
     action_limit: int = 40,
 ):
-    state = ensure_protocol_state(plan, change_dir)
+    state = ensure_protocol_state(runtime_seed, change_dir)
     done = len([a for a in state["actions"] if a["status"] == "SUCCESS"])
     failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
     running = len([a for a in state["actions"] if a["status"] == "RUNNING"])
@@ -376,7 +397,6 @@ def status_snapshot(
 
     payload = {
         "changeName": state.get("changeName"),
-        "schemaVersion": state.get("schemaVersion"),
         "protocolVersion": SUPPORTED_PROTOCOL_VERSION,
         "status": state["status"],
         "progress": {

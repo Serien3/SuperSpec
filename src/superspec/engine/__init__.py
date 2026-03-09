@@ -1,1 +1,1 @@
-"""Engine modules for plan orchestration."""
+"""Engine modules for workflow-driven execution orchestration."""

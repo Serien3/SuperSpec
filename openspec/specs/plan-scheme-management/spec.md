@@ -1,7 +1,7 @@
-# plan-scheme-management Specification
+# workflow-schema-management Specification
 
 ## Purpose
-Define file-based workflow definitions for plan generation, including identity, validation, and extensibility requirements.
+Define file-based workflow definitions for runtime snapshot generation, including identity, validation, and extensibility requirements.
 
 ## Requirements
 
@@ -23,17 +23,17 @@ The system MUST validate required workflow metadata fields and workflow template
 
 #### Scenario: Reject workflow missing required metadata
 - **WHEN** a workflow definition is missing required identity metadata such as `workflowId` or `version`
-- **THEN** plan initialization fails with a clear validation error
-- **AND** no plan file is generated
+- **THEN** change initialization fails with a clear validation error
+- **AND** no `execution/state.json` is generated
 
 #### Scenario: Reject unsupported template customization field
 - **WHEN** a workflow definition includes a template customization field that is not in the supported schema contract
-- **THEN** plan initialization fails with a clear validation error that includes the unsupported path
-- **AND** no plan file is generated
+- **THEN** change initialization fails with a clear validation error that includes the unsupported path
+- **AND** no `execution/state.json` is generated
 
 #### Scenario: Reject unknown nested field in constrained workflow object
 - **WHEN** a workflow definition includes an unknown field under constrained objects such as `actions[*]`
-- **THEN** validation fails before plan generation
+- **THEN** validation fails before runtime baseline generation
 - **AND** the error identifies the precise nested path
 
 ### Requirement: User-defined workflow extensibility
@@ -42,4 +42,4 @@ The system MUST allow users to add new workflow files without modifying SuperSpe
 #### Scenario: Use a newly added custom workflow
 - **WHEN** a user adds a new valid workflow file to the supported workflow directory
 - **THEN** that workflow becomes selectable for subsequent `change advance --new` calls
-- **AND** the system can generate a valid plan from it
+- **AND** the system can generate a valid runtime baseline from it

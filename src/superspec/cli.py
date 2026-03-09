@@ -10,7 +10,7 @@ from superspec.engine.git_ops import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import resolve_change_dir, state_path_for_change, validate_change_name
 from superspec.engine.state_store import initialize_execution_snapshot
-from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
+from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source, workflow_schema_version
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
@@ -44,39 +44,43 @@ def _write_execution_snapshot(repo_root: Path, change_name: str, schema: str | N
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
 
-    definition, selected_schema, _ = build_plan_from_workflow(
+    runtime_blueprint, selected_schema, _ = build_plan_from_workflow(
         repo_root,
         change_name,
         schema=schema,
     )
-    initialize_execution_snapshot(str(change_dir), definition)
+    initialize_execution_snapshot(
+        str(change_dir),
+        runtime_blueprint,
+        workflow_schema_version=workflow_schema_version(),
+    )
     return state_path_for_change(str(repo_root), change_name), selected_schema
 
 
 def _parse_new_selector(raw: str):
     if not isinstance(raw, str) or not raw.strip():
         raise ProtocolError(
-            "Invalid --new selector. Expected format: <workflow-type>/<change-name>",
+            "Invalid --new value: expected '<workflow-type>/<change-name>'.",
             code="invalid_selector",
             details={"selector": raw},
         )
     parts = raw.split("/", 1)
     if len(parts) != 2:
         raise ProtocolError(
-            "Invalid --new selector. Expected format: <workflow-type>/<change-name>",
+            "Invalid --new value: expected '<workflow-type>/<change-name>'.",
             code="invalid_selector",
             details={"selector": raw},
         )
     workflow_type, local_name = parts[0].strip(), parts[1].strip()
     if not workflow_type or not local_name:
         raise ProtocolError(
-            "Invalid --new selector. Expected format: <workflow-type>/<change-name>",
+            "Invalid --new value: expected '<workflow-type>/<change-name>'.",
             code="invalid_selector",
             details={"selector": raw},
         )
     if "/" in local_name:
         raise ProtocolError(
-            "Invalid --new selector. Expected exactly one slash: <workflow-type>/<change-name>",
+            "Invalid --new value: expected exactly one slash in '<workflow-type>/<change-name>'.",
             code="invalid_selector",
             details={"selector": raw},
         )
@@ -105,12 +109,12 @@ def _create_change_with_workflow(repo_root: Path, selector: str):
         bound = _bound_workflow_id(change_dir)
         if bound and bound != workflow_type:
             raise ProtocolError(
-                f"Change '{change_name}' is already bound to workflow '{bound}', cannot bind to '{workflow_type}'",
+                f"Change '{change_name}' is already bound to workflow '{bound}'.",
                 code="workflow_binding_conflict",
                 details={"change": change_name, "existing": bound, "requested": workflow_type},
             )
         raise ProtocolError(
-            f"Change '{change_name}' already exists at {change_dir}",
+            f"Change '{change_name}' already exists.",
             code="change_exists",
             details={"change": change_name, "path": str(change_dir)},
         )
@@ -122,9 +126,9 @@ def _parse_object_json(raw: str, field: str):
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise ProtocolError(f"{field} must be valid JSON", code="invalid_payload") from exc
+        raise ProtocolError(f"Invalid {field}: expected valid JSON.", code="invalid_payload") from exc
     if not isinstance(parsed, dict):
-        raise ProtocolError(f"{field} must be a JSON object", code="invalid_payload")
+        raise ProtocolError(f"Invalid {field}: expected a JSON object.", code="invalid_payload")
     return parsed
 
 
@@ -156,7 +160,10 @@ def _agent_config_dir(repo_root: Path, agent: str):
     try:
         config_dir = AGENT_CONFIG_DIR_MAP[agent]
     except KeyError as exc:
-        raise ProtocolError(f"Unsupported agent. Only {', '.join(sorted(AGENT_CONFIG_DIR_MAP.keys()))} is supported.", code="invalid_payload") from exc
+        raise ProtocolError(
+            f"Unsupported agent '{agent}'. Supported: {', '.join(sorted(AGENT_CONFIG_DIR_MAP.keys()))}.",
+            code="invalid_payload",
+        ) from exc
     return repo_root / config_dir
 
 
@@ -265,7 +272,7 @@ def command_git_commit(repo_root: Path, args):
 def command_change_advance(repo_root: Path, args):
     if args.new and args.change:
         raise ProtocolError(
-            "Provide either --new <workflow-type>/<change-name> or <change-name>, not both.",
+            "Invalid arguments: provide either --new or <change>, not both.",
             code="invalid_arguments",
         )
     if args.new:

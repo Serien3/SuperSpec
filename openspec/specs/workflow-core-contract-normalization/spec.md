@@ -10,7 +10,7 @@ The workflow template SHALL define a minimal core contract with required top-lev
 #### Scenario: Missing core action executor is rejected
 - **WHEN** a workflow action omits `executor`
 - **THEN** workflow validation fails with an executor-required contract error
-- **AND** no plan generation output is produced
+- **AND** no runtime snapshot generation output is produced
 
 ### Requirement: Action executor payload is mutually exclusive and exact
 The system SHALL require exactly one executor payload that matches `actions[].executor`, and SHALL reject any non-matching executor payload fields on the same action.

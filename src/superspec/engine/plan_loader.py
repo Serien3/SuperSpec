@@ -13,7 +13,7 @@ def _ensure_path_under_root(path: Path, root: Path, *, field: str):
     resolved_root = root.resolve()
     if not resolved_path.is_relative_to(resolved_root):
         raise ProtocolError(
-            f"{field} escapes allowed directory",
+            "Invalid path: value is outside the allowed change directory.",
             code="invalid_path",
             details={"path": str(resolved_path), "root": str(resolved_root), "field": field},
         )
@@ -51,7 +51,7 @@ def state_path_for_change(repo_root: str, change_name: str) -> Path:
 
 def resolve_change_dir_from_definition_context(repo_root: str | Path, change_dir: str) -> Path:
     if not isinstance(change_dir, str) or not change_dir.strip():
-        raise ProtocolError("context.changeDir must be a non-empty string", code="invalid_path")
+        raise ProtocolError("Invalid change directory: expected a non-empty string.", code="invalid_path")
     repo = Path(repo_root).resolve()
     target = (repo / change_dir).resolve()
     return _ensure_path_under_root(target, changes_root(repo), field="context.changeDir")
@@ -71,21 +71,21 @@ def load_state_snapshot_from_change(repo_root: str, change_name: str):
         ) from exc
     if not isinstance(snapshot, dict):
         raise ProtocolError(
-            "Execution snapshot must be a JSON object",
+            "Invalid execution state file: expected a JSON object.",
             code="invalid_json",
             details={"path": str(state_path)},
         )
     runtime = snapshot.get("runtime")
     if not isinstance(runtime, dict):
         raise ProtocolError(
-            "Execution snapshot missing runtime",
+            "Invalid execution state file: missing runtime section.",
             code="invalid_json",
             details={"path": str(state_path)},
         )
     actions = runtime.get("actions")
     if not isinstance(actions, list):
         raise ProtocolError(
-            "Execution snapshot runtime.actions must be an array",
+            "Invalid execution state file: runtime.actions must be an array.",
             code="invalid_json",
             details={"path": str(state_path)},
         )

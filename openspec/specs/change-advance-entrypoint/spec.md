@@ -1,14 +1,14 @@
 # change-advance-entrypoint Specification
 
 ## Purpose
-TBD - created by archiving change unify-change-workflow-entrypoint. Update Purpose after archive.
+Define the unified `superspec change advance` entrypoint behavior for listing, creating, and advancing changes.
 ## Requirements
 ### Requirement: Unified change advance command modes
 The CLI SHALL provide a unified `superspec change advance` command that supports list mode, existing-change advance mode, and create-and-advance mode.
 
 #### Scenario: List mode without arguments
 - **WHEN** a user runs `superspec change advance` with no positional change name and no `--new`
-- **THEN** the command returns the same change listing semantics as current `superspec change list`
+- **THEN** the command lists change directories under `superspec/changes`
 - **AND** the output excludes non-change directories such as `archive`
 
 #### Scenario: Advance existing change by name
@@ -34,4 +34,3 @@ The CLI SHALL reject ambiguous `change advance` argument combinations with struc
 - **WHEN** a user provides `--new` without a `<workflow-type>/<change-name>` shape
 - **THEN** the command fails with an invalid selector error
 - **AND** the error includes remediation guidance for expected format
-

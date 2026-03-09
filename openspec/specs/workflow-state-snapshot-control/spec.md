@@ -1,14 +1,15 @@
 # workflow-state-snapshot-control Specification
 
 ## Purpose
-TBD - created by archiving change state-snapshot-control-and-remove-context-substitution. Update Purpose after archive.
+Define state snapshot control semantics for workflow execution based on change-scoped runtime files.
 ## Requirements
 ### Requirement: State snapshot is the single control file
-The system MUST use `openspec/changes/<change-name>/execution/state.json` as the single authoritative control file for workflow execution state.
+The system MUST use `superspec/changes/<change-name>/execution/state.json` as the single authoritative control file for workflow execution state.
 
 #### Scenario: State snapshot contains meta and runtime partitions
 - **WHEN** a change is created through unified workflow entry
 - **THEN** `execution/state.json` includes `meta` and `runtime` top-level sections
+- **AND** `meta` contains `schemaVersion`, `workflowId`, and `workflowDescription`
 - **AND** `runtime` stores mutable execution lifecycle state
 
 ### Requirement: Immutable runtime action baseline

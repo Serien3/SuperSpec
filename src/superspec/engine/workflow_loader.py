@@ -3,9 +3,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from superspec.engine.constants import SUPPORTED_SCHEMA_VERSION
-from superspec.engine.errors import ProtocolError, ValidationError
-from superspec.engine.validator import validate_plan
+from superspec.engine.errors import ProtocolError
 
 WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
     "workflowId",
@@ -15,9 +13,8 @@ WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
     "metadata",
 )
 
-WORKFLOW_PLAN_CUSTOMIZATION_FIELDS = (
+WORKFLOW_RUNTIME_CUSTOMIZATION_FIELDS = (
     "actions",
-    "metadata",
 )
 WORKFLOW_OPTIONAL_TOP_LEVEL_FIELDS = (
     "description",
@@ -35,22 +32,9 @@ def _load_json(path: Path):
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
-        raise ProtocolError(f"File not found: {path}", code="missing_file", details={"path": str(path)}) from exc
+        raise ProtocolError(f"Workflow file not found: {path}.", code="missing_file", details={"path": str(path)}) from exc
     except json.JSONDecodeError as exc:
-        raise ProtocolError(f"Invalid JSON in {path}", code="invalid_json", details={"path": str(path)}) from exc
-
-
-def _deep_merge(base, overlay):
-    if not isinstance(base, dict) or not isinstance(overlay, dict):
-        return overlay
-
-    merged = dict(base)
-    for key, value in overlay.items():
-        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
-            merged[key] = _deep_merge(merged[key], value)
-        else:
-            merged[key] = value
-    return merged
+        raise ProtocolError(f"Invalid JSON in workflow file: {path}.", code="invalid_json", details={"path": str(path)}) from exc
 
 
 def _resolve_workflow_name(workflow: str | None):
@@ -61,22 +45,12 @@ def _load_workflow_schema():
     return _load_json(_package_root() / "schemas" / "workflow.schema.json")
 
 
-def _base_definition(change_name: str):
-    return {
-        "schemaVersion": SUPPORTED_SCHEMA_VERSION,
-        "planId": "main",
-        "title": "Change delivery plan",
-        "goal": "Execute this change in a single-agent serial loop",
-        "context": {
-            "changeName": change_name,
-            "changeDir": f"superspec/changes/{change_name}",
-            "repoRoot": ".",
-            "specRoot": "superspec",
-        },
-        "metadata": {
-            "generatedBy": "superspec",
-        },
-    }
+def workflow_schema_version():
+    schema = _load_workflow_schema()
+    schema_id = schema.get("$id") if isinstance(schema, dict) else None
+    if isinstance(schema_id, str) and schema_id:
+        return schema_id
+    return "workflow.schema/unknown"
 
 
 def _load_workflow(repo_root: Path, workflow_name: str):
@@ -89,7 +63,7 @@ def _load_workflow(repo_root: Path, workflow_name: str):
         return _load_json(package_path), package_path
 
     raise ProtocolError(
-        f"Unknown plan schema '{workflow_name}'. Expected workflow at {local_path} or {package_path}",
+        f"Unknown workflow schema '{workflow_name}'.",
         code="invalid_plan_schema",
         details={"schema": workflow_name, "localPath": str(local_path), "defaultPath": str(package_path)},
     )
@@ -347,12 +321,15 @@ def _semantic_errors(workflow: dict):
 
 
 def _generation_readiness_errors(workflow: dict):
-    generated = _deep_merge(_base_definition("validate-only"), _workflow_payload(workflow))
-
-    try:
-        validate_plan(generated)
-    except ValidationError as exc:
-        return [_error("not_generation_ready", "$", str(exc))]
+    generated = _workflow_runtime_blueprint_payload(workflow, "validate-only")
+    actions = generated.get("actions")
+    if not isinstance(actions, list) or not actions:
+        return [_error("not_generation_ready", "$.actions", "Generated runtime actions must be a non-empty array")]
+    for idx, action in enumerate(actions):
+        if not isinstance(action, dict):
+            return [_error("not_generation_ready", f"$.actions.{idx}", "Generated runtime action must be an object")]
+        if not isinstance(action.get("description"), str) or not action["description"]:
+            return [_error("not_generation_ready", f"$.actions.{idx}.description", "Generated runtime action description is required")]
     return []
 
 
@@ -428,42 +405,35 @@ def _validate_workflow(repo_root: Path, workflow: dict, workflow_name: str):
 
     first = errors[0]
     raise ProtocolError(
-        f"Invalid plan schema '{workflow_name}': {first['message']}",
+        f"Invalid workflow schema '{workflow_name}': {first['message']}.",
         code="invalid_plan_schema",
         details={"schema": workflow_name, "location": first["path"]},
     )
 
 
-def _workflow_payload(workflow: dict):
-    payload = {}
-    for key in WORKFLOW_PLAN_CUSTOMIZATION_FIELDS:
+def _workflow_runtime_blueprint_payload(workflow: dict, change_name: str):
+    payload = {
+        "changeName": change_name,
+    }
+    for key in WORKFLOW_RUNTIME_CUSTOMIZATION_FIELDS:
         if key in workflow:
             payload[key] = workflow[key]
 
-    # Workflow actions use "description" as the author-facing field and are
-    # normalized to plan actions' required "type" field at generation time.
+    # Workflow actions already use "description"; runtime snapshot keeps the same field name.
     normalized_actions = []
     for action in payload.get("actions", []):
         if isinstance(action, dict):
-            normalized = dict(action)
-            normalized["type"] = normalized.pop("description")
-            normalized_actions.append(normalized)
+            normalized_actions.append(dict(action))
         else:
             normalized_actions.append(action)
     if normalized_actions:
         payload["actions"] = normalized_actions
 
-    # Keep workflow identity in generated metadata for traceability.
-    payload.setdefault("metadata", {})
-    payload["metadata"] = _deep_merge(
-        payload.get("metadata", {}),
-        {
-            "workflow": {
-                "id": workflow["workflowId"],
-                "version": workflow["version"],
-            }
-        },
-    )
+    payload["workflow"] = {
+        "id": workflow["workflowId"],
+        "version": workflow["version"],
+        "description": workflow.get("description"),
+    }
     return payload
 
 
@@ -472,6 +442,6 @@ def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | No
     workflow_doc, workflow_path = _load_workflow(repo_root, selected_workflow)
     _validate_workflow(repo_root, workflow_doc, selected_workflow)
 
-    generated = _deep_merge(_base_definition(change_name), _workflow_payload(workflow_doc))
+    generated = _workflow_runtime_blueprint_payload(workflow_doc, change_name)
 
     return generated, selected_workflow, str(workflow_path)

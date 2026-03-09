@@ -3,7 +3,7 @@
 Define the change-scoped plan orchestration behavior for SuperSpec v1.0.0, including plan validation, protocol-driven action execution, and execution state tracking.
 ## Requirements
 ### Requirement: Change-scoped runtime snapshot
-The system MUST support a change-scoped runtime snapshot in `openspec/changes/<change-name>/execution/state.json` as the authoritative execution state for that change.
+The system MUST support a change-scoped runtime snapshot in `superspec/changes/<change-name>/execution/state.json` as the authoritative execution state for that change.
 
 #### Scenario: Load execution runtime from state snapshot
 - **WHEN** a user runs execution for a change
@@ -44,13 +44,14 @@ The system MUST provide a default plan template optimized for single-agent, sing
 - **THEN** the generated template expresses a serial action flow suitable for one agent
 - **AND** excludes lease-oriented or concurrency-oriented starter fields
 
-### Requirement: Plan schema version validation
-The system MUST validate the declared execution runtime schema version before any action execution begins.
+### Requirement: Workflow schema identity persistence
+The system MUST persist workflow schema identity metadata in the state snapshot.
 
-#### Scenario: Reject unknown schema version
-- **WHEN** snapshot runtime contains an unsupported `schemaVersion`
-- **THEN** the system fails validation
-- **AND** does not execute any actions
+#### Scenario: Snapshot records workflow schema identity
+- **WHEN** a new change snapshot is initialized
+- **THEN** `execution/state.json.meta.schemaVersion` records the workflow schema identity
+- **AND** `execution/state.json.meta.workflowId` and `meta.workflowDescription` record workflow identity and description
+- **AND** runtime execution state remains in `execution/state.json.runtime`
 
 ### Requirement: Action dependency ordering
 The system MUST execute actions in dependency-safe order and reject invalid dependency graphs.
@@ -97,25 +98,10 @@ The system MUST support `skill`, `script`, and `human` executors using a shared 
 - **THEN** plan validation fails before protocol execution starts
 - **AND** no next-action payload is generated for that invalid action
 
-#### Scenario: Limit runtime expression resolution surface
-- **WHEN** an action includes template expressions
-- **THEN** runtime expression resolution for next-action payload generation is applied only to `executor`, `script`, `skill`, `prompt`, `human.instruction`, and `inputs` (recursive)
-- **AND** expression scopes are constrained to `context.*`, `variables.*`, `actions.*`, `state.*`, and `env.*`
-- **AND** other action fields do not participate in runtime payload expression expansion
-- **AND** the runtime implementation does not provide a generic recursive resolver for arbitrary action objects
-
-#### Scenario: Surface runtime expression resolution errors as protocol errors
-- **WHEN** runtime expression resolution fails during next-action payload generation
-- **THEN** execution does not fall back to an unstructured generic exception
-- **AND** the engine raises a structured protocol error with code `invalid_expression`
-
-### Requirement: Open action type support
-The system MUST allow arbitrary non-empty action `type` values instead of enforcing a fixed allowlist.
-
-#### Scenario: Accept custom action type
-- **WHEN** a plan contains an action with a custom non-empty `type`
-- **THEN** plan validation succeeds for action type semantics
-- **AND** protocol execution can proceed using executor contract rules
+#### Scenario: Runtime fields are treated as literal values
+- **WHEN** an action runtime field contains `${...}` substrings
+- **THEN** next-action payload generation keeps those values literal
+- **AND** no expression expansion is performed by protocol runtime
 
 ### Requirement: Resumable execution state
 The system MUST persist execution state to allow interrupted runs to resume safely in single-agent mode.

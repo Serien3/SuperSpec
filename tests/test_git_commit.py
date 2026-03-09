@@ -33,25 +33,10 @@ class GitCommitTest(unittest.TestCase):
             json.dumps(
                 {
                     "meta": {
-                        "schemaVersion": "superspec.state/v1.0.0",
+                        "schemaVersion": "https://superspec.dev/schemas/workflow-v1.json",
                         "changeName": "demo-change",
                     },
-                    "definition": {
-                        "schemaVersion": "superspec.plan/v1.0.0",
-                        "planId": "main",
-                        "title": "Test",
-                        "goal": "Test",
-                        "context": {
-                            "changeName": "demo-change",
-                            "changeDir": "superspec/changes/demo-change",
-                            "repoRoot": ".",
-                            "specRoot": "superspec",
-                        },
-                        "actions": [],
-                    },
                     "runtime": {
-                        "schemaVersion": "superspec.plan/v1.0.0",
-                        "planId": "main",
                         "changeName": "demo-change",
                         "status": "running",
                         "actions": [],
@@ -93,21 +78,8 @@ class GitCommitTest(unittest.TestCase):
             json.dumps(
                 {
                     "meta": {
-                        "schemaVersion": "superspec.state/v1.0.0",
+                        "schemaVersion": "https://superspec.dev/schemas/workflow-v1.json",
                         "changeName": "demo-change",
-                    },
-                    "definition": {
-                        "schemaVersion": "superspec.plan/v1.0.0",
-                        "planId": "main",
-                        "title": "Test",
-                        "goal": "Test",
-                        "context": {
-                            "changeName": "demo-change",
-                            "changeDir": "superspec/changes/demo-change",
-                            "repoRoot": ".",
-                            "specRoot": "superspec",
-                        },
-                        "actions": [],
                     },
                     "runtime": {
                         "status": "success",

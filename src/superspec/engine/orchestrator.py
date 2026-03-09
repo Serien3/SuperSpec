@@ -16,7 +16,7 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
     runtime_change_name = runtime.get("changeName")
     if runtime_change_name and runtime_change_name != change_name:
         raise ProtocolError(
-            "runtime.changeName does not match requested change",
+            "Execution state belongs to a different change.",
             code="invalid_path",
             details={
                 "change": change_name,
@@ -40,7 +40,7 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
             compact=bool(kwargs.get("compact", False)),
             action_limit=int(kwargs.get("action_limit", 40)),
         )
-    raise ProtocolError(f"Unknown protocol action: {action}")
+    raise ProtocolError(f"Unsupported protocol action '{action}'.", code="invalid_arguments")
 
 
 def to_json(payload: dict):

@@ -1,12 +1,12 @@
 # workflow-validation-command Specification
 
 ## Purpose
-Define the human-facing workflow validation command contract so workflow authors can validate templates before plan generation.
+Define the human-facing workflow validation command contract so workflow authors can validate templates before runtime snapshot generation.
 
 ## Requirements
 
 ### Requirement: Validate command targets workflow templates
-The `superspec validate` command MUST validate workflow template documents intended for plan generation, and MUST NOT require a change-scoped `execution/state.json` input.
+The `superspec validate` command MUST validate workflow template documents intended for runtime snapshot generation, and MUST NOT require a change-scoped `execution/state.json` input.
 
 #### Scenario: Validate local workflow by schema name
 - **WHEN** a user runs `superspec validate --schema custom-flow`
@@ -19,7 +19,7 @@ The `superspec validate` command MUST validate workflow template documents inten
 - **AND** does not require a change name
 
 ### Requirement: Validate command enforces generation readiness
-The `superspec validate` command MUST perform generation-readiness checks in addition to structural schema checks, including core workflow contract checks for explicit executor declaration and exact executor payload matching, so a passing workflow is usable for subsequent `change advance --new` plan generation.
+The `superspec validate` command MUST perform generation-readiness checks in addition to structural schema checks, including core workflow contract checks for explicit executor declaration and exact executor payload matching, so a passing workflow is usable for subsequent `change advance --new` runtime snapshot generation.
 
 #### Scenario: Reject semantically invalid dependency graph
 - **WHEN** a workflow document has an action dependency that references a missing action id

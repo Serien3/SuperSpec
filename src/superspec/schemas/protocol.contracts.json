@@ -108,7 +108,7 @@
     ]
   },
   "removed": [
-    "plan run command",
+    "legacy run command",
     "legacy run-state storage under run-state.json and runs/<run-id>/"
   ]
 }

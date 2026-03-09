@@ -130,7 +130,7 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 | 模式 | 用法 | 说明 |
 | ---- | ---- | ---- |
 | 列表模式 | `superspec change advance` | 列出当前 changes。 |
-| 推进模式 | `superspec change advance <change>` | 拉取下一个可执行 action。 |
+| 推进模式 | `superspec change advance <change>` | 拉取下一个可执行 step。 |
 | 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，初始化 `superspec/changes/<name>/execution/state.json` 与 `events.log` 并立即执行一次 next pull。 |
 
 **Options:**
@@ -144,7 +144,7 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 
 ### `superspec change status`
 
-查询执行状态、进度和 action 列表。
+查询执行状态、进度和 step 列表。
 
 ```bash
 superspec change status <change> [options]
@@ -160,8 +160,8 @@ superspec change status <change> [options]
 | ---------------- | ------------------------------ | ------- |
 | `--json`         | JSON 输出。                    | `false` |
 | `--debug`        | 返回协议调试字段。             | `false` |
-| `--full`         | 与 `--json` 一起使用时返回完整 action 对象。 | `false` |
-| `--action-limit` | 精简模式返回 action 摘要上限。 | `40`    |
+| `--full`         | 与 `--json` 一起使用时返回完整 step 对象。 | `false` |
+| `--step-limit` | 精简模式返回 step 摘要上限。 | `40`    |
 
 **JSON 输出规则:**
 | 条件 | 输出 |
@@ -169,83 +169,60 @@ superspec change status <change> [options]
 | `--json` 且未开启 `--full/--debug` | 精简对象：`changeName/status/progress` |
 | `--json` 且开启 `--full` 或 `--debug` | 完整协议 payload |
 
+### `superspec change stepComplete`
+
+将 step 标记为完成。
+
+```bash
+superspec change stepComplete <change> <step_id>
+```
+
+**Arguments:**
+| Argument      | description            | default  |
+| ------------- | ---------------------- | -------- |
+| `<change>`    | `change`名称           | Required |
+| `<step_id>` | 要完成的 step 标识。 | Required |
+
+### `superspec change stepFail`
+
+将 step 标记为失败。
+
+```bash
+superspec change stepFail <change> <step_id>
+```
+
+**Arguments:**
+| Argument      | description            | default  |
+| ------------- | ---------------------- | -------- |
+| `<change>`    | `change`名称           | Required |
+| `<step_id>` | 要失败的 step 标识。 | Required |
+
 ## Plan Commands
-
-### `superspec plan complete`
-
-将 action 标记为完成并提交输出 payload。
-
-```bash
-superspec plan complete <change> <action_id> --output-json <json-object>
-```
-
-**Arguments:**
-| Argument      | description            | default  |
-| ------------- | ---------------------- | -------- |
-| `<change>`    | `change`名称           | Required |
-| `<action_id>` | 要完成的 action 标识。 | Required |
-
-**Options:**
-| option          | description            | default  |
-| --------------- | ---------------------- | -------- |
-| `--output-json` | 完成输出 JSON 对象。   | Required |
-
-### `superspec plan fail`
-
-将 action 标记为失败并提交错误 payload。
-
-```bash
-superspec plan fail <change> <action_id> --error-json <json-object>
-```
-
-**Arguments:**
-| Argument      | description            | default  |
-| ------------- | ---------------------- | -------- |
-| `<change>`    | `change`名称           | Required |
-| `<action_id>` | 要失败的 action 标识。 | Required |
-
-**Options:**
-| option         | description          | default  |
-| -------------- | -------------------- | -------- |
-| `--error-json` | 失败错误 JSON 对象。 | Required |
 
 ### `superspec plan approve`
 
-人类审批通过快捷命令（内部映射为 `complete`，`executor=human`）。
+人类审批通过快捷命令（内部映射为 `complete`）。
 
 ```bash
-superspec plan approve <change> <action_id> [options]
+superspec plan approve <change> <step_id>
 ```
 
 **Arguments:**
 | Argument      | description            | default  |
 | ------------- | ---------------------- | -------- |
 | `<change>`    | `change`名称           | Required |
-| `<action_id>` | 要审批的 action 标识。 | Required |
-
-**Options:**
-
-| option      | description | default |
-| ----------- | ----------- | ------- |
-| `--summary` | 审批备注。  | `""`    |
+| `<step_id>` | 要审批的 step 标识。 | Required |
 
 ### `superspec plan reject`
 
-人类审批拒绝快捷命令（内部映射为 `fail`，`executor=human`）。
+人类审批拒绝快捷命令（内部映射为 `fail`）。
 
 ```bash
-superspec plan reject <change> <action_id> [options]
+superspec plan reject <change> <step_id>
 ```
 
 **Arguments:**
 | Argument      | description            | default  |
 | ------------- | ---------------------- | -------- |
 | `<change>`    | `change`名称           | Required |
-| `<action_id>` | 要拒绝的 action 标识。 | Required |
-
-**Options:**
-
-| option      | description  | default                 |
-| ----------- | ------------ | ----------------------- |
-| `--code`    | 拒绝错误码。 | `human_rejected`        |
-| `--message` | 拒绝信息。   | `human review rejected` |
+| `<step_id>` | 要拒绝的 step 标识。 | Required |

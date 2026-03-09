@@ -6,12 +6,12 @@ Define file-based workflow definitions for runtime snapshot generation, includin
 ## Requirements
 
 ### Requirement: File-based workflow definitions
-The system MUST support declarative workflow files that define workflow metadata and action sequence content.
+The system MUST support declarative workflow files that define workflow metadata and step sequence content.
 
 #### Scenario: Load a valid workflow file
 - **WHEN** a user requests change creation with `change advance --new <schema>/<change-name>` and the schema exists in the configured workflow directory
 - **THEN** the system loads that workflow definition
-- **AND** uses its metadata and actions as generation input
+- **AND** uses its metadata and steps as generation input
 
 #### Scenario: Discover workflow in default filesystem location
 - **WHEN** a user adds a valid workflow file under `superspec/schemas/workflows/` using the `<schema>.workflow.json` naming pattern
@@ -32,7 +32,7 @@ The system MUST validate required workflow metadata fields and workflow template
 - **AND** no `execution/state.json` is generated
 
 #### Scenario: Reject unknown nested field in constrained workflow object
-- **WHEN** a workflow definition includes an unknown field under constrained objects such as `actions[*]`
+- **WHEN** a workflow definition includes an unknown field under constrained objects such as `steps[*]`
 - **THEN** validation fails before runtime baseline generation
 - **AND** the error identifies the precise nested path
 

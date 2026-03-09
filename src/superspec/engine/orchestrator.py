@@ -6,10 +6,10 @@ from superspec.engine.plan_loader import (
     load_state_snapshot_from_change,
     resolve_change_dir,
 )
-from superspec.engine.protocol import complete_action, fail_action, next_action, status_snapshot
+from superspec.engine.protocol import complete_step, fail_step, next_step, status_snapshot
 
 
-def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str, **kwargs):
+def run_protocol_action_from_cli(repo_root: Path, change_name: str, command: str, **kwargs):
     snapshot, _ = load_state_snapshot_from_change(str(repo_root), change_name)
     runtime = snapshot["runtime"]
     expected_change_dir = resolve_change_dir(str(repo_root), change_name)
@@ -26,21 +26,21 @@ def run_protocol_action_from_cli(repo_root: Path, change_name: str, action: str,
 
     change_dir = str(expected_change_dir)
 
-    if action == "next":
-        return next_action(None, change_dir, owner=kwargs.get("owner", "agent"))
-    if action == "complete":
-        return complete_action(None, change_dir, kwargs["action_id"], kwargs["output_payload"])
-    if action == "fail":
-        return fail_action(None, change_dir, kwargs["action_id"], kwargs["error_payload"])
-    if action == "status":
+    if command == "next":
+        return next_step(None, change_dir, owner=kwargs.get("owner", "agent"))
+    if command == "complete":
+        return complete_step(None, change_dir, kwargs["step_id"])
+    if command == "fail":
+        return fail_step(None, change_dir, kwargs["step_id"])
+    if command == "status":
         return status_snapshot(
             None,
             change_dir,
             debug=bool(kwargs.get("debug", False)),
             compact=bool(kwargs.get("compact", False)),
-            action_limit=int(kwargs.get("action_limit", 40)),
+            step_limit=int(kwargs.get("step_limit", 40)),
         )
-    raise ProtocolError(f"Unsupported protocol action '{action}'.", code="invalid_arguments")
+    raise ProtocolError(f"Unsupported protocol command '{command}'.", code="invalid_arguments")
 
 
 def to_json(payload: dict):

@@ -39,7 +39,7 @@ class GitCommitTest(unittest.TestCase):
                     "runtime": {
                         "changeName": "demo-change",
                         "status": "running",
-                        "actions": [],
+                        "steps": [],
                     },
                 },
                 indent=2,
@@ -83,7 +83,7 @@ class GitCommitTest(unittest.TestCase):
                     },
                     "runtime": {
                         "status": "success",
-                        "actions": [],
+                        "steps": [],
                     },
                 },
                 indent=2,

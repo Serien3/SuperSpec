@@ -1,64 +1,64 @@
 ## Purpose
 
-Define the protocol-driven, agent-executed action flow for SuperSpec v1.0.0, including pull-based action retrieval, serial reporting, and executor-specific payload contracts.
+Define the protocol-driven, agent-executed step flow for SuperSpec v1.0.0, including pull-based step retrieval, serial reporting, and executor-specific payload contracts.
 ## Requirements
-### Requirement: Next-action retrieval command
-The system MUST provide a command to retrieve exactly one executable action for a change in structured JSON form.
+### Requirement: Next-step retrieval command
+The system MUST provide a command to retrieve exactly one executable step for a change in structured JSON form.
 
-#### Scenario: Retrieve next ready action
-- **WHEN** a client requests the next action for a change with pending runnable work
+#### Scenario: Retrieve next ready step
+- **WHEN** a client requests the next step for a change with pending runnable work
 - **THEN** the system returns state `ready`
-- **AND** returns only top-level fields `state` and `action`
+- **AND** returns only top-level fields `state` and `step`
 
-#### Scenario: No remaining actions
-- **WHEN** all actions are in terminal states according to execution policy
+#### Scenario: No remaining steps
+- **WHEN** all steps are in terminal states according to execution policy
 - **THEN** the system returns state `done`
-- **AND** does not return an executable action payload
+- **AND** does not return an executable step payload
 
-### Requirement: Action completion reporting
-The system MUST provide a command for clients to report successful action completion with structured output payload.
+### Requirement: Step completion reporting
+The system MUST provide a command for clients to report successful step completion.
 
-#### Scenario: Complete running action
-- **WHEN** a client reports completion for a running action
-- **THEN** the action state transitions to `SUCCESS`
-- **AND** output payload is stored as action output
+#### Scenario: Complete running step
+- **WHEN** a client reports completion for a running step
+- **THEN** the step state transitions to `SUCCESS`
+- **AND** the step is marked finished without persisting an step output payload
 
-### Requirement: Action failure reporting
-The system MUST provide a command for clients to report action failure with structured error payload.
+### Requirement: Step failure reporting
+The system MUST provide a command for clients to report step failure.
 
-#### Scenario: Fail action is terminal
-- **WHEN** a client reports failure for a running action
-- **THEN** the action transitions to `FAILED`
+#### Scenario: Fail step is terminal
+- **WHEN** a client reports failure for a running step
+- **THEN** the step transitions to `FAILED`
 - **AND** the workflow transitions to terminal `failed`
 - **AND** no retry scheduling is created
 
-#### Scenario: Propagate dependency failure to downstream actions
-- **WHEN** an action reaches terminal `FAILED` and downstream actions depend on it directly or transitively
-- **THEN** those downstream actions transition to terminal `FAILED`
-- **AND** each propagated failure includes dependency-failure context identifying the upstream failed action
+#### Scenario: Propagate dependency failure to downstream steps
+- **WHEN** an step reaches terminal `FAILED` and downstream steps depend on it directly or transitively
+- **THEN** those downstream steps transition to terminal `FAILED`
+- **AND** dependency-failure context is recorded in execution events
 
 ### Requirement: Executor-specific payload contract
 The system MUST return normalized execution payloads that distinguish script, skill, and human execution modes, and MUST reject plans whose explicit `executor` value is not one of `skill`, `script`, or `human`.
 
-#### Scenario: Script action payload
-- **WHEN** the next action uses `executor=script`
+#### Scenario: Script step payload
+- **WHEN** the next step uses `executor=script`
 - **THEN** the payload includes `script_command` and `prompt`
-- **AND** may include literal `inputs` when action inputs are defined
+- **AND** may include literal `inputs` when step inputs are defined
 
-#### Scenario: Skill action payload
-- **WHEN** the next action uses `executor=skill`
+#### Scenario: Skill step payload
+- **WHEN** the next step uses `executor=skill`
 - **THEN** the payload includes `skillName` and `prompt`
-- **AND** does not include context file maps in the action payload
-- **AND** may include literal `inputs` when action inputs are defined
+- **AND** does not include context file maps in the step payload
+- **AND** may include literal `inputs` when step inputs are defined
 
-#### Scenario: Human action payload
-- **WHEN** the next action uses `executor=human`
+#### Scenario: Human step payload
+- **WHEN** the next step uses `executor=human`
 - **THEN** the payload includes `human` review metadata and `prompt`
 - **AND** does not include `script_command` or `skillName`
-- **AND** may include literal `inputs` when action inputs are defined
+- **AND** may include literal `inputs` when step inputs are defined
 
 #### Scenario: Runtime fields are not expression-expanded
-- **WHEN** action runtime fields contain `${...}` substrings
+- **WHEN** step runtime fields contain `${...}` substrings
 - **THEN** protocol payload generation treats those fields as literal string content
 - **AND** no runtime expression expansion scope is applied
 
@@ -67,18 +67,18 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 
 #### Scenario: Iterate until done
 - **WHEN** an agent repeatedly requests `next` after each completion or failure report
-- **THEN** the protocol continues returning runnable actions while work remains
+- **THEN** the protocol continues returning runnable steps while work remains
 - **AND** eventually returns `done` when the plan reaches terminal state
 
 #### Scenario: Blocked loop behavior
-- **WHEN** `next` returns `blocked` because no action is currently runnable due to unresolved dependencies and no in-flight `RUNNING` action is available for resume
+- **WHEN** `next` returns `blocked` because no step is currently runnable due to unresolved dependencies and no in-flight `RUNNING` step is available for resume
 - **THEN** the agent can continue polling without invalidating state
-- **AND** serial action ordering remains intact across repeated polling
+- **AND** serial step ordering remains intact across repeated polling
 
-#### Scenario: Return in-flight running action for session handoff
-- **WHEN** a change has an in-flight `RUNNING` action and a client requests `next`
-- **THEN** the protocol returns state `ready` with that same in-flight action payload
-- **AND** does not allocate a new action until the in-flight action is reported complete or failed
+#### Scenario: Return in-flight running step for session handoff
+- **WHEN** a change has an in-flight `RUNNING` step and a client requests `next`
+- **THEN** the protocol returns state `ready` with that same in-flight step payload
+- **AND** does not allocate a new step until the in-flight step is reported complete or failed
 
 ### Requirement: Status contract visibility in debug mode
 The system MUST return protocol contract metadata in status responses only when debug mode is explicitly requested.
@@ -93,18 +93,18 @@ The system MUST return protocol contract metadata in status responses only when 
 - **THEN** the response includes execution state and progress fields
 - **AND** includes `contracts` metadata for protocol inspection
 
-### Requirement: Two-terminal-state action model
-The system MUST represent action terminal outcomes using only `SUCCESS` and `FAILED`.
+### Requirement: Two-terminal-state step model
+The system MUST represent step terminal outcomes using only `SUCCESS` and `FAILED`.
 
-#### Scenario: Report action status snapshot
+#### Scenario: Report step status snapshot
 - **WHEN** a client requests `superspec change status <change-name>` during or after execution
-- **THEN** each action status is one of `PENDING`, `READY`, `RUNNING`, `SUCCESS`, or `FAILED`
-- **AND** no action is reported as `SKIPPED`
+- **THEN** each step status is one of `PENDING`, `READY`, `RUNNING`, `SUCCESS`, or `FAILED`
+- **AND** no step is reported as `SKIPPED`
 
 ### Requirement: Progress accounting without skipped work
 The system MUST compute progress fields without counting skipped outcomes.
 
 #### Scenario: Calculate done and failed counts
 - **WHEN** `superspec change status <change-name>` is computed for a change
-- **THEN** `progress.done` counts only actions in `SUCCESS`
-- **AND** `progress.failed` counts actions in `FAILED`
+- **THEN** `progress.done` counts only steps in `SUCCESS`
+- **AND** `progress.failed` counts steps in `FAILED`

@@ -14,6 +14,6 @@ The system MUST validate required workflow metadata fields and workflow template
 - **AND** no plan file is generated
 
 #### Scenario: Reject unknown nested field in constrained workflow object
-- **WHEN** a workflow definition includes an unknown field under constrained objects such as `defaults` or `actions[*]`
+- **WHEN** a workflow definition includes an unknown field under constrained objects such as `defaults` or `steps[*]`
 - **THEN** validation fails before plan generation
 - **AND** the error identifies the precise nested path

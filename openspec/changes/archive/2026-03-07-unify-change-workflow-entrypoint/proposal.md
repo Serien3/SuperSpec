@@ -7,7 +7,7 @@ Current SuperSpec change execution is split across `change new`, `plan init`, an
 - Introduce a unified command: `superspec change advance` as the primary runtime entrypoint for listing, creating, and advancing changes.
 - Enforce that each change binds to exactly one workflow type at creation time.
 - Add `superspec change advance --new <workflow-type>/<change-name>` to create a change and initialize its workflow-backed plan in one step.
-- Make `superspec change advance <change-name>` the canonical next-action pull behavior.
+- Make `superspec change advance <change-name>` the canonical next-step pull behavior.
 - Make `superspec change advance` (without args) equivalent to `superspec change list`.
 - Remove `superspec change new`, `superspec plan init`, and `superspec plan next` from CLI surface in favor of the unified entrypoint.
 - Keep existing protocol report commands (`plan complete|fail|approve|reject|status`) during migration.

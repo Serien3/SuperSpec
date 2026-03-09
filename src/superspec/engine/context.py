@@ -42,13 +42,13 @@ def _resolve_template_value(value, context):
     return value
 
 
-def resolve_runtime_action_fields(action: dict, context: dict):
+def resolve_runtime_action_fields(step: dict, context: dict):
     resolved = {}
     for field in ("executor", "script", "skill", "prompt"):
-        if field in action:
-            resolved[field] = resolve_template_string(action[field], context)
+        if field in step:
+            resolved[field] = resolve_template_string(step[field], context)
 
-    human = action.get("human")
+    human = step.get("human")
     if isinstance(human, dict):
         resolved_human = {}
         for field in ("instruction",):
@@ -57,7 +57,7 @@ def resolve_runtime_action_fields(action: dict, context: dict):
         if resolved_human:
             resolved["human"] = resolved_human
 
-    inputs = action.get("inputs")
+    inputs = step.get("inputs")
     if isinstance(inputs, dict):
         resolved["inputs"] = _resolve_template_value(inputs, context)
 

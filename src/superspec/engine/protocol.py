@@ -20,8 +20,8 @@ def _now_iso():
     return _now().isoformat()
 
 
-def _resolve_executor(action):
-    executor = action.get("executor")
+def _resolve_executor(step):
+    executor = step.get("executor")
     if isinstance(executor, str) and executor:
         return executor
     return None
@@ -38,80 +38,72 @@ def _runtime_blueprint_from_seed(runtime_seed: dict):
     return {
         "changeName": change_name,
         "workflow": {},
-        "actions": runtime_seed.get("actions", []),
+        "steps": runtime_seed.get("steps", []),
     }
 
 
-def _action_runtime_outputs(state: dict):
-    outputs = {}
-    for action in state["actions"]:
-        if action.get("output") is not None:
-            outputs[action["id"]] = {"outputs": action["output"]}
-    return outputs
-
-
-def _build_action_payload(action: dict):
-    executor = _resolve_executor(action)
+def _build_step_payload(step: dict):
+    executor = _resolve_executor(step)
     if executor is None:
         raise ProtocolError(
-            f"Invalid action '{action['id']}': missing executor.",
-            code="invalid_action_payload",
+            f"Invalid step '{step['id']}': missing executor.",
+            code="invalid_step_payload",
         )
     if executor not in _VALID_EXECUTORS:
         raise ProtocolError(
-            f"Invalid action '{action['id']}': unsupported executor '{executor}'.",
-            code="invalid_action_payload",
+            f"Invalid step '{step['id']}': unsupported executor '{executor}'.",
+            code="invalid_step_payload",
         )
 
-    rendered_prompt = action.get("prompt")
+    rendered_prompt = step.get("prompt")
     if rendered_prompt is not None and not isinstance(rendered_prompt, str):
         raise ProtocolError(
-            f"Invalid action '{action['id']}': prompt must be a string.",
-            code="invalid_action_payload",
+            f"Invalid step '{step['id']}': prompt must be a string.",
+            code="invalid_step_payload",
         )
-    rendered_inputs = action.get("inputs")
+    rendered_inputs = step.get("inputs")
     if rendered_inputs is not None and not isinstance(rendered_inputs, dict):
         raise ProtocolError(
-            f"Invalid action '{action['id']}': inputs must be an object.",
-            code="invalid_action_payload",
+            f"Invalid step '{step['id']}': inputs must be an object.",
+            code="invalid_step_payload",
         )
     payload = {
-        "actionId": action["id"],
+        "stepId": step["id"],
         "executor": executor,
     }
     if rendered_inputs is not None:
         payload["inputs"] = rendered_inputs
 
     if executor == "script":
-        command = action.get("script")
+        command = step.get("script")
         if not isinstance(command, str) or not command:
             raise ProtocolError(
-                f"Invalid action '{action['id']}': script executor requires a non-empty script command.",
-                code="invalid_action_payload",
+                f"Invalid step '{step['id']}': script executor requires a non-empty script command.",
+                code="invalid_step_payload",
             )
         payload["script_command"] = command
-        payload["prompt"] = rendered_prompt or f"Run script command for action {action['id']}"
+        payload["prompt"] = rendered_prompt or f"Run script command for step {step['id']}"
         return payload
 
     if executor == "human":
-        human = action.get("human")
+        human = step.get("human")
         if not isinstance(human, dict) or not isinstance(human.get("instruction"), str) or not human.get("instruction"):
             raise ProtocolError(
-                f"Invalid action '{action['id']}': human executor requires a non-empty instruction.",
-                code="invalid_action_payload",
+                f"Invalid step '{step['id']}': human executor requires a non-empty instruction.",
+                code="invalid_step_payload",
             )
         payload["human"] = human
-        payload["prompt"] = rendered_prompt or human.get("instruction") or f"Wait for human review on action {action['id']}"
+        payload["prompt"] = rendered_prompt or human.get("instruction") or f"Wait for human review on step {step['id']}"
         return payload
 
-    skill_name = action.get("skill")
+    skill_name = step.get("skill")
     if not isinstance(skill_name, str) or not skill_name:
         raise ProtocolError(
-            f"Invalid action '{action['id']}': skill executor requires a non-empty skill name.",
-            code="invalid_action_payload",
+            f"Invalid step '{step['id']}': skill executor requires a non-empty skill name.",
+            code="invalid_step_payload",
         )
     payload["skillName"] = skill_name
-    payload["prompt"] = rendered_prompt or f"Invoke skill {skill_name} for action {action['id']}"
+    payload["prompt"] = rendered_prompt or f"Invoke skill {skill_name} for step {step['id']}"
 
     return payload
 
@@ -136,35 +128,35 @@ def _persist(change_dir: str, state: dict):
 
 def _completed_ids(state: dict):
     return {
-        a["id"]
-        for a in state["actions"]
-        if a["status"] == "SUCCESS"
+        step["id"]
+        for step in state["steps"]
+        if step["status"] == "SUCCESS"
     }
 
 
-def _dependencies_satisfied(action_state: dict, completed: set[str]):
-    for dep in action_state.get("dependsOn", []):
+def _dependencies_satisfied(step_state: dict, completed: set[str]):
+    for dep in step_state.get("dependsOn", []):
         if dep not in completed:
             return False
     return True
 
 
-def _refresh_ready_actions(state: dict):
+def _refresh_ready_steps(state: dict):
     completed = _completed_ids(state)
-    for action_state in state["actions"]:
-        if action_state["status"] not in {"PENDING", "READY"}:
+    for step_state in state["steps"]:
+        if step_state["status"] not in {"PENDING", "READY"}:
             continue
 
-        if _dependencies_satisfied(action_state, completed):
-            action_state["status"] = "READY"
+        if _dependencies_satisfied(step_state, completed):
+            step_state["status"] = "READY"
         else:
-            action_state["status"] = "PENDING"
+            step_state["status"] = "PENDING"
 
 
-def _action_state_by_id(state: dict, action_id: str):
-    for action in state["actions"]:
-        if action["id"] == action_id:
-            return action
+def _step_state_by_id(state: dict, step_id: str):
+    for step in state["steps"]:
+        if step["id"] == step_id:
+            return step
     return None
 
 
@@ -172,31 +164,26 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
     # Repeatedly collapse blocked dependents into FAILED for deterministic termination.
     while True:
         transitioned = False
-        for action_state in state["actions"]:
-            if action_state["status"] not in {"PENDING", "READY"}:
+        for step_state in state["steps"]:
+            if step_state["status"] not in {"PENDING", "READY"}:
                 continue
 
             failed_dep = None
-            for dep in action_state.get("dependsOn", []):
-                dep_state = _action_state_by_id(state, dep)
+            for dep in step_state.get("dependsOn", []):
+                dep_state = _step_state_by_id(state, dep)
                 if dep_state and dep_state["status"] == "FAILED":
                     failed_dep = dep
                     break
             if not failed_dep:
                 continue
 
-            action_state["status"] = "FAILED"
-            action_state["finishedAt"] = _now_iso()
-            action_state["error"] = {
-                "code": "dependency_failed",
-                "message": f"Blocked by failed dependency: {failed_dep}",
-                "dependency": failed_dep,
-            }
+            step_state["status"] = "FAILED"
+            step_state["finishedAt"] = _now_iso()
             append_event(
                 change_dir,
                 {
-                    "event": "action.failed",
-                    "actionId": action_state["id"],
+                    "event": "step.failed",
+                    "stepId": step_state["id"],
                     "reason": "dependency_failed",
                     "dependency": failed_dep,
                 },
@@ -208,55 +195,55 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
 
 
 def _terminalize_if_done(change_dir: str, state: dict):
-    remaining = [a for a in state["actions"] if a["status"] in {"PENDING", "READY", "RUNNING"}]
+    remaining = [s for s in state["steps"] if s["status"] in {"PENDING", "READY", "RUNNING"}]
     if not remaining:
-        has_failed = any(a["status"] == "FAILED" for a in state["actions"])
+        has_failed = any(s["status"] == "FAILED" for s in state["steps"])
         state["status"] = "failed" if has_failed else "success"
         state["finishedAt"] = _now_iso()
         append_event(change_dir, {"event": "state.terminal", "status": state["status"]})
 
 
-def next_action(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
+def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
     state = ensure_protocol_state(runtime_seed, change_dir)
-    _refresh_ready_actions(state)
+    _refresh_ready_steps(state)
 
     if state["status"] in {"success", "failed"}:
         _persist(change_dir, state)
         return {
             "state": "done",
-            "action": None,
+            "step": None,
         }
 
-    for action_state in state["actions"]:
-        if action_state["status"] != "RUNNING":
+    for step_state in state["steps"]:
+        if step_state["status"] != "RUNNING":
             continue
-        payload = _build_action_payload(action_state)
+        payload = _build_step_payload(step_state)
         _persist(change_dir, state)
         return {
             "state": "ready",
-            "action": payload,
+            "step": payload,
         }
 
-    for action_state in state["actions"]:
-        if action_state["status"] != "READY":
+    for step_state in state["steps"]:
+        if step_state["status"] != "READY":
             continue
 
-        action_state["status"] = "RUNNING"
-        action_state["startedAt"] = _now_iso()
+        step_state["status"] = "RUNNING"
+        step_state["startedAt"] = _now_iso()
 
-        payload = _build_action_payload(action_state)
+        payload = _build_step_payload(step_state)
         append_event(
             change_dir,
             {
-                "event": "action.started",
-                "actionId": action_state["id"],
+                "event": "step.started",
+                "stepId": step_state["id"],
                 "owner": owner,
             },
         )
         _persist(change_dir, state)
         return {
             "state": "ready",
-            "action": payload,
+            "step": payload,
         }
 
     _terminalize_if_done(change_dir, state)
@@ -264,67 +251,57 @@ def next_action(runtime_seed: dict | None, change_dir: str, owner: str = "agent"
     if state["status"] in {"success", "failed"}:
         return {
             "state": "done",
-            "action": None,
+            "step": None,
         }
 
     return {
         "state": "blocked",
-        "action": None,
+        "step": None,
     }
 
 
-def _validate_report_shape(payload: dict, key: str):
-    if not isinstance(payload, dict):
-        raise ProtocolError(f"Invalid {key} payload: expected a JSON object.", code="invalid_payload")
-
-
-def complete_action(runtime_seed: dict | None, change_dir: str, action_id: str, output_payload: dict):
-    _validate_report_shape(output_payload, "output")
+def complete_step(runtime_seed: dict | None, change_dir: str, step_id: str):
     state = ensure_protocol_state(runtime_seed, change_dir)
 
-    action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
-    if not action_state:
-        raise ProtocolError(f"Unknown action: '{action_id}'.", code="unknown_action")
-    if action_state["status"] != "RUNNING":
+    step_state = next((s for s in state["steps"] if s["id"] == step_id), None)
+    if not step_state:
+        raise ProtocolError(f"Unknown step: '{step_id}'.", code="unknown_step")
+    if step_state["status"] != "RUNNING":
         raise ProtocolError(
-            f"Action '{action_id}' cannot be completed from status '{action_state['status']}'.",
+            f"Step '{step_id}' cannot be completed from status '{step_state['status']}'.",
             code="invalid_state",
         )
 
-    action_state["status"] = "SUCCESS"
-    action_state["output"] = output_payload
-    action_state["error"] = None
-    action_state["finishedAt"] = _now_iso()
+    step_state["status"] = "SUCCESS"
+    step_state["finishedAt"] = _now_iso()
 
-    append_event(change_dir, {"event": "action.completed", "actionId": action_id})
-    _refresh_ready_actions(state)
+    append_event(change_dir, {"event": "step.completed", "stepId": step_id})
+    _refresh_ready_steps(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
     return status_snapshot(runtime_seed, change_dir)
 
 
-def fail_action(runtime_seed: dict | None, change_dir: str, action_id: str, error_payload: dict):
-    _validate_report_shape(error_payload, "error")
+def fail_step(runtime_seed: dict | None, change_dir: str, step_id: str):
     state = ensure_protocol_state(runtime_seed, change_dir)
 
-    action_state = next((a for a in state["actions"] if a["id"] == action_id), None)
-    if not action_state:
-        raise ProtocolError(f"Unknown action: '{action_id}'.", code="unknown_action")
-    if action_state["status"] != "RUNNING":
+    step_state = next((s for s in state["steps"] if s["id"] == step_id), None)
+    if not step_state:
+        raise ProtocolError(f"Unknown step: '{step_id}'.", code="unknown_step")
+    if step_state["status"] != "RUNNING":
         raise ProtocolError(
-            f"Action '{action_id}' cannot be failed from status '{action_state['status']}'.",
+            f"Step '{step_id}' cannot be failed from status '{step_state['status']}'.",
             code="invalid_state",
         )
 
-    action_state["error"] = error_payload
-    action_state["finishedAt"] = _now_iso()
-    action_state["status"] = "FAILED"
+    step_state["finishedAt"] = _now_iso()
+    step_state["status"] = "FAILED"
     state["status"] = "failed"
     state["finishedAt"] = _now_iso()
 
-    append_event(change_dir, {"event": "action.failed", "actionId": action_id, "reason": "reported_failure"})
+    append_event(change_dir, {"event": "step.failed", "stepId": step_id, "reason": "reported_failure"})
     _propagate_dependency_failures(change_dir, state)
-    _refresh_ready_actions(state)
+    _refresh_ready_steps(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)
     return status_snapshot(runtime_seed, change_dir)
@@ -334,47 +311,40 @@ def _contracts_payload():
     return {
         "next": {
             "states": ["ready", "blocked", "done"],
-            "fields": ["state", "action"],
-            "errors": ["invalid_action_payload"],
+            "fields": ["state", "step"],
+            "errors": ["invalid_step_payload"],
         },
-        "complete": {
-            "request": ["change", "action-id", "output-json"],
-            "errors": ["invalid_payload", "unknown_action", "invalid_state"],
+        "stepComplete": {
+            "request": ["change", "step-id"],
+            "errors": ["unknown_step", "invalid_state"],
         },
-        "fail": {
-            "request": ["change", "action-id", "error-json"],
-            "errors": ["invalid_payload", "unknown_action", "invalid_state"],
+        "stepFail": {
+            "request": ["change", "step-id"],
+            "errors": ["unknown_step", "invalid_state"],
         },
         "status": {
             "fields": ["changeName", "status", "progress"],
-            "actionStates": ["PENDING", "READY", "RUNNING", "SUCCESS", "FAILED"],
-            "debugFields": ["contracts", "lastFailure", "actions", "actionsOmitted", "protocolVersion"],
+            "stepStates": ["PENDING", "READY", "RUNNING", "SUCCESS", "FAILED"],
+            "debugFields": ["contracts", "lastFailure", "steps", "stepsOmitted", "protocolVersion"],
             "modes": {
                 "default": "status --json returns minimal fields only",
-                "full": "status --json --full returns full action objects",
-                "debug": "status --json --debug returns contracts and compact action summaries",
+                "full": "status --json --full returns full step objects",
+                "debug": "status --json --debug returns contracts and compact step summaries",
             },
         },
-        "actionPayload": {
-            "script": ["actionId", "executor", "script_command", "prompt"],
-            "skill": ["actionId", "executor", "skillName", "prompt"],
-            "human": ["actionId", "executor", "human", "prompt"],
+        "stepPayload": {
+            "script": ["stepId", "executor", "script_command", "prompt"],
+            "skill": ["stepId", "executor", "skillName", "prompt"],
+            "human": ["stepId", "executor", "human", "prompt"],
         },
     }
 
 
-def _compact_action_entry(action: dict):
-    entry = {
-        "id": action["id"],
-        "status": action["status"],
+def _compact_step_entry(step: dict):
+    return {
+        "id": step["id"],
+        "status": step["status"],
     }
-    if action.get("error"):
-        error = action["error"]
-        entry["error"] = {
-            "code": error.get("code"),
-            "message": error.get("message"),
-        }
-    return entry
 
 
 def status_snapshot(
@@ -382,17 +352,17 @@ def status_snapshot(
     change_dir: str,
     debug: bool = False,
     compact: bool = False,
-    action_limit: int = 40,
+    step_limit: int = 40,
 ):
     state = ensure_protocol_state(runtime_seed, change_dir)
-    done = len([a for a in state["actions"] if a["status"] == "SUCCESS"])
-    failed = len([a for a in state["actions"] if a["status"] == "FAILED"])
-    running = len([a for a in state["actions"] if a["status"] == "RUNNING"])
+    done = len([s for s in state["steps"] if s["status"] == "SUCCESS"])
+    failed = len([s for s in state["steps"] if s["status"] == "FAILED"])
+    running = len([s for s in state["steps"] if s["status"] == "RUNNING"])
 
     last_failure = None
-    for action in reversed(state["actions"]):
-        if action.get("status") == "FAILED" and action.get("error"):
-            last_failure = {"actionId": action["id"], "error": action["error"]}
+    for step in reversed(state["steps"]):
+        if step.get("status") == "FAILED":
+            last_failure = {"stepId": step["id"]}
             break
 
     payload = {
@@ -400,21 +370,21 @@ def status_snapshot(
         "protocolVersion": SUPPORTED_PROTOCOL_VERSION,
         "status": state["status"],
         "progress": {
-            "total": len(state["actions"]),
+            "total": len(state["steps"]),
             "done": done,
             "failed": failed,
             "running": running,
-            "remaining": len(state["actions"]) - done - failed - running,
+            "remaining": len(state["steps"]) - done - failed - running,
         },
         "lastFailure": last_failure,
     }
     if compact:
-        limit = max(1, int(action_limit))
-        compact_actions = [_compact_action_entry(action) for action in state["actions"][:limit]]
-        payload["actions"] = compact_actions
-        payload["actionsOmitted"] = max(0, len(state["actions"]) - len(compact_actions))
+        limit = max(1, int(step_limit))
+        compact_steps = [_compact_step_entry(step) for step in state["steps"][:limit]]
+        payload["steps"] = compact_steps
+        payload["stepsOmitted"] = max(0, len(state["steps"]) - len(compact_steps))
     else:
-        payload["actions"] = state["actions"]
+        payload["steps"] = state["steps"]
     if debug:
         payload["contracts"] = _contracts_payload()
     return payload

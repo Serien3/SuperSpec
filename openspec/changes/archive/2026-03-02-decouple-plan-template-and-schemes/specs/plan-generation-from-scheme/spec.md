@@ -6,7 +6,7 @@ The system MUST generate change-scoped `plan.json` by combining a generic base p
 #### Scenario: Generate plan with selected scheme
 - **WHEN** a user initializes a plan for a change with a valid scheme
 - **THEN** the generated `plan.json` contains the base template structural fields
-- **AND** includes defaults and actions from the selected scheme
+- **AND** includes defaults and steps from the selected scheme
 
 ### Requirement: Deterministic merge precedence
 The system MUST apply a deterministic merge order across generation inputs.

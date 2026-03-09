@@ -9,57 +9,57 @@ The system MUST support a change-scoped `plan.json` located at `openspec/changes
 - **AND** rejects execution if the file is missing
 
 ### Requirement: Plan schema version validation
-The system MUST validate the declared plan schema version before any action execution begins.
+The system MUST validate the declared plan schema version before any step execution begins.
 
 #### Scenario: Reject unknown schema version
 - **WHEN** `plan.json` contains an unsupported `schemaVersion`
 - **THEN** the system fails validation
-- **AND** does not execute any actions
+- **AND** does not execute any steps
 
-### Requirement: Action dependency ordering
-The system MUST execute actions in dependency-safe order and reject invalid dependency graphs.
+### Requirement: Step dependency ordering
+The system MUST execute steps in dependency-safe order and reject invalid dependency graphs.
 
-#### Scenario: Execute only ready actions
-- **WHEN** an action has unresolved dependencies
-- **THEN** the action is not executed
+#### Scenario: Execute only ready steps
+- **WHEN** an step has unresolved dependencies
+- **THEN** the step is not executed
 - **AND** it remains pending until dependencies succeed
 
 #### Scenario: Reject cyclic dependencies
-- **WHEN** the action graph contains a cycle
+- **WHEN** the step graph contains a cycle
 - **THEN** validation fails before execution starts
 
-### Requirement: Unified action execution contract
-The system MUST support both `skill` and `script` executors using a shared action contract with normalized outputs.
+### Requirement: Unified step execution contract
+The system MUST support both `skill` and `script` executors using a shared step contract with normalized outputs.
 
-#### Scenario: Skill executor action
-- **WHEN** an action declares `executor: skill`
+#### Scenario: Skill executor step
+- **WHEN** an step declares `executor: skill`
 - **THEN** the orchestrator invokes the configured skill
-- **AND** stores normalized outputs for downstream action references
+- **AND** stores normalized outputs for downstream step references
 
-#### Scenario: Script executor action
-- **WHEN** an action declares `executor: script`
+#### Scenario: Script executor step
+- **WHEN** an step declares `executor: script`
 - **THEN** the orchestrator runs the configured script
-- **AND** stores normalized outputs for downstream action references
+- **AND** stores normalized outputs for downstream step references
 
-### Requirement: Open action type support
-The system MUST allow arbitrary non-empty action `type` values in plan execution.
+### Requirement: Open step type support
+The system MUST allow arbitrary non-empty step `type` values in plan execution.
 
-#### Scenario: Accept custom action type
-- **WHEN** a plan contains an action with a custom non-empty `type`
-- **THEN** plan validation succeeds for action type semantics
+#### Scenario: Accept custom step type
+- **WHEN** a plan contains an step with a custom non-empty `type`
+- **THEN** plan validation succeeds for step type semantics
 
 ### Requirement: Resumable execution state
 The system MUST persist execution state to allow interrupted runs to resume safely.
 
-#### Scenario: Resume after failed action
-- **WHEN** a prior run failed after completing a subset of actions
-- **THEN** a resume run continues from the next executable action
-- **AND** previously successful actions are not re-executed unless explicitly requested
+#### Scenario: Resume after failed step
+- **WHEN** a prior run failed after completing a subset of steps
+- **THEN** a resume run continues from the next executable step
+- **AND** previously successful steps are not re-executed unless explicitly requested
 
-### Requirement: Per-action execution logs
-The system MUST write per-action logs for each run under a run-specific directory.
+### Requirement: Per-step execution logs
+The system MUST write per-step logs for each run under a run-specific directory.
 
-#### Scenario: Inspect action log after failure
-- **WHEN** an action fails during execution
-- **THEN** a corresponding action log exists in the run log directory
+#### Scenario: Inspect step log after failure
+- **WHEN** an step fails during execution
+- **THEN** a corresponding step log exists in the run log directory
 - **AND** includes command or skill execution details sufficient for troubleshooting

@@ -122,16 +122,6 @@ def _create_change_with_workflow(repo_root: Path, selector: str):
     return change_name, state_path, selected_schema
 
 
-def _parse_object_json(raw: str, field: str):
-    try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ProtocolError(f"Invalid {field}: expected valid JSON.", code="invalid_payload") from exc
-    if not isinstance(parsed, dict):
-        raise ProtocolError(f"Invalid {field}: expected a JSON object.", code="invalid_payload")
-    return parsed
-
-
 def _skills_source_dir():
     package_skills = Path(__file__).resolve().parent / "skills"
     if package_skills.exists() and package_skills.is_dir():
@@ -286,8 +276,8 @@ def command_change_advance(repo_root: Path, args):
         if args.json:
             print(to_json(payload))
         else:
-            action = payload.get("action") or {}
-            print(action.get("prompt") or payload.get("state", ""))
+            step = payload.get("step") or {}
+            print(step.get("prompt") or payload.get("state", ""))
         return
     if args.change:
         payload = run_protocol_action_from_cli(
@@ -299,69 +289,50 @@ def command_change_advance(repo_root: Path, args):
         if args.json:
             print(to_json(payload))
         else:
-            action = payload.get("action") or {}
-            print(action.get("prompt") or payload.get("state", ""))
+            step = payload.get("step") or {}
+            print(step.get("prompt") or payload.get("state", ""))
         return
     _print_change_list(repo_root)
 
 
-def command_plan_complete(repo_root: Path, args):
-    output_payload = _parse_object_json(args.output_json, "output-json")
+def command_change_step_complete(repo_root: Path, args):
     run_protocol_action_from_cli(
         repo_root,
         args.change,
         "complete",
-        action_id=args.action_id,
-        output_payload=output_payload,
+        step_id=args.step_id,
     )
-    print(f"Action {args.action_id} marked complete.")
+    print(f"Step {args.step_id} marked complete.")
 
 
-def command_plan_fail(repo_root: Path, args):
-    error_payload = _parse_object_json(args.error_json, "error-json")
+def command_change_step_fail(repo_root: Path, args):
     run_protocol_action_from_cli(
         repo_root,
         args.change,
         "fail",
-        action_id=args.action_id,
-        error_payload=error_payload,
+        step_id=args.step_id,
     )
-    print(f"Action {args.action_id} marked failed.")
+    print(f"Step {args.step_id} marked failed.")
 
 
 def command_plan_approve(repo_root: Path, args):
-    output_payload = {
-        "ok": True,
-        "executor": "human",
-        "actionId": args.action_id,
-    }
-    if args.summary:
-        output_payload["summary"] = args.summary
-
     run_protocol_action_from_cli(
         repo_root,
         args.change,
         "complete",
-        action_id=args.action_id,
-        output_payload=output_payload,
+        step_id=args.step_id,
     )
-    print(f"Action {args.action_id} approved.")
+    print(f"Step {args.step_id} approved.")
 
 
 def command_plan_reject(repo_root: Path, args):
-    error_payload = {
-        "code": args.code,
-        "message": args.message,
-        "executor": "human",
-    }
     run_protocol_action_from_cli(
         repo_root,
         args.change,
         "fail",
-        action_id=args.action_id,
-        error_payload=error_payload,
+        step_id=args.step_id,
     )
-    print(f"Action {args.action_id} rejected.")
+    print(f"Step {args.step_id} rejected.")
 
 
 def command_change_status(repo_root: Path, args):
@@ -371,7 +342,7 @@ def command_change_status(repo_root: Path, args):
         "status",
         debug=bool(args.debug),
         compact=(not bool(args.full)),
-        action_limit=int(args.action_limit),
+        step_limit=int(args.step_limit),
     )
     if args.json:
         if args.full or args.debug:
@@ -389,9 +360,8 @@ def command_change_status(repo_root: Path, args):
     print(f"Status: {payload['status']}")
     progress = payload["progress"]
     print(f"Progress: {progress['done']}/{progress['total']} (failed={progress['failed']}, running={progress['running']})")
-    for action in payload["actions"]:
-        suffix = f" ({action['error']['message']})" if action.get("error") and action["error"].get("message") else ""
-        print(f"- {action['id']} [{action['status']}]{suffix}")
+    for step in payload["steps"]:
+        print(f"- {step['id']} [{step['status']}]")
 
 
 def build_parser():
@@ -413,37 +383,30 @@ def build_parser():
     change_status.add_argument("change")
     change_status.add_argument("--json", action="store_true")
     change_status.add_argument("--debug", action="store_true")
-    change_status.add_argument("--full", action="store_true", help="Return full action objects in JSON output.")
+    change_status.add_argument("--full", action="store_true", help="Return full step objects in JSON output.")
     change_status.add_argument(
-        "--action-limit",
+        "--step-limit",
         type=int,
         default=40,
-        help="Compact JSON mode: max number of action summaries to include.",
+        help="Compact JSON mode: max number of step summaries to include.",
     )
+    change_step_complete = change_sub.add_parser("stepComplete")
+    change_step_complete.add_argument("change")
+    change_step_complete.add_argument("step_id")
+    change_step_fail = change_sub.add_parser("stepFail")
+    change_step_fail.add_argument("change")
+    change_step_fail.add_argument("step_id")
 
     plan = sub.add_parser("plan")
     plan_sub = plan.add_subparsers(dest="sub")
 
-    plan_complete = plan_sub.add_parser("complete")
-    plan_complete.add_argument("change")
-    plan_complete.add_argument("action_id")
-    plan_complete.add_argument("--output-json", required=True)
-
-    plan_fail = plan_sub.add_parser("fail")
-    plan_fail.add_argument("change")
-    plan_fail.add_argument("action_id")
-    plan_fail.add_argument("--error-json", required=True)
-
     plan_approve = plan_sub.add_parser("approve")
     plan_approve.add_argument("change")
-    plan_approve.add_argument("action_id")
-    plan_approve.add_argument("--summary", default="")
+    plan_approve.add_argument("step_id")
 
     plan_reject = plan_sub.add_parser("reject")
     plan_reject.add_argument("change")
-    plan_reject.add_argument("action_id")
-    plan_reject.add_argument("--code", default="human_rejected")
-    plan_reject.add_argument("--message", default="human review rejected")
+    plan_reject.add_argument("step_id")
 
     validate = sub.add_parser("validate")
     validate.add_argument("--schema")
@@ -468,7 +431,7 @@ def build_parser():
     git_worktree_finish.add_argument(
         "--yes",
         action="store_true",
-        help="Actually perform actions. Without this, only prints plan.",
+        help="Actually perform steps. Without this, only prints plan.",
     )
     git_worktree_finish.add_argument(
         "--merge",
@@ -516,6 +479,12 @@ def main():
         if args.group == "change" and args.sub == "status":
             command_change_status(repo_root, args)
             return
+        if args.group == "change" and args.sub == "stepComplete":
+            command_change_step_complete(repo_root, args)
+            return
+        if args.group == "change" and args.sub == "stepFail":
+            command_change_step_fail(repo_root, args)
+            return
         if args.group == "validate":
             command_validate(repo_root, args)
             return
@@ -527,12 +496,6 @@ def main():
             return
         if args.group == "git" and args.sub == "commit":
             command_git_commit(repo_root, args)
-            return
-        if args.group == "plan" and args.sub == "complete":
-            command_plan_complete(repo_root, args)
-            return
-        if args.group == "plan" and args.sub == "fail":
-            command_plan_fail(repo_root, args)
             return
         if args.group == "plan" and args.sub == "approve":
             command_plan_approve(repo_root, args)

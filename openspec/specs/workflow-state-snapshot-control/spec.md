@@ -12,12 +12,12 @@ The system MUST use `superspec/changes/<change-name>/execution/state.json` as th
 - **AND** `meta` contains `schemaVersion`, `workflowId`, and `workflowDescription`
 - **AND** `runtime` stores mutable execution lifecycle state
 
-### Requirement: Immutable runtime action baseline
-The system MUST freeze workflow-derived action execution fields into `state.json.runtime.actions` at change creation and MUST NOT re-resolve workflow files during protocol execution.
+### Requirement: Immutable runtime step baseline
+The system MUST freeze workflow-derived step execution fields into `state.json.runtime.steps` at change creation and MUST NOT re-resolve workflow files during protocol execution.
 
 #### Scenario: Workflow file changes after creation do not alter running change
 - **WHEN** a workflow source file is modified after a change is created
-- **THEN** protocol commands for that change execute using `state.json.runtime.actions`
+- **THEN** protocol commands for that change execute using `state.json.runtime.steps`
 - **AND** behavior remains deterministic for that change instance
 
 ### Requirement: Execution log is created during change bootstrap
@@ -25,4 +25,4 @@ The system MUST create `execution/events.log` when a change is created via `chan
 
 #### Scenario: Fresh change has both control and log artifacts
 - **WHEN** `superspec change advance --new <workflow-type>/<change-name>` succeeds
-- **THEN** both `execution/state.json` and `execution/events.log` exist before first action payload is returned
+- **THEN** both `execution/state.json` and `execution/events.log` exist before first step payload is returned

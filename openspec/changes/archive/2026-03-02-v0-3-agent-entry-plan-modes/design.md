@@ -11,7 +11,7 @@ This v1.0.0 iteration introduces a clear entry architecture:
 
 **Goals:**
 - Provide explicit agent guidance for end-to-end plan execution.
-- Define stable handling for skill action execution outcomes reported back to protocol.
+- Define stable handling for skill step execution outcomes reported back to protocol.
 - Support mode-based plan initialization with an extensible mode registry (initially `sdd`).
 - Clarify lifecycle separation between change creation and plan creation.
 
@@ -34,8 +34,8 @@ This v1.0.0 iteration introduces a clear entry architecture:
 - Decision: guidance explicitly states that `executor=script` and `executor=skill` are dispatched by the agent runtime; both map to normalized complete/fail report payloads.
 - Why: aligns with existing payload contract and supports heterogeneous runtimes without over-constraining implementation language.
 - Alternatives considered:
-  - Treat skill actions as no-op placeholders: rejected because it prevents reliable end-to-end automation.
-  - Force all actions into scripts: rejected because it weakens semantic intent and skill portability.
+  - Treat skill steps as no-op placeholders: rejected because it prevents reliable end-to-end automation.
+  - Force all steps into scripts: rejected because it weakens semantic intent and skill portability.
 
 ### 3) Introduce mode-keyed plan template resolution
 - Decision: `plan init --mode <mode>` resolves a template from a registry, with `sdd` as the initial supported mode.
@@ -63,7 +63,7 @@ This v1.0.0 iteration introduces a clear entry architecture:
 2. Add plan mode resolution with `sdd` mode mapped to current SDD plan semantics.
 3. Update change/plan command lifecycle checks and CLI guidance text.
 4. Add integration tests covering:
-   - guidance-driven full loop with mixed script/skill actions,
+   - guidance-driven full loop with mixed script/skill steps,
    - explicit init mode flow,
    - missing-plan and unsupported-mode failures.
 5. Document v1.0.0 workflow and deprecate implicit assumptions from v1.0.0 docs.

@@ -9,7 +9,7 @@ The system MUST support workflow-based runtime baseline generation when creating
 
 #### Scenario: Initialize runtime snapshot with schema key
 - **WHEN** a user runs `superspec change advance --new <schema>/<change-name>`
-- **THEN** the system resolves the selected workflow definition and writes a change-scoped `execution/state.json` with runtime action baseline
+- **THEN** the system resolves the selected workflow definition and writes a change-scoped `execution/state.json` with runtime step baseline
 - **AND** binds `runtime.changeName` to the requested `<change-name>`
 - **AND** writes workflow metadata in `state.json.meta` (`schemaVersion`, `workflowId`, `workflowDescription`)
 

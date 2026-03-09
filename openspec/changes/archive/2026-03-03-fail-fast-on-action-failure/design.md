@@ -5,9 +5,9 @@ SuperSpec currently supports retry scheduling (`maxAttempts`, `intervalSec`) and
 ## Goals / Non-Goals
 
 **Goals:**
-- Make failure handling deterministic: one reported action failure ends the workflow.
+- Make failure handling deterministic: one reported step failure ends the workflow.
 - Remove retry policy surfaces from runtime config and status contracts.
-- Keep action lifecycle and status payload simple for both humans and agents.
+- Keep step lifecycle and status payload simple for both humans and agents.
 - Align skills/docs with a human-escalation model.
 
 **Non-Goals:**
@@ -18,7 +18,7 @@ SuperSpec currently supports retry scheduling (`maxAttempts`, `intervalSec`) and
 ## Decisions
 
 1. Immediate terminal failure on `plan fail`
-- Decision: `fail_action` always sets action state to `FAILED`, sets run status to `failed`, and sets `finishedAt` immediately.
+- Decision: `fail_action` always sets step state to `FAILED`, sets run status to `failed`, and sets `finishedAt` immediately.
 - Rationale: deterministic behavior and immediate escalation.
 - Alternative: keep `onFail` policies; rejected as unnecessary policy branching.
 

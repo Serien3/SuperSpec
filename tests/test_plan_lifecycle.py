@@ -81,7 +81,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "version": "1.0.0",
             "description": "Custom workflow description",
             "metadata": {"channel": "test"},
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -108,7 +108,7 @@ class PlanLifecycleTest(unittest.TestCase):
         custom = {
             "workflowId": "legacy-plan",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -140,7 +140,7 @@ class PlanLifecycleTest(unittest.TestCase):
         custom = {
             "workflowId": "unknown-field",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -187,7 +187,7 @@ class PlanLifecycleTest(unittest.TestCase):
             "variables": {
                 "channel": "test",
             },
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -222,7 +222,7 @@ class PlanLifecycleTest(unittest.TestCase):
             json.dumps(
                 {
                     "workflowId": "broken",
-                    # Missing required version and actions.
+                    # Missing required version and steps.
                 },
                 indent=2,
             ),
@@ -295,7 +295,7 @@ class PlanLifecycleTest(unittest.TestCase):
         custom = {
             "workflowId": "quick-apply",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -314,7 +314,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         nxt = run_protocol_action_from_cli(root, "demo-change", "next", owner="agent", debug=False)
         self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["action"]["actionId"], "x1")
+        self.assertEqual(nxt["step"]["stepId"], "x1")
 
     def test_validate_supports_explicit_file_input(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -323,7 +323,7 @@ class PlanLifecycleTest(unittest.TestCase):
         workflow = {
             "workflowId": "by-file",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -353,7 +353,7 @@ class PlanLifecycleTest(unittest.TestCase):
         broken = {
             "workflowId": "broken",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -387,7 +387,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 "executor": "skill",
                 "unknown": True,
             },
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -407,7 +407,7 @@ class PlanLifecycleTest(unittest.TestCase):
         broken = {
             "workflowId": "executor-mismatch",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "run",
@@ -428,7 +428,7 @@ class PlanLifecycleTest(unittest.TestCase):
         broken = {
             "workflowId": "missing-explicit-executor",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "run",
@@ -445,7 +445,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 command_validate(root, SimpleNamespace(schema="missing-explicit-executor", file=None, json=True))
         payload = json.loads(stdout.getvalue())
         self.assertEqual(payload["errors"][0]["code"], "missing_required_field")
-        self.assertEqual(payload["errors"][0]["path"], "actions.0.executor")
+        self.assertEqual(payload["errors"][0]["path"], "steps.0.executor")
 
     def test_validate_rejects_mixed_executor_payloads(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -454,7 +454,7 @@ class PlanLifecycleTest(unittest.TestCase):
         broken = {
             "workflowId": "mixed-executor-payloads",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "run",
@@ -473,7 +473,7 @@ class PlanLifecycleTest(unittest.TestCase):
                 command_validate(root, SimpleNamespace(schema="mixed-executor-payloads", file=None, json=True))
         payload = json.loads(stdout.getvalue())
         self.assertEqual(payload["errors"][0]["code"], "invalid_executor_payload")
-        self.assertEqual(payload["errors"][0]["path"], "actions.0")
+        self.assertEqual(payload["errors"][0]["path"], "steps.0")
 
     def test_validate_accepts_human_executor_payload(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -482,7 +482,7 @@ class PlanLifecycleTest(unittest.TestCase):
         workflow = {
             "workflowId": "human-exec",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "human.review",
@@ -501,9 +501,9 @@ class PlanLifecycleTest(unittest.TestCase):
         self._seed_generation_assets(root)
 
         workflow = {
-            "workflowId": "action-prompt",
+            "workflowId": "step-prompt",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -513,19 +513,19 @@ class PlanLifecycleTest(unittest.TestCase):
                 }
             ],
         }
-        workflow_path = root / "superspec" / "schemas" / "workflows" / "action-prompt.workflow.json"
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "step-prompt.workflow.json"
         workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
 
-        command_validate(root, SimpleNamespace(schema="action-prompt", file=None, json=False))
+        command_validate(root, SimpleNamespace(schema="step-prompt", file=None, json=False))
 
     def test_validate_rejects_removed_action_optional_fields(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
 
         workflow = {
-            "workflowId": "removed-action-fields",
+            "workflowId": "removed-step-fields",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "openspec.apply",
@@ -536,11 +536,11 @@ class PlanLifecycleTest(unittest.TestCase):
                 }
             ],
         }
-        workflow_path = root / "superspec" / "schemas" / "workflows" / "removed-action-fields.workflow.json"
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "removed-step-fields.workflow.json"
         workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
 
         with self.assertRaises(SystemExit):
-            command_validate(root, SimpleNamespace(schema="removed-action-fields", file=None, json=False))
+            command_validate(root, SimpleNamespace(schema="removed-step-fields", file=None, json=False))
 
     def test_validate_rejects_human_executor_payload_mismatch(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -549,7 +549,7 @@ class PlanLifecycleTest(unittest.TestCase):
         workflow = {
             "workflowId": "human-mismatch",
             "version": "1.0.0",
-            "actions": [
+            "steps": [
                 {
                     "id": "x1",
                     "description": "human.review",

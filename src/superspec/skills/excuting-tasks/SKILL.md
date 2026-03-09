@@ -99,7 +99,7 @@ All tasks complete!
 
 ## **Fluid Workflow Integration**
 
-This skill supports the "actions on a change" model:
+This skill supports the "steps on a change" model:
 
-- **Can be invoked anytime**: Before all context document are done (if tasks exist), after partial implementation, interleaved with other actions
+- **Can be invoked anytime**: Before all context document are done (if tasks exist), after partial implementation, interleaved with other steps
 - **Allows document updates**: If implementation reveals design issues, suggest updating documents - not phase-locked, work fluidly

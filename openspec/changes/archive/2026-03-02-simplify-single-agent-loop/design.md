@@ -1,6 +1,6 @@
 ## Context
 
-SuperSpec currently exposes a lease-aware pull protocol (`next`, `complete`, `fail`, `status`) to support concurrent agents, stale-claim recovery, and ownership validation. In present usage, execution is intentionally simpler: one agent, one process, serial action handling. The active protocol and guidance therefore carry complexity (lease lifecycle, invalid lease handling, lease-safe polling semantics) that does not deliver immediate value for the current operating model.
+SuperSpec currently exposes a lease-aware pull protocol (`next`, `complete`, `fail`, `status`) to support concurrent agents, stale-claim recovery, and ownership validation. In present usage, execution is intentionally simpler: one agent, one process, serial step handling. The active protocol and guidance therefore carry complexity (lease lifecycle, invalid lease handling, lease-safe polling semantics) that does not deliver immediate value for the current operating model.
 
 At the same time, the plan template includes advanced knobs and narrative that are useful for generalized orchestration but heavy for the near-term workflow centered on sequential OpenSpec artifact progression.
 
@@ -21,10 +21,10 @@ At the same time, the plan template includes advanced knobs and narrative that a
 ## Decisions
 
 ### Decision 1: Adopt single-agent serial protocol contract for current release
-The protocol remains pull-based but no longer requires action leases.
+The protocol remains pull-based but no longer requires step leases.
 
-- `next` returns one runnable action payload when available.
-- `complete`/`fail` identify the action by `actionId` only.
+- `next` returns one runnable step payload when available.
+- `complete`/`fail` identify the step by `stepId` only.
 - The engine assumes exclusive in-process ownership of execution state.
 
 Rationale:

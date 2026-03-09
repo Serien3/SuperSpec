@@ -2,7 +2,7 @@
   "workflowId": "SDD",
   "version": "1.0.0",
   "description": "Default spec-driven development workflow",
-  "actions": [
+  "steps": [
     {
       "id": "a1",
       "description": "proposal",

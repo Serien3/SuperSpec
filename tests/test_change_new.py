@@ -10,6 +10,8 @@ from unittest.mock import patch
 from superspec.cli import (
     build_parser,
     command_change_advance,
+    command_change_step_complete,
+    command_change_step_fail,
     command_plan_approve,
     command_plan_reject,
 )
@@ -58,7 +60,7 @@ class ChangeNewCommandTest(unittest.TestCase):
         args = SimpleNamespace(change="demo", new=None, owner="agent", json=True)
 
         with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
-            mock_run.return_value = {"state": "blocked", "action": None}
+            mock_run.return_value = {"state": "blocked", "step": None}
             stdout = StringIO()
             with redirect_stdout(stdout):
                 command_change_advance(root, args)
@@ -97,14 +99,29 @@ class ChangeNewCommandTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse_args(["plan", "next", "demo-change"])
 
-    def test_plan_complete_parser_requires_output_json(self):
+    def test_step_complete_parser_and_plan_complete_removal(self):
         parser = build_parser()
 
         with self.assertRaises(SystemExit):
-            parser.parse_args(["plan", "complete", "demo-change", "a1", "--result-json", '{"ok": true}'])
+            parser.parse_args(["plan", "complete", "demo-change", "a1", "--output-json", '{"ok": true}'])
 
-        args = parser.parse_args(["plan", "complete", "demo-change", "a1", "--output-json", '{"ok": true}'])
-        self.assertEqual(args.output_json, '{"ok": true}')
+        args = parser.parse_args(["change", "stepComplete", "demo-change", "a1"])
+        self.assertEqual(args.group, "change")
+        self.assertEqual(args.sub, "stepComplete")
+        self.assertEqual(args.change, "demo-change")
+        self.assertEqual(args.step_id, "a1")
+
+    def test_step_fail_parser_and_plan_fail_removal(self):
+        parser = build_parser()
+
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["plan", "fail", "demo-change", "a1"])
+
+        args = parser.parse_args(["change", "stepFail", "demo-change", "a1"])
+        self.assertEqual(args.group, "change")
+        self.assertEqual(args.sub, "stepFail")
+        self.assertEqual(args.change, "demo-change")
+        self.assertEqual(args.step_id, "a1")
 
     def test_change_status_parser_rejects_retry_flag(self):
         parser = build_parser()
@@ -115,16 +132,16 @@ class ChangeNewCommandTest(unittest.TestCase):
         parser = build_parser()
         args = parser.parse_args(["plan", "approve", "demo-change", "a1"])
         self.assertEqual(args.change, "demo-change")
-        self.assertEqual(args.action_id, "a1")
-        self.assertEqual(args.summary, "")
+        self.assertEqual(args.step_id, "a1")
+        self.assertFalse(hasattr(args, "summary"))
 
     def test_plan_reject_parser_defaults(self):
         parser = build_parser()
         args = parser.parse_args(["plan", "reject", "demo-change", "a1"])
         self.assertEqual(args.change, "demo-change")
-        self.assertEqual(args.action_id, "a1")
-        self.assertEqual(args.code, "human_rejected")
-        self.assertEqual(args.message, "human review rejected")
+        self.assertEqual(args.step_id, "a1")
+        self.assertFalse(hasattr(args, "code"))
+        self.assertFalse(hasattr(args, "message"))
 
     def test_version_flag_prints_version(self):
         parser = build_parser()
@@ -138,7 +155,7 @@ class ChangeNewCommandTest(unittest.TestCase):
 
     def test_command_plan_approve_maps_to_complete(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        args = SimpleNamespace(change="demo-change", action_id="a1", summary="approved by reviewer")
+        args = SimpleNamespace(change="demo-change", step_id="a1")
 
         with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
             stdout = StringIO()
@@ -149,24 +166,13 @@ class ChangeNewCommandTest(unittest.TestCase):
             root,
             "demo-change",
             "complete",
-            action_id="a1",
-            output_payload={
-                "ok": True,
-                "executor": "human",
-                "actionId": "a1",
-                "summary": "approved by reviewer",
-            },
+            step_id="a1",
         )
-        self.assertIn("Action a1 approved.", stdout.getvalue())
+        self.assertIn("Step a1 approved.", stdout.getvalue())
 
     def test_command_plan_reject_maps_to_fail(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        args = SimpleNamespace(
-            change="demo-change",
-            action_id="a1",
-            code="human_rejected",
-            message="needs changes",
-        )
+        args = SimpleNamespace(change="demo-change", step_id="a1")
 
         with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
             stdout = StringIO()
@@ -177,14 +183,43 @@ class ChangeNewCommandTest(unittest.TestCase):
             root,
             "demo-change",
             "fail",
-            action_id="a1",
-            error_payload={
-                "code": "human_rejected",
-                "message": "needs changes",
-                "executor": "human",
-            },
+            step_id="a1",
         )
-        self.assertIn("Action a1 rejected.", stdout.getvalue())
+        self.assertIn("Step a1 rejected.", stdout.getvalue())
+
+    def test_command_change_step_complete_maps_to_complete(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace(change="demo-change", step_id="a1")
+
+        with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                command_change_step_complete(root, args)
+
+        mock_run.assert_called_once_with(
+            root,
+            "demo-change",
+            "complete",
+            step_id="a1",
+        )
+        self.assertIn("Step a1 marked complete.", stdout.getvalue())
+
+    def test_command_change_step_fail_maps_to_fail(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace(change="demo-change", step_id="a1")
+
+        with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                command_change_step_fail(root, args)
+
+        mock_run.assert_called_once_with(
+            root,
+            "demo-change",
+            "fail",
+            step_id="a1",
+        )
+        self.assertIn("Step a1 marked failed.", stdout.getvalue())
 
 
 if __name__ == "__main__":

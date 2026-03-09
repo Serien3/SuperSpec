@@ -13,8 +13,8 @@ The CLI SHALL provide a unified `superspec change advance` command that supports
 
 #### Scenario: Advance existing change by name
 - **WHEN** a user runs `superspec change advance <change-name>`
-- **THEN** the command resolves the target change and performs next-action pull semantics for that change
-- **AND** non-JSON mode prints the action prompt or protocol state text
+- **THEN** the command resolves the target change and performs next-step pull semantics for that change
+- **AND** non-JSON mode prints the step prompt or protocol state text
 
 #### Scenario: Create and advance with explicit workflow selector
 - **WHEN** a user runs `superspec change advance --new <workflow-type>/<change-name>`

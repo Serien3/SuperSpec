@@ -8,7 +8,7 @@
 ## 2. Agent-Driven Execution Guidance
 
 - [x] 2.1 Create a reusable skill and/or `AGENT.md` guidance document that defines the full loop: `plan next -> execute -> plan complete|fail -> repeat`.
-- [x] 2.2 Document executor dispatch rules for `script` and `skill` actions, including required report payload fields.
+- [x] 2.2 Document executor dispatch rules for `script` and `skill` steps, including required report payload fields.
 - [x] 2.3 Define guidance for `blocked` handling, polling/backoff, and terminal success/failure signaling.
 - [x] 2.4 Add usage examples so an external agent can run the full superspec workflow without additional assumptions.
 
@@ -20,6 +20,6 @@
 
 ## 4. Verification
 
-- [x] 4.1 Add verification steps (or tests where applicable) for guidance-driven full loop completion across mixed `script` and `skill` actions.
+- [x] 4.1 Add verification steps (or tests where applicable) for guidance-driven full loop completion across mixed `script` and `skill` steps.
 - [x] 4.2 Add tests for unsupported mode rejection and missing-plan lifecycle errors.
 - [x] 4.3 Validate terminal success/failure signaling behavior as described by guidance.

@@ -7,21 +7,21 @@ The system MUST provide standardized guidance (via skill and/or AGENT.md) that i
 
 #### Scenario: Run loop to terminal state from unified entry guidance
 - **WHEN** an agent follows the published guidance for a valid change
-- **THEN** the agent enters the loop using `superspec change advance <change-name>` as the next-action entry command
+- **THEN** the agent enters the loop using `superspec change advance <change-name>` as the next-step entry command
 - **AND** exits only when protocol state is `done`
 
-### Requirement: Executor-dispatched action execution
+### Requirement: Executor-dispatched step execution
 The agent guidance MUST define dispatch behavior by executor type and report outcomes through protocol commands.
 
-#### Scenario: Execute script action from guidance
-- **WHEN** next-action pull returns an action with `executor=script`
-- **THEN** the guided agent executes `action.script_command`
-- **AND** reports `complete` or `fail` with the returned action identifier
+#### Scenario: Execute script step from guidance
+- **WHEN** next-step pull returns an step with `executor=script`
+- **THEN** the guided agent executes `step.script_command`
+- **AND** reports `complete` or `fail` with the returned step identifier
 
-#### Scenario: Execute skill action from guidance
-- **WHEN** next-action pull returns an action with `executor=skill`
-- **THEN** the guided agent invokes the skill named by `action.skillName`
-- **AND** reports `complete` or `fail` with the returned action identifier
+#### Scenario: Execute skill step from guidance
+- **WHEN** next-step pull returns an step with `executor=skill`
+- **THEN** the guided agent invokes the skill named by `step.skillName`
+- **AND** reports `complete` or `fail` with the returned step identifier
 
 ### Requirement: Loop observability and terminal signaling
 The agent guidance MUST specify structured progress reporting and terminal outcome signaling for success and failure.
@@ -34,4 +34,4 @@ The agent guidance MUST specify structured progress reporting and terminal outco
 #### Scenario: Terminal failure signaling
 - **WHEN** the loop reaches `done` and `superspec change status <change-name>` reports `failed`
 - **THEN** the guided agent reports terminal failure
-- **AND** surfaces the last failure action and error payload
+- **AND** surfaces the last failed step id

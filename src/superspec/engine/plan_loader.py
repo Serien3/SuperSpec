@@ -82,10 +82,10 @@ def load_state_snapshot_from_change(repo_root: str, change_name: str):
             code="invalid_json",
             details={"path": str(state_path)},
         )
-    actions = runtime.get("actions")
-    if not isinstance(actions, list):
+    steps = runtime.get("steps")
+    if not isinstance(steps, list):
         raise ProtocolError(
-            "Invalid execution state file: runtime.actions must be an array.",
+            "Invalid execution state file: runtime.steps must be an array.",
             code="invalid_json",
             details={"path": str(state_path)},
         )

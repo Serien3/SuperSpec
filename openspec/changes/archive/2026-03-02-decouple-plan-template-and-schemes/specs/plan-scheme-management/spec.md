@@ -1,12 +1,12 @@
 ## ADDED Requirements
 
 ### Requirement: File-based scheme definitions
-The system MUST support declarative plan scheme files that define scheme metadata, defaults, and action sequence content.
+The system MUST support declarative plan scheme files that define scheme metadata, defaults, and step sequence content.
 
 #### Scenario: Load a valid scheme file
 - **WHEN** a user requests plan initialization with a scheme name that exists in the configured scheme directory
 - **THEN** the system loads that scheme definition
-- **AND** uses its metadata, defaults, and actions as generation input
+- **AND** uses its metadata, defaults, and steps as generation input
 
 ### Requirement: Scheme identity and metadata validation
 The system MUST validate required scheme metadata fields before using a scheme for generation.

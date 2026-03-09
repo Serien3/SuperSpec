@@ -1,6 +1,6 @@
 ## 1. Scheme Model And Validation
 
-- [x] 1.1 Define a scheme file contract (required metadata, defaults, actions, optional variables) and add schema-based validation for scheme documents.
+- [x] 1.1 Define a scheme file contract (required metadata, defaults, steps, optional variables) and add schema-based validation for scheme documents.
 - [x] 1.2 Introduce canonical scheme discovery rules for a dedicated scheme directory and implement clear errors for missing/unknown scheme names.
 - [x] 1.3 Add tests for valid scheme loading and invalid scheme rejection paths.
 

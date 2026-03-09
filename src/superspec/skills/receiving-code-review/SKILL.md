@@ -35,7 +35,7 @@ WHEN receiving code review feedback:
 - Restate the technical requirement
 - Ask clarifying questions
 - Push back with technical reasoning if wrong
-- Just start working (actions > words)
+- Just start working (steps > words)
 
 ## Handling Unclear Feedback
 
@@ -62,7 +62,7 @@ You understand 1,2,3,6. Unclear on 4,5.
 - **Trusted** - implement after understanding
 - **Still ask** if scope unclear
 - **No performative agreement**
-- **Skip to action** or technical acknowledgment
+- **Skip to step** or technical acknowledgment
 
 ### From External Reviewers
 ```

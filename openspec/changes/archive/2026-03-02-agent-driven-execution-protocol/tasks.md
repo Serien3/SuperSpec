@@ -1,13 +1,13 @@
 ## 1. Define execution protocol contracts
 
 - [x] 1.1 Add command contract definitions for `next`, `complete`, `fail`, and `status` (request/response fields, states, and errors).
-- [x] 1.2 Define action payload schemas for `script` and `skill` executors, including debug-only rendered prompt behavior.
+- [x] 1.2 Define step payload schemas for `script` and `skill` executors, including debug-only rendered prompt behavior.
 - [x] 1.3 Define lease token structure and lifecycle rules (issued, validated, expired, reclaimed).
 
 ## 2. Refactor engine to protocol-driven progression
 
-- [x] 2.1 Implement `next` logic to select one runnable action with dependency checks and return lease-bound payload.
-- [x] 2.2 Implement `complete` logic to persist action output, transition state, and unlock downstream actions.
+- [x] 2.1 Implement `next` logic to select one runnable step with dependency checks and return lease-bound payload.
+- [x] 2.2 Implement `complete` logic to persist step output, transition state, and unlock downstream steps.
 - [x] 2.3 Implement `fail` logic to record error payload, apply retry/backoff/onFail policy, and return next state.
 
 ## 3. Persist and observe execution state

@@ -1,6 +1,6 @@
 ## Why
 
-Current protocol execution trusts `plan.context.changeDir` after loading `plan.json` by CLI `change` name, and plan validation accepts arbitrary executor values. This can cause cross-change state writes and contract-breaking action payloads in production.
+Current protocol execution trusts `plan.context.changeDir` after loading `plan.json` by CLI `change` name, and plan validation accepts arbitrary executor values. This can cause cross-change state writes and contract-breaking step payloads in production.
 
 ## What Changes
 
@@ -16,7 +16,7 @@ Current protocol execution trusts `plan.context.changeDir` after loading `plan.j
 
 ### Modified Capabilities
 - `change-plan-orchestration`: Tighten orchestration path resolution to ensure CLI change and plan context target the same change directory.
-- `agent-driven-plan-execution`: Tighten action validation so executor type/value cannot violate protocol contract payload expectations.
+- `agent-driven-plan-execution`: Tighten step validation so executor type/value cannot violate protocol contract payload expectations.
 
 ## Impact
 

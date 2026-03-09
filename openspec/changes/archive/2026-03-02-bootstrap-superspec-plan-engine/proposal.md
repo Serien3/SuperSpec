@@ -4,16 +4,16 @@ OpenSpec is strong at artifact-level workflows, but SuperSpec needs a higher-lev
 
 ## What Changes
 
-- Introduce a change-scoped `plan.json` as the authoritative action sequence for a change.
-- Define a stable plan schema (`superspec.plan/v1.0.0`) with action dependencies, execution policy, and variable interpolation.
-- Support OpenSpec-like actions inside a plan: `proposal`, `specs`, `design`, `tasks`, and `apply`.
-- Define a unified action contract so actions can be executed by either scripts or Agent skills.
-- Add run-state and per-action logging requirements to support resume and troubleshooting.
+- Introduce a change-scoped `plan.json` as the authoritative step sequence for a change.
+- Define a stable plan schema (`superspec.plan/v1.0.0`) with step dependencies, execution policy, and variable interpolation.
+- Support OpenSpec-like steps inside a plan: `proposal`, `specs`, `design`, `tasks`, and `apply`.
+- Define a unified step contract so steps can be executed by either scripts or Agent skills.
+- Add run-state and per-step logging requirements to support resume and troubleshooting.
 
 ## Capabilities
 
 ### New Capabilities
-- `change-plan-orchestration`: Defines the change-level plan model, action system, and execution semantics for SuperSpec.
+- `change-plan-orchestration`: Defines the change-level plan model, step system, and execution semantics for SuperSpec.
 
 ### Modified Capabilities
 - None.

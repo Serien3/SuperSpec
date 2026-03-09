@@ -4,10 +4,10 @@
 
 ## What Changes
 
-- Add an agent-driven execution guidance artifact (skill and/or AGENT.md) that instructs agents to repeatedly pull the next runnable action, execute it via executor-specific handling, and report completion/failure until terminal state.
+- Add an agent-driven execution guidance artifact (skill and/or AGENT.md) that instructs agents to repeatedly pull the next runnable step, execute it via executor-specific handling, and report completion/failure until terminal state.
 - Add plan mode selection to plan initialization so users can explicitly choose an execution pattern (starting with `sdd` mode).
 - Clarify and enforce lifecycle boundaries between `change new` and `plan init` so plan creation is explicit and mode-aware.
-- Define protocol expectations for agent-executed skill actions, including standardized success/error report payloads.
+- Define protocol expectations for agent-executed skill steps, including standardized success/error report payloads.
 
 ## Capabilities
 
@@ -17,11 +17,11 @@
 
 ### Modified Capabilities
 - `change-plan-orchestration`: Update change lifecycle and plan creation requirements to support explicit, mode-aware initialization.
-- `agent-driven-plan-execution`: Update payload/report contracts to clearly cover externally executed skill actions in agent loops.
+- `agent-driven-plan-execution`: Update payload/report contracts to clearly cover externally executed skill steps in agent loops.
 
 ## Impact
 
 - Affected CLI surface: change and plan command flow, including new mode option(s).
 - Affected agent guidance: skill/AGENT.md instructions for loop orchestration, executor dispatch boundaries, and completion/failure reporting.
 - Affected templates/assets: plan template organization to support mode-specific generation.
-- Affected docs/tests: protocol contract docs and integration tests for full loop execution with mixed script/skill actions.
+- Affected docs/tests: protocol contract docs and integration tests for full loop execution with mixed script/skill steps.

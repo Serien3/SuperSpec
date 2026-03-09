@@ -4,8 +4,8 @@ Current workflow field definitions are hard to learn and hard to extend because 
 
 ## What Changes
 
-- Define a strict minimal workflow contract with explicit required fields at top-level and action-level.
-- Require explicit `executor` on every action and enforce exactly-one matching executor payload (`skill`/`script`/`human`).
+- Define a strict minimal workflow contract with explicit required fields at top-level and step-level.
+- Require explicit `executor` on every step and enforce exactly-one matching executor payload (`skill`/`script`/`human`).
 - Keep readability-oriented fields as optional annotations, clearly separated from execution-critical fields.
 - Tighten workflow validation so contract violations fail early with stable error codes and field paths.
 - Update default workflow templates and tests to use the normalized contract.

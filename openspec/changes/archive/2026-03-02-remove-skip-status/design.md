@@ -1,12 +1,12 @@
 ## Context
 
-SuperSpec currently models three action terminal outcomes (`SUCCESS`, `FAILED`, `SKIPPED`). In practice, `SKIPPED` introduces semantic overlap with failure policies and dependency gating, and makes progress accounting less intuitive. Existing protocol logic also treats `SKIPPED` as dependency-complete, which couples scheduling behavior to a non-essential status value.
+SuperSpec currently models three step terminal outcomes (`SUCCESS`, `FAILED`, `SKIPPED`). In practice, `SKIPPED` introduces semantic overlap with failure policies and dependency gating, and makes progress accounting less intuitive. Existing protocol logic also treats `SKIPPED` as dependency-complete, which couples scheduling behavior to a non-essential status value.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Reduce action terminal semantics to two states: `SUCCESS` and `FAILED`.
-- Remove `skip_dependents` policy from plan/action-level `onFail` configuration.
+- Reduce step terminal semantics to two states: `SUCCESS` and `FAILED`.
+- Remove `skip_dependents` policy from plan/step-level `onFail` configuration.
 - Preserve deterministic orchestration by explicitly failing downstream dependents when an upstream dependency cannot succeed.
 - Keep status/progress output simple and unambiguous.
 
@@ -17,18 +17,18 @@ SuperSpec currently models three action terminal outcomes (`SUCCESS`, `FAILED`, 
 
 ## Decisions
 
-1. Two-terminal-state model for actions
-- Decision: action terminal states are only `SUCCESS` and `FAILED`.
+1. Two-terminal-state model for steps
+- Decision: step terminal states are only `SUCCESS` and `FAILED`.
 - Rationale: this aligns state semantics with user intent and simplifies decision logic.
 - Alternative considered: keep `SKIPPED` as presentation-only alias; rejected because it keeps internal branching complexity.
 
 2. Remove `skip_dependents` from failure policy enums
 - Decision: `onFail` supports only `stop` and `continue`.
-- Rationale: the difference between these policies is whether overall run halts immediately or keeps processing independent runnable actions; neither requires `SKIPPED`.
+- Rationale: the difference between these policies is whether overall run halts immediately or keeps processing independent runnable steps; neither requires `SKIPPED`.
 - Alternative considered: keep `skip_dependents` and map to `FAILED`; rejected because policy name becomes misleading.
 
 3. Add explicit dependency-failure propagation
-- Decision: when an action reaches non-retryable failure, all actions that (directly or transitively) depend on it are marked `FAILED` with structured dependency-failure error payload.
+- Decision: when an step reaches non-retryable failure, all steps that (directly or transitively) depend on it are marked `FAILED` with structured dependency-failure error payload.
 - Rationale: without `SKIPPED`, dependents must not remain indefinitely pending/blocked.
 - Alternative considered: leave dependents pending forever and rely on terminal timeout; rejected as operationally noisy and non-deterministic.
 
@@ -42,10 +42,10 @@ SuperSpec currently models three action terminal outcomes (`SUCCESS`, `FAILED`, 
   Mitigation: update plan schema and default templates together; provide clear validation error message.
 
 - [Risk] Dependency-failure propagation could hide original failure context.
-  Mitigation: preserve original failure in `lastFailure` semantics and encode propagated failures with explicit `dependency_failed` metadata referencing upstream action id.
+  Mitigation: preserve original failure in `lastFailure` semantics and encode propagated failures with explicit `dependency_failed` metadata referencing upstream step id.
 
-- [Risk] Broad propagation in large DAGs can make many actions fail at once.
-  Mitigation: deterministic event emission per propagated action for traceability.
+- [Risk] Broad propagation in large DAGs can make many steps fail at once.
+  Mitigation: deterministic event emission per propagated step for traceability.
 
 ## Migration Plan
 
@@ -56,5 +56,5 @@ SuperSpec currently models three action terminal outcomes (`SUCCESS`, `FAILED`, 
 
 ## Open Questions
 
-- Should propagated dependent failures be emitted as a distinct event type (e.g., `action.failed_dependency`) or reuse `action.failed` with a dedicated code?
+- Should propagated dependent failures be emitted as a distinct event type (e.g., `step.failed_dependency`) or reuse `step.failed` with a dedicated code?
 - Should `continue` mode continue scheduling unrelated branches after root failure propagation in the same polling cycle, or only on subsequent `next` calls?

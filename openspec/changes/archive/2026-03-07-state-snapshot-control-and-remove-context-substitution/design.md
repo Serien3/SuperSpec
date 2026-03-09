@@ -1,6 +1,6 @@
 ## Context
 
-Current execution flow materializes a change-scoped `plan.json` from workflow + base template, then uses `plan.json` as runtime input while persisting runtime state to `execution/state.json`. This creates two control surfaces for one change/workflow binding. The runtime additionally supports `${...}` expression substitution in action fields, which increases payload behavior complexity and error surface (`invalid_expression`).
+Current execution flow materializes a change-scoped `plan.json` from workflow + base template, then uses `plan.json` as runtime input while persisting runtime state to `execution/state.json`. This creates two control surfaces for one change/workflow binding. The runtime additionally supports `${...}` expression substitution in step fields, which increases payload behavior complexity and error surface (`invalid_expression`).
 
 The change goal is to make execution model single-source and deterministic for development stage usage:
 - no `plan.json`
@@ -14,7 +14,7 @@ The change goal is to make execution model single-source and deterministic for d
 - Replace `plan.json` runtime dependency with a snapshot-based `execution/state.json` control file.
 - Initialize `execution/state.json` and `execution/events.log` during `change advance --new <workflow>/<change>`.
 - Store immutable workflow definition and mutable runtime state in one file with clear boundaries.
-- Remove runtime action expression substitution and related validation/error paths.
+- Remove runtime step expression substitution and related validation/error paths.
 - Keep CLI protocol behavior (`next/complete/fail/status`) stable at contract level where possible.
 
 **Non-Goals:**
@@ -28,8 +28,8 @@ The change goal is to make execution model single-source and deterministic for d
 
 `execution/state.json` will include:
 - `meta`: schema version, change name, workflow id/version, timestamps
-- `definition`: frozen action/workflow definition resolved from selected workflow at change creation
-- `runtime`: execution status and per-action runtime fields
+- `definition`: frozen step/workflow definition resolved from selected workflow at change creation
+- `runtime`: execution status and per-step runtime fields
 
 Rationale:
 - Eliminates split-brain between `plan.json` and `state.json`.
@@ -58,7 +58,7 @@ Alternatives considered:
 
 ### Decision: Remove runtime `${...}` substitution entirely
 
-Payload fields (`executor`, `skill`, `script`, `prompt`, `human`, `inputs`) are treated as literal values from definition snapshot. No dynamic interpolation from context/state/env/actions is performed.
+Payload fields (`executor`, `skill`, `script`, `prompt`, `human`, `inputs`) are treated as literal values from definition snapshot. No dynamic interpolation from context/state/env/steps is performed.
 
 Rationale:
 - Reduces runtime complexity and unpredictability.

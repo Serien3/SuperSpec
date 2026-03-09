@@ -9,12 +9,12 @@ WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
     "workflowId",
     "version",
     "description",
-    "actions",
+    "steps",
     "metadata",
 )
 
 WORKFLOW_RUNTIME_CUSTOMIZATION_FIELDS = (
-    "actions",
+    "steps",
 )
 WORKFLOW_OPTIONAL_TOP_LEVEL_FIELDS = (
     "description",
@@ -128,25 +128,25 @@ def _schema_errors(workflow: dict):
             missing = [key for key in err.validator_value if key not in err.instance]
             if missing:
                 missing_field = str(missing[0])
-                if path.startswith("actions.") and missing_field == "executor":
+                if path.startswith("steps.") and missing_field == "executor":
                     code = "missing_required_field"
                     path = f"{path}.executor"
-                    message = "Action must define explicit 'executor'"
+                    message = "Step must define explicit 'executor'"
                     hint = f"Set executor to one of: {', '.join(WORKFLOW_EXECUTORS)}"
-                elif path.startswith("actions.") and missing_field in WORKFLOW_EXECUTORS:
+                elif path.startswith("steps.") and missing_field in WORKFLOW_EXECUTORS:
                     code = "invalid_executor_payload"
                     path = f"{path}.{missing_field}"
-                    message = f"Action executor requires matching '{missing_field}' payload"
+                    message = f"Step executor requires matching '{missing_field}' payload"
                     hint = "Ensure exactly one matching executor payload is present"
-                elif path.startswith("actions.") and missing_field == "instruction":
+                elif path.startswith("steps.") and missing_field == "instruction":
                     code = "invalid_executor_payload"
                     path = f"{path}.instruction"
-                    message = "Action with executor 'human' must define non-empty 'human.instruction'"
+                    message = "Step with executor 'human' must define non-empty 'human.instruction'"
                     hint = "Set human.instruction to a non-empty string"
-        elif err.validator == "not" and path.startswith("actions."):
+        elif err.validator == "not" and path.startswith("steps."):
             code = "invalid_executor_payload"
-            message = "Action defines mixed executor payload fields"
-            hint = "Keep only the payload field that matches actions[].executor"
+            message = "Step defines mixed executor payload fields"
+            hint = "Keep only the payload field that matches steps[].executor"
 
         mapped.append(_error(code, path, message, hint))
     return mapped
@@ -154,35 +154,35 @@ def _schema_errors(workflow: dict):
 
 def _semantic_errors(workflow: dict):
     errors = []
-    actions = workflow.get("actions")
-    if not isinstance(actions, list):
+    steps = workflow.get("steps")
+    if not isinstance(steps, list):
         return errors
 
     by_id = {}
-    for idx, action in enumerate(actions):
-        if not isinstance(action, dict):
+    for idx, step in enumerate(steps):
+        if not isinstance(step, dict):
             continue
 
-        action_id = action.get("id")
-        if isinstance(action_id, str):
-            if action_id in by_id:
+        step_id = step.get("id")
+        if isinstance(step_id, str):
+            if step_id in by_id:
                 errors.append(
                     _error(
-                        "duplicate_action_id",
-                        f"actions.{idx}.id",
-                        f"Duplicate action id '{action_id}'",
+                        "duplicate_step_id",
+                        f"steps.{idx}.id",
+                        f"Duplicate step id '{step_id}'",
                     )
                 )
             else:
-                by_id[action_id] = idx
+                by_id[step_id] = idx
 
-        executor = action.get("executor")
+        executor = step.get("executor")
         if not isinstance(executor, str) or not executor:
             errors.append(
                 _error(
                     "missing_required_field",
-                    f"actions.{idx}.executor",
-                    "Action must define explicit 'executor'",
+                    f"steps.{idx}.executor",
+                    "Step must define explicit 'executor'",
                     f"Set executor to one of: {', '.join(WORKFLOW_EXECUTORS)}",
                 )
             )
@@ -191,53 +191,53 @@ def _semantic_errors(workflow: dict):
             errors.append(
                 _error(
                     "invalid_executor_payload",
-                    f"actions.{idx}.executor",
+                    f"steps.{idx}.executor",
                     f"Unsupported executor '{executor}'",
                     f"Supported executors: {', '.join(WORKFLOW_EXECUTORS)}",
                 )
             )
             continue
 
-        has_skill = "skill" in action
-        has_script = "script" in action
-        has_human = "human" in action
+        has_skill = "skill" in step
+        has_script = "script" in step
+        has_human = "human" in step
 
-        if executor == "skill" and not action.get("skill"):
+        if executor == "skill" and not step.get("skill"):
             errors.append(
                 _error(
                     "invalid_executor_payload",
-                    f"actions.{idx}.skill",
-                    "Action with executor 'skill' must define a non-empty 'skill' field",
-                    "Set actions[].skill and remove script/human fields",
+                    f"steps.{idx}.skill",
+                    "Step with executor 'skill' must define a non-empty 'skill' field",
+                    "Set steps[].skill and remove script/human fields",
                 )
             )
-        if executor == "script" and not action.get("script"):
+        if executor == "script" and not step.get("script"):
             errors.append(
                 _error(
                     "invalid_executor_payload",
-                    f"actions.{idx}.script",
-                    "Action with executor 'script' must define a non-empty 'script' field",
-                    "Set actions[].script and remove skill/human fields",
+                    f"steps.{idx}.script",
+                    "Step with executor 'script' must define a non-empty 'script' field",
+                    "Set steps[].script and remove skill/human fields",
                 )
             )
         if executor == "human":
-            human = action.get("human")
+            human = step.get("human")
             if not isinstance(human, dict):
                 errors.append(
                     _error(
                         "invalid_executor_payload",
-                        f"actions.{idx}.human",
-                        "Action with executor 'human' must define a 'human' object",
-                        "Set actions[].human as an object with non-empty instruction",
+                        f"steps.{idx}.human",
+                        "Step with executor 'human' must define a 'human' object",
+                        "Set steps[].human as an object with non-empty instruction",
                     )
                 )
             elif not isinstance(human.get("instruction"), str) or not human.get("instruction"):
                 errors.append(
                     _error(
                         "invalid_executor_payload",
-                        f"actions.{idx}.human.instruction",
-                        "Action with executor 'human' must define non-empty 'human.instruction'",
-                        "Set actions[].human.instruction to a non-empty string",
+                        f"steps.{idx}.human.instruction",
+                        "Step with executor 'human' must define non-empty 'human.instruction'",
+                        "Set steps[].human.instruction to a non-empty string",
                     )
                 )
 
@@ -245,35 +245,35 @@ def _semantic_errors(workflow: dict):
             errors.append(
                 _error(
                     "invalid_executor_payload",
-                    f"actions.{idx}",
-                    "Action with executor 'skill' cannot define script/human payload fields",
-                    "Keep only actions[].skill for skill executor",
+                    f"steps.{idx}",
+                    "Step with executor 'skill' cannot define script/human payload fields",
+                    "Keep only steps[].skill for skill executor",
                 )
             )
         if executor == "script" and (has_skill or has_human):
             errors.append(
                 _error(
                     "invalid_executor_payload",
-                    f"actions.{idx}",
-                    "Action with executor 'script' cannot define skill/human payload fields",
-                    "Keep only actions[].script for script executor",
+                    f"steps.{idx}",
+                    "Step with executor 'script' cannot define skill/human payload fields",
+                    "Keep only steps[].script for script executor",
                 )
             )
         if executor == "human" and (has_skill or has_script):
             errors.append(
                 _error(
                     "invalid_executor_payload",
-                    f"actions.{idx}",
-                    "Action with executor 'human' cannot define skill/script payload fields",
-                    "Keep only actions[].human for human executor",
+                    f"steps.{idx}",
+                    "Step with executor 'human' cannot define skill/script payload fields",
+                    "Keep only steps[].human for human executor",
                 )
             )
 
     # Validate dependency references and detect cycles.
-    for idx, action in enumerate(actions):
-        if not isinstance(action, dict):
+    for idx, step in enumerate(steps):
+        if not isinstance(step, dict):
             continue
-        deps = action.get("dependsOn")
+        deps = step.get("dependsOn")
         if not isinstance(deps, list):
             continue
         for dep_idx, dep in enumerate(deps):
@@ -281,39 +281,39 @@ def _semantic_errors(workflow: dict):
                 errors.append(
                     _error(
                         "unknown_dependency",
-                        f"actions.{idx}.dependsOn.{dep_idx}",
-                        f"Unknown dependency action id '{dep}'",
+                        f"steps.{idx}.dependsOn.{dep_idx}",
+                        f"Unknown dependency step id '{dep}'",
                     )
                 )
 
     visited = {}
 
-    def dfs(action_id: str):
-        visited[action_id] = "visiting"
-        action = actions[by_id[action_id]]
-        for dep in action.get("dependsOn", []):
+    def dfs(step_id: str):
+        visited[step_id] = "visiting"
+        step = steps[by_id[step_id]]
+        for dep in step.get("dependsOn", []):
             if dep not in by_id:
                 continue
             dep_state = visited.get(dep)
             if dep_state == "visiting":
-                return [action_id, dep]
+                return [step_id, dep]
             if dep_state is None:
                 cycle = dfs(dep)
                 if cycle:
-                    return [action_id] + cycle
-        visited[action_id] = "done"
+                    return [step_id] + cycle
+        visited[step_id] = "done"
         return None
 
-    for action_id in by_id:
-        if visited.get(action_id) is None:
-            cycle = dfs(action_id)
+    for step_id in by_id:
+        if visited.get(step_id) is None:
+            cycle = dfs(step_id)
             if cycle:
                 pretty_cycle = " -> ".join(cycle)
                 errors.append(
                     _error(
                         "dependency_cycle",
-                        "actions",
-                        f"Action dependency cycle detected: {pretty_cycle}",
+                        "steps",
+                        f"Step dependency cycle detected: {pretty_cycle}",
                     )
                 )
                 break
@@ -322,14 +322,14 @@ def _semantic_errors(workflow: dict):
 
 def _generation_readiness_errors(workflow: dict):
     generated = _workflow_runtime_blueprint_payload(workflow, "validate-only")
-    actions = generated.get("actions")
-    if not isinstance(actions, list) or not actions:
-        return [_error("not_generation_ready", "$.actions", "Generated runtime actions must be a non-empty array")]
-    for idx, action in enumerate(actions):
-        if not isinstance(action, dict):
-            return [_error("not_generation_ready", f"$.actions.{idx}", "Generated runtime action must be an object")]
-        if not isinstance(action.get("description"), str) or not action["description"]:
-            return [_error("not_generation_ready", f"$.actions.{idx}.description", "Generated runtime action description is required")]
+    steps = generated.get("steps")
+    if not isinstance(steps, list) or not steps:
+        return [_error("not_generation_ready", "$.steps", "Generated runtime steps must be a non-empty array")]
+    for idx, step in enumerate(steps):
+        if not isinstance(step, dict):
+            return [_error("not_generation_ready", f"$.steps.{idx}", "Generated runtime step must be an object")]
+        if not isinstance(step.get("description"), str) or not step["description"]:
+            return [_error("not_generation_ready", f"$.steps.{idx}.description", "Generated runtime step description is required")]
     return []
 
 
@@ -419,15 +419,15 @@ def _workflow_runtime_blueprint_payload(workflow: dict, change_name: str):
         if key in workflow:
             payload[key] = workflow[key]
 
-    # Workflow actions already use "description"; runtime snapshot keeps the same field name.
+    # Workflow steps already use "description"; runtime snapshot keeps the same field name.
     normalized_actions = []
-    for action in payload.get("actions", []):
-        if isinstance(action, dict):
-            normalized_actions.append(dict(action))
+    for step in payload.get("steps", []):
+        if isinstance(step, dict):
+            normalized_actions.append(dict(step))
         else:
-            normalized_actions.append(action)
+            normalized_actions.append(step)
     if normalized_actions:
-        payload["actions"] = normalized_actions
+        payload["steps"] = normalized_actions
 
     payload["workflow"] = {
         "id": workflow["workflowId"],

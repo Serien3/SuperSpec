@@ -5,7 +5,7 @@ The system MUST provide a default plan template optimized for single-agent, sing
 
 #### Scenario: Initialize simplified default plan
 - **WHEN** a user initializes a plan in the default mode
-- **THEN** the generated template expresses a serial action flow suitable for one agent
+- **THEN** the generated template expresses a serial step flow suitable for one agent
 - **AND** excludes lease-oriented or concurrency-oriented starter fields
 
 ### Requirement: Single-agent execution assumption
@@ -18,15 +18,15 @@ The system MUST define current plan execution baseline as exclusive single-agent
 
 ## MODIFIED Requirements
 
-### Requirement: Unified action execution contract
-The system MUST support both `skill` and `script` executors using a shared action contract with normalized outputs under serial single-agent execution.
+### Requirement: Unified step execution contract
+The system MUST support both `skill` and `script` executors using a shared step contract with normalized outputs under serial single-agent execution.
 
-#### Scenario: Skill executor action
-- **WHEN** an action declares `executor: skill`
+#### Scenario: Skill executor step
+- **WHEN** an step declares `executor: skill`
 - **THEN** the execution protocol returns a skill execution payload for an external agent
 - **AND** stores normalized outputs only after explicit completion reporting
 
-#### Scenario: Script executor action
-- **WHEN** an action declares `executor: script`
+#### Scenario: Script executor step
+- **WHEN** an step declares `executor: script`
 - **THEN** the execution protocol returns script command payload for execution
 - **AND** stores normalized outputs only after explicit completion reporting

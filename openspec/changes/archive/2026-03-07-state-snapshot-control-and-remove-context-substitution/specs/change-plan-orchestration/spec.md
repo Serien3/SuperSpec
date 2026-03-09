@@ -35,9 +35,9 @@ The system MUST resolve initialization content through base-template-plus-workfl
 - **AND** writes the resolved definition into `execution/state.json`
 
 ### Requirement: Plan schema version validation
-The system MUST validate the declared execution definition schema version before any action execution begins.
+The system MUST validate the declared execution definition schema version before any step execution begins.
 
 #### Scenario: Reject unknown schema version
 - **WHEN** snapshot definition contains an unsupported `schemaVersion`
 - **THEN** the system fails validation
-- **AND** does not execute any actions
+- **AND** does not execute any steps

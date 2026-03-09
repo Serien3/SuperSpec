@@ -2,7 +2,7 @@
     "workflowId": "code-review",
     "version": "1.0.0",
     "description": "Workflow for requesting and receiving code reviews as part of the spec-driven development process",
-    "actions": [
+    "steps": [
         {
             "id": "a1",
             "description": "request-code-review",

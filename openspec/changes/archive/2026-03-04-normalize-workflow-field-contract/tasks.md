@@ -1,6 +1,6 @@
 ## 1. Workflow Contract Normalization
 
-- [x] 1.1 Tighten `workflow.schema.json` so each action requires explicit `executor`.
+- [x] 1.1 Tighten `workflow.schema.json` so each step requires explicit `executor`.
 - [x] 1.2 Add schema constraints to enforce exact executor payload mapping and reject mixed payloads.
 - [x] 1.3 Keep annotation/readability fields available as optional fields without execution semantics.
 

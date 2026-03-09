@@ -1,22 +1,22 @@
 ## Why
 
-Current workflows support `skill` and `script` executors only. Teams need a first-class way to pause between automated actions for human review and then resume execution only after explicit human feedback.
+Current workflows support `skill` and `script` executors only. Teams need a first-class way to pause between automated steps for human review and then resume execution only after explicit human feedback.
 
 ## What Changes
 
-- Add a new action executor type: `human`.
-- Extend `plan next` action payload generation to emit human-review instructions for `human` actions.
+- Add a new step executor type: `human`.
+- Extend `plan next` step payload generation to emit human-review instructions for `human` steps.
 - Keep protocol flow unchanged (`next -> complete|fail`): human approval is reported via `complete`, rejection via `fail`.
-- Extend workflow/plan validation to accept `human` executor payload and reject malformed human actions.
+- Extend workflow/plan validation to accept `human` executor payload and reject malformed human steps.
 - Update protocol contracts and agent-loop execution guidance to include `human` dispatch handling.
 
 ## Capabilities
 
 ### New Capabilities
-- `human-gated-action-execution`: Introduce human-gated action execution in workflow protocol with explicit review instructions and resume semantics.
+- `human-gated-step-execution`: Introduce human-gated step execution in workflow protocol with explicit review instructions and resume semantics.
 
 ### Modified Capabilities
-- `agent-driven-plan-execution`: Expand executor model and action payload contracts from `skill|script` to `skill|script|human`.
+- `agent-driven-plan-execution`: Expand executor model and step payload contracts from `skill|script` to `skill|script|human`.
 
 ## Impact
 

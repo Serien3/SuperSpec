@@ -22,4 +22,4 @@ The system MUST create `execution/events.log` when a change is created via `chan
 
 #### Scenario: Fresh change has both control and log artifacts
 - **WHEN** `superspec change advance --new <workflow-type>/<change-name>` succeeds
-- **THEN** both `execution/state.json` and `execution/events.log` exist before first action payload is returned
+- **THEN** both `execution/state.json` and `execution/events.log` exist before first step payload is returned

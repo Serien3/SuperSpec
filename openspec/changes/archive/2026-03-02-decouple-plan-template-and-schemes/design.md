@@ -1,6 +1,6 @@
 ## Context
 
-SuperSpec currently initializes plans through a mode-to-template mapping where the selected template contains both structural plan fields and a concrete action sequence. In practice, this mixes two different concerns: plan document shape and planning strategy. As more planning strategies are needed, this approach scales poorly because each new strategy tends to duplicate structural fields while only changing sequence metadata and action definitions.
+SuperSpec currently initializes plans through a mode-to-template mapping where the selected template contains both structural plan fields and a concrete step sequence. In practice, this mixes two different concerns: plan document shape and planning strategy. As more planning strategies are needed, this approach scales poorly because each new strategy tends to duplicate structural fields while only changing sequence metadata and step definitions.
 
 This change introduces a scheme-driven generation model: base template provides stable plan structure, scheme files provide sequence semantics. Runtime orchestration remains unchanged and continues to consume only rendered `plan.json`.
 
@@ -21,16 +21,16 @@ This change introduces a scheme-driven generation model: base template provides 
 
 ### Decision: Introduce file-based scheme definitions
 - Schemes will be stored in a dedicated scheme directory and treated as declarative inputs.
-- Each scheme contains metadata (`schemeId`, `version`, description), defaults, and action sequence definitions.
+- Each scheme contains metadata (`schemeId`, `version`, description), defaults, and step sequence definitions.
 - Rationale: keeps planning patterns composable and user-extensible while remaining reviewable in git.
 
 Alternatives considered:
 - Keep adding hardcoded mode constants in CLI: simple initially but creates recurring code edits and poor extensibility.
 - Store schemes inside Python modules: stronger typing but blocks user-defined schemes without code changes.
 
-### Decision: Keep a generic base template with no predefined action sequence
+### Decision: Keep a generic base template with no predefined step sequence
 - Base template defines stable plan envelope (`schemaVersion`, `context`, optional metadata scaffolding).
-- Scheme contributes strategy-dependent content (`defaults`, `actions`, optional scheme variables).
+- Scheme contributes strategy-dependent content (`defaults`, `steps`, optional scheme variables).
 - Rationale: clean separation of concerns and lower duplication across planning patterns.
 
 Alternatives considered:
@@ -71,4 +71,4 @@ Rollback strategy:
 
 - Should custom scheme lookup support both repository-local and user-global directories in v1?
 - Do we want optional `superspec scheme list/show/validate` commands in the first release or follow-up?
-- Should scheme files support lightweight templating for repeated action fragments, or keep them strictly explicit initially?
+- Should scheme files support lightweight templating for repeated step fragments, or keep them strictly explicit initially?

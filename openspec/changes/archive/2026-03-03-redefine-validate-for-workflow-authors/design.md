@@ -2,7 +2,7 @@
 
 SuperSpec currently exposes `superspec plan validate <change>` to validate generated `plan.json`. This serves agent/runtime protocol checks, but it does not serve workflow authors who need to validate `*.workflow.json` before plan generation.
 
-At the same time, workflow schema validation is partly strict at top-level and partly permissive in nested objects (`defaults`, `actions`), which allows authoring mistakes to pass schema checks and fail later during plan generation or execution.
+At the same time, workflow schema validation is partly strict at top-level and partly permissive in nested objects (`defaults`, `steps`), which allows authoring mistakes to pass schema checks and fail later during plan generation or execution.
 
 This change re-centers `validate` as a human authoring command: validate workflow templates against an explicit, finite, generation-ready contract.
 
@@ -16,7 +16,7 @@ This change re-centers `validate` as a human authoring command: validate workflo
 
 **Non-Goals:**
 - Changing protocol runtime state machine (`next/complete/fail/status`) semantics.
-- Adding new workflow execution primitives beyond current plan/action model.
+- Adding new workflow execution primitives beyond current plan/step model.
 - Backward-compat shims that preserve old `superspec plan validate` behavior.
 
 ## Decisions
@@ -31,13 +31,13 @@ This change re-centers `validate` as a human authoring command: validate workflo
 ### Decision 2: Three-stage validation pipeline
 Validation SHALL execute in fixed order:
 1. **Schema structure validation** against strict `workflow.schema.json`.
-2. **Semantic validation** for graph and action constraints (e.g., dependency references, cycle detection, executor/field compatibility).
+2. **Semantic validation** for graph and step constraints (e.g., dependency references, cycle detection, executor/field compatibility).
 3. **Generation-readiness validation** by attempting deterministic render path checks required for `plan init` (without writing plan files).
 
 Rationale: author sees earliest precise failure while guaranteeing a "pass" outcome is actually usable for plan generation.
 
 ### Decision 3: Strict finite field surface for workflow templates
-- Tighten `workflow.schema.json` to explicit nested properties with `additionalProperties: false` on constrained objects (notably `defaults`, `defaults.retry`, `actions[*]`, `actions[*].retry`).
+- Tighten `workflow.schema.json` to explicit nested properties with `additionalProperties: false` on constrained objects (notably `defaults`, `defaults.retry`, `steps[*]`, `steps[*].retry`).
 - Keep extensibility only where intentionally allowed and documented.
 - Rationale: avoid silent acceptance of misspelled or unsupported fields.
 

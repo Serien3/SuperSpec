@@ -12,7 +12,7 @@
 
 ## 3. Workflow Schema Contract Tightening
 
-- [x] 3.1 Tighten `workflow.schema.json` to explicitly define supported nested fields for `defaults` and `actions`
+- [x] 3.1 Tighten `workflow.schema.json` to explicitly define supported nested fields for `defaults` and `steps`
 - [x] 3.2 Set constrained objects to reject unknown nested fields where contract is finite (`additionalProperties: false`)
 - [x] 3.3 Ensure schema field surface matches runtime-accepted customization surface without drift
 

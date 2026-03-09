@@ -5,7 +5,7 @@ The system MUST support mode-based plan generation when initializing a change pl
 
 #### Scenario: Initialize SDD mode plan
 - **WHEN** a user runs plan initialization with `mode=sdd`
-- **THEN** the system writes a change-scoped `plan.json` populated with the SDD action sequence
+- **THEN** the system writes a change-scoped `plan.json` populated with the SDD step sequence
 - **AND** records context values for that change without placeholder leakage
 
 ### Requirement: Plan mode validation

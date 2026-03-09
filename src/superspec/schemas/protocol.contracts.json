@@ -8,42 +8,23 @@
       },
       "response": {
         "state": "ready | blocked | done",
-        "action": "object | null"
+        "step": "object | null"
       },
-      "errors": ["invalid_expression", "invalid_action_payload"]
+      "errors": ["invalid_step_payload"]
     },
-    "complete": {
+    "stepComplete": {
       "request": {
         "change": "string",
-        "actionId": "string",
-        "outputJson": {
-          "type": "object",
-          "recommendedFields": {
-            "ok": "boolean",
-            "executor": "script | skill | human",
-            "actionId": "string",
-            "summary": "string (optional)",
-            "outputs": "object (optional)"
-          }
-        }
+        "stepId": "string"
       },
-      "errors": ["invalid_payload", "unknown_action", "invalid_state"]
+      "errors": ["unknown_step", "invalid_state"]
     },
-    "fail": {
+    "stepFail": {
       "request": {
         "change": "string",
-        "actionId": "string",
-        "errorJson": {
-          "type": "object",
-          "recommendedFields": {
-            "code": "string",
-            "message": "string",
-            "executor": "script | skill | human",
-            "details": "object (optional)"
-          }
-        }
+        "stepId": "string"
       },
-      "errors": ["invalid_payload", "unknown_action", "invalid_state"]
+      "errors": ["unknown_step", "invalid_state"]
     },
     "status": {
       "request": {
@@ -64,7 +45,7 @@
       }
     }
   },
-  "actionPayload": {
+  "stepPayload": {
     "script": {
       "executor": "script",
       "script_command": "string",
@@ -85,25 +66,9 @@
       "inputs": "object (optional)",
       "prompt": "string"
     },
-    "runtimeExpressionResolution": [
-      "executor",
-      "script",
-      "skill",
-      "prompt",
-      "human.instruction",
-      "inputs (recursive)"
-    ],
-    "runtimeExpressionScopes": [
-      "context.*",
-      "variables.*",
-      "actions.*",
-      "state.*",
-      "env.*"
-    ],
     "runtimeExpressionNotes": [
-      "No generic recursive runtime resolver for arbitrary action fields",
-      "Only the listed fields are expanded in next-action payload generation",
-      "When action.prompt is set, payload.prompt uses rendered action.prompt for all executors",
+      "Runtime payload generation treats ${...} strings as literal values",
+      "When step.prompt is set, payload.prompt uses step.prompt for all executors",
       "inputs remains input-definition data and is not used as prompt override source"
     ]
   },

@@ -1,13 +1,13 @@
 ## Context
 
-SuperSpec currently exposes separate lifecycle commands for change scaffolding (`change new`), workflow materialization (`plan init`), and action dispatch (`plan next`). This split causes agent logic and CLI UX to branch before useful execution can begin, and it weakens the conceptual model when new workflow types are introduced. We need a single entrypoint that supports list, create+bind workflow, and advance behavior while preserving protocol execution semantics.
+SuperSpec currently exposes separate lifecycle commands for change scaffolding (`change new`), workflow materialization (`plan init`), and step dispatch (`plan next`). This split causes agent logic and CLI UX to branch before useful execution can begin, and it weakens the conceptual model when new workflow types are introduced. We need a single entrypoint that supports list, create+bind workflow, and advance behavior while preserving protocol execution semantics.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Provide one command surface (`change advance`) for change lifecycle entry.
 - Bind workflow type to change identity at creation time.
-- Preserve existing protocol action loop behavior once a change is selected.
+- Preserve existing protocol step loop behavior once a change is selected.
 - Deliver compatibility path for existing users and skills.
 
 **Non-Goals:**
@@ -20,7 +20,7 @@ SuperSpec currently exposes separate lifecycle commands for change scaffolding (
 1. Introduce a tri-modal `change advance` command.
 - No arguments: list available changes (current `change list` behavior).
 - `<change-name>`: advance existing change (current `plan next` behavior).
-- `--new <type>/<change-name>`: create change, select workflow type, materialize plan, and return next action payload.
+- `--new <type>/<change-name>`: create change, select workflow type, materialize plan, and return next step payload.
 
 2. Persist workflow binding in change metadata.
 - At creation (`--new`), write binding metadata in change-scoped state (e.g., plan metadata/workflow id and auxiliary manifest if needed).

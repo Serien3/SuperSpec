@@ -15,7 +15,7 @@
     "startedAt": "<iso-8601>",
     "updatedAt": "<iso-8601>",
     "finishedAt": "<iso-8601|null>",
-    "actions": []
+    "steps": []
   }
 }
 ```
@@ -25,4 +25,5 @@
 - `meta` 只保存 workflow 身份信息，不包含 `workflowVersion`、`createdAt`、`updatedAt`。
 - `meta.schemaVersion` 来自 `workflow.schema.json` 的 `$id`（当前为 `https://superspec.dev/schemas/workflow-v1.json`）。
 - `runtime.updatedAt` 在每次协议写入（`next/complete/fail`）时刷新。
-- `runtime.actions[*]` 的执行状态只允许：`PENDING`、`READY`、`RUNNING`、`SUCCESS`、`FAILED`。
+- `runtime.steps[*]` 的执行状态只允许：`PENDING`、`READY`、`RUNNING`、`SUCCESS`、`FAILED`。
+- `runtime.steps[*]` 不包含 `output`、`error` 字段。

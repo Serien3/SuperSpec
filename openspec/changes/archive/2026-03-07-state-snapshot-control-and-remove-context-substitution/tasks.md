@@ -2,11 +2,11 @@
 
 - [x] 1.1 Replace `plan.json` loading/orchestration entrypoints with state-snapshot loading helpers.
 - [x] 1.2 Implement change bootstrap flow that writes `execution/state.json` (`meta`/`definition`/`runtime`) and creates `execution/events.log` during `change advance --new`.
-- [x] 1.3 Ensure protocol initialization and action graph setup read from `state.json.definition` and persist runtime transitions to `state.json.runtime`.
+- [x] 1.3 Ensure protocol initialization and step graph setup read from `state.json.definition` and persist runtime transitions to `state.json.runtime`.
 
 ## 2. Remove Runtime Context Substitution
 
-- [x] 2.1 Remove runtime expression resolution module usage from protocol next-action payload generation.
+- [x] 2.1 Remove runtime expression resolution module usage from protocol next-step payload generation.
 - [x] 2.2 Treat `executor`, `skill`, `script`, `prompt`, `human`, and `inputs` as literal runtime fields and delete `invalid_expression` pathway.
 - [x] 2.3 Simplify validation logic by removing expression-scope checks that only served substitution.
 

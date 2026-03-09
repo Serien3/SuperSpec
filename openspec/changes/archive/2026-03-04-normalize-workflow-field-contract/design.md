@@ -1,6 +1,6 @@
 ## Context
 
-Workflow authoring currently allows both explicit executor declaration and implicit executor inference from payload fields (`skill`, `script`, `human`). This dual model creates ambiguity for users and for validation outcomes, especially when action fields are mixed. The project already has a requirement for a minimal and finite customization contract, but executor authoring remains split in practice.
+Workflow authoring currently allows both explicit executor declaration and implicit executor inference from payload fields (`skill`, `script`, `human`). This dual model creates ambiguity for users and for validation outcomes, especially when step fields are mixed. The project already has a requirement for a minimal and finite customization contract, but executor authoring remains split in practice.
 
 ## Goals / Non-Goals
 
@@ -14,17 +14,17 @@ Workflow authoring currently allows both explicit executor declaration and impli
 **Non-Goals:**
 - Backward compatibility with legacy executor inference authoring.
 - New executor types.
-- Changes to runtime action scheduling semantics.
+- Changes to runtime step scheduling semantics.
 
 ## Decisions
 
-1. Enforce explicit executor for every action.
-- Decision: `actions[].executor` is mandatory in workflow authoring.
+1. Enforce explicit executor for every step.
+- Decision: `steps[].executor` is mandatory in workflow authoring.
 - Rationale: avoids inference ambiguity and creates a single mental model.
 - Alternative considered: keep inference and add warnings. Rejected because it prolongs confusion and adds branchy validation behavior.
 
 2. Enforce exactly-one executor payload model.
-- Decision: each action must contain exactly one matching payload for its executor:
+- Decision: each step must contain exactly one matching payload for its executor:
   - `skill` => requires `skill`, forbids `script`/`human`
   - `script` => requires `script`, forbids `skill`/`human`
   - `human` => requires `human.instruction`, forbids `skill`/`script`
@@ -46,7 +46,7 @@ Workflow authoring currently allows both explicit executor declaration and impli
 - [Risk] Schema and semantic validation may drift again.
   - Mitigation: add tests that assert matching behavior for schema checks, semantic checks, and `superspec validate` output.
 - [Risk] Tightening fields may block some ad-hoc metadata usage.
-  - Mitigation: keep annotation fields explicit and allow top-level/action metadata-style fields already defined by schema.
+  - Mitigation: keep annotation fields explicit and allow top-level/step metadata-style fields already defined by schema.
 
 ## Migration Plan
 
@@ -61,5 +61,5 @@ Rollback strategy:
 
 ## Open Questions
 
-- Should `inputs` be mandatory for `skill` actions in a future schema version, or remain optional?
+- Should `inputs` be mandatory for `skill` steps in a future schema version, or remain optional?
 - Should we add a dedicated machine-readable migration guide command for workflow authors?

@@ -1,21 +1,21 @@
 ## Context
 
-SuperSpec protocol execution currently supports `script` and `skill` executors. Workflow and validator schemas reject any third executor type, and protocol payload generation assumes non-script actions are `skill` actions. Teams need a workflow-native pause point for human review between automated steps while preserving existing pull-loop semantics.
+SuperSpec protocol execution currently supports `script` and `skill` executors. Workflow and validator schemas reject any third executor type, and protocol payload generation assumes non-script steps are `skill` steps. Teams need a workflow-native pause point for human review between automated steps while preserving existing pull-loop semantics.
 
-The existing runtime already supports this execution shape: `next` marks one action `RUNNING`, subsequent `next` calls return `blocked`, and execution resumes after a `complete` or `fail` report. This lets us add a human-gated action without introducing a new protocol command.
+The existing runtime already supports this execution shape: `next` marks one step `RUNNING`, subsequent `next` calls return `blocked`, and execution resumes after a `complete` or `fail` report. This lets us add a human-gated step without introducing a new protocol command.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Add first-class `human` executor support in workflow schema, plan validation, and protocol action payloads.
-- Represent human review as a normal running action that is finalized by existing `complete`/`fail` commands.
+- Add first-class `human` executor support in workflow schema, plan validation, and protocol step payloads.
+- Represent human review as a normal running step that is finalized by existing `complete`/`fail` commands.
 - Keep existing `skill` and `script` behaviors unchanged and backward compatible.
 - Document agent-loop dispatch rules for `human` executor.
 
 **Non-Goals:**
 - Add new protocol commands like `approve`/`reject`.
 - Add asynchronous external approval services or notifications.
-- Redesign action state machine or add new terminal/intermediate states.
+- Redesign step state machine or add new terminal/intermediate states.
 
 ## Decisions
 
@@ -23,12 +23,12 @@ The existing runtime already supports this execution shape: `next` marks one act
 - Rationale: keeps executor model explicit and self-describing.
 - Alternative considered: encode human review as `skill` with specific skill name; rejected because it hides semantics and weakens validation.
 
-2. Reuse current lifecycle (`next -> RUNNING -> complete|fail`) for human actions.
+2. Reuse current lifecycle (`next -> RUNNING -> complete|fail`) for human steps.
 - Rationale: zero state-machine expansion, minimal risk.
 - Alternative considered: add dedicated approval state and commands; rejected as unnecessary protocol complexity.
 
-3. Add structured `human` action payload in `next` response.
-- Fields: `executor=human`, `prompt`, and `human` object from action definition (for example `instruction`, `approveLabel`, `rejectLabel`).
+3. Add structured `human` step payload in `next` response.
+- Fields: `executor=human`, `prompt`, and `human` object from step definition (for example `instruction`, `approveLabel`, `rejectLabel`).
 - Rationale: UI/agent can render clear human instructions without schema-free conventions.
 
 4. Keep completion/failure report schema generic.
@@ -39,7 +39,7 @@ The existing runtime already supports this execution shape: `next` marks one act
 
 ## Risks / Trade-offs
 
-- [Risk] Human action payload may be under-specified for some workflows. -> Mitigation: validate `human` object type and require at least `instruction` string for executor `human`.
+- [Risk] Human step payload may be under-specified for some workflows. -> Mitigation: validate `human` object type and require at least `instruction` string for executor `human`.
 - [Risk] Existing automation loops may ignore unknown executor. -> Mitigation: update bundled loop skills and contracts to include explicit `human` branch.
 - [Trade-off] Reusing complete/fail means no approval-specific ergonomics. -> Accepted for v1 to avoid redundant command surface.
 
@@ -55,5 +55,5 @@ Rollback strategy: revert enum and protocol payload changes; existing `skill`/`s
 
 ## Open Questions
 
-- Should `human` action payload later require a canonical decision field (`approved: true|false`) in completion output for analytics consistency?
-- Should timeout/escalation behavior for unattended human actions be introduced as a future retry/onFail policy extension?
+- Should `human` step payload later require a canonical decision field (`approved: true|false`) in completion output for analytics consistency?
+- Should timeout/escalation behavior for unattended human steps be introduced as a future retry/onFail policy extension?

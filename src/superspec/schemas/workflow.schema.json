@@ -6,7 +6,7 @@
   "required": [
     "workflowId",
     "version",
-    "actions"
+    "steps"
   ],
   "properties": {
     "workflowId": {
@@ -20,7 +20,7 @@
     "description": {
       "type": "string"
     },
-    "actions": {
+    "steps": {
       "type": "array",
       "minItems": 1,
       "items": {

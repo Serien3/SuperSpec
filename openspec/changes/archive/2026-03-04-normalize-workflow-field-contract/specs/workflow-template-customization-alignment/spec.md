@@ -1,16 +1,16 @@
 ## MODIFIED Requirements
 
 ### Requirement: Unified customization contract across schema and runtime
-The system MUST enforce one identical workflow authoring contract across `workflow.schema.json` validation, runtime workflow processing, and `superspec validate`, including explicit action executor declaration and exact executor payload matching.
+The system MUST enforce one identical workflow authoring contract across `workflow.schema.json` validation, runtime workflow processing, and `superspec validate`, including explicit step executor declaration and exact executor payload matching.
 
 #### Scenario: Schema-valid executor contract is runtime-valid
-- **WHEN** a workflow action declares explicit `executor` and provides exactly one matching payload
-- **THEN** runtime workflow loading and plan generation accept that action without contract mismatch errors
+- **WHEN** a workflow step declares explicit `executor` and provides exactly one matching payload
+- **THEN** runtime workflow loading and plan generation accept that step without contract mismatch errors
 
 #### Scenario: Runtime rejection matches schema contract
-- **WHEN** a workflow action includes mixed executor payload fields that violate the explicit executor contract
+- **WHEN** a workflow step includes mixed executor payload fields that violate the explicit executor contract
 - **THEN** runtime validation fails
-- **AND** the error identifies the invalid action field path and expected payload shape
+- **AND** the error identifies the invalid step field path and expected payload shape
 
 #### Scenario: Validate command uses identical contract semantics
 - **WHEN** a workflow file is checked with `superspec validate`
@@ -31,6 +31,6 @@ The system MUST support only an explicitly documented, finite workflow customiza
 - **AND** no partially accepted customization is applied
 
 #### Scenario: Implicit executor style is rejected
-- **WHEN** a workflow action omits `executor` and only defines payload fields such as `skill` or `script`
+- **WHEN** a workflow step omits `executor` and only defines payload fields such as `skill` or `script`
 - **THEN** validation fails for missing explicit executor
-- **AND** diagnostics guide the author to set `actions[].executor`
+- **AND** diagnostics guide the author to set `steps[].executor`

@@ -12,7 +12,7 @@ The protocol CLI currently resolves `plan.json` using the CLI change name but th
 
 **Non-Goals:**
 - Introduce locking/atomic write changes in this change set.
-- Alter fail-fast semantics or runtime action scheduling logic.
+- Alter fail-fast semantics or runtime step scheduling logic.
 - Redesign protocol payload schema beyond executor validation hardening.
 
 ## Decisions
@@ -39,7 +39,7 @@ Rationale:
 
 Alternative considered:
 - Add runtime fallback/coercion for unknown executor.
-  - Rejected because silent coercion can hide malformed plans and produce confusing action payloads.
+  - Rejected because silent coercion can hide malformed plans and produce confusing step payloads.
 
 ## Risks / Trade-offs
 
@@ -51,7 +51,7 @@ Alternative considered:
 
 ## Migration Plan
 
-1. Implement guard in orchestrator before action dispatch.
+1. Implement guard in orchestrator before step dispatch.
 2. Implement strict executor validation in plan validator.
 3. Add regression tests for mismatch and invalid executor cases.
 4. Run full unit test suite and release with changelog note: malformed plans are now rejected earlier.

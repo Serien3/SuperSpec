@@ -25,7 +25,7 @@
 ## 5. Test Refactor and Coverage Expansion
 
 - [x] 5.1 Replace parser tests that assume `plan init`/`change new` as required setup with `change advance` mode tests.
-- [x] 5.2 Add lifecycle tests for `change advance --new <type>/<name>` that assert immediate plan availability and next-action readiness.
+- [x] 5.2 Add lifecycle tests for `change advance --new <type>/<name>` that assert immediate plan availability and next-step readiness.
 - [x] 5.3 Add negative tests for malformed selectors, mixed argument modes, and workflow-binding conflicts.
 - [x] 5.4 Keep protocol behavior regression tests green for `complete|fail|approve|reject|status` paths.
 

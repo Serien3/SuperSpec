@@ -6,7 +6,7 @@ The system MUST generate change-scoped `plan.json` by combining a generic base p
 #### Scenario: Generate plan with selected workflow
 - **WHEN** a user initializes a plan for a change with a valid schema key
 - **THEN** the generated `plan.json` contains the base template structural fields
-- **AND** includes defaults and actions from the selected workflow
+- **AND** includes defaults and steps from the selected workflow
 
 #### Scenario: Ignore unsupported customization by failing validation first
 - **WHEN** a workflow contains unsupported template customization fields

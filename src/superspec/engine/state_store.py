@@ -51,22 +51,20 @@ def append_event(change_dir: str, event: dict):
 def _initial_runtime_state(runtime_blueprint: dict):
     now = _now_iso()
     runtime_actions = []
-    for action in runtime_blueprint["actions"]:
+    for step in runtime_blueprint["steps"]:
         runtime_action = {
-            "id": action["id"],
-            "description": action["description"],
+            "id": step["id"],
+            "description": step["description"],
             "status": "PENDING",
-            "dependsOn": action.get("dependsOn", []),
+            "dependsOn": step.get("dependsOn", []),
             "startedAt": None,
             "finishedAt": None,
-            "error": None,
-            "output": None,
         }
         for field in ("executor", "skill", "script", "prompt", "inputs"):
-            if field in action:
-                runtime_action[field] = action[field]
-        if "human" in action:
-            runtime_action["human"] = action["human"]
+            if field in step:
+                runtime_action[field] = step[field]
+        if "human" in step:
+            runtime_action["human"] = step["human"]
         runtime_actions.append(runtime_action)
 
     return {
@@ -74,7 +72,7 @@ def _initial_runtime_state(runtime_blueprint: dict):
         "status": "running",
         "startedAt": now,
         "updatedAt": now,
-        "actions": runtime_actions,
+        "steps": runtime_actions,
     }
 
 

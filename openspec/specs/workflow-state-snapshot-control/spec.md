@@ -9,7 +9,7 @@ The system MUST use `superspec/changes/<change-name>/execution/state.json` as th
 #### Scenario: State snapshot contains meta and runtime partitions
 - **WHEN** a change is created through unified workflow entry
 - **THEN** `execution/state.json` includes `meta` and `runtime` top-level sections
-- **AND** `meta` contains `schemaVersion`, `workflowId`, and `workflowDescription`
+- **AND** `meta` contains all workflow top-level fields except `steps`
 - **AND** `runtime` stores mutable execution lifecycle state
 
 ### Requirement: Immutable runtime step baseline

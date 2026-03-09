@@ -22,7 +22,7 @@ The system MUST support declarative workflow files that define workflow metadata
 The system MUST validate required workflow metadata fields and workflow template customization fields before using a workflow for generation, and MUST enforce an explicit finite set of supported fields at both top-level and constrained nested objects.
 
 #### Scenario: Reject workflow missing required metadata
-- **WHEN** a workflow definition is missing required identity metadata such as `workflowId` or `version`
+- **WHEN** a workflow definition is missing required identity metadata such as `workflowId`
 - **THEN** change initialization fails with a clear validation error
 - **AND** no `execution/state.json` is generated
 

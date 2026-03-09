@@ -30,6 +30,7 @@ The system MUST provide a command for clients to report step failure.
 - **WHEN** a client reports failure for a running step
 - **THEN** the step transitions to `FAILED`
 - **AND** the workflow transitions to terminal `failed`
+- **AND** all remaining non-terminal steps are terminalized according to fail-fast policy
 - **AND** no retry scheduling is created
 
 #### Scenario: Propagate dependency failure to downstream steps
@@ -43,19 +44,16 @@ The system MUST return normalized execution payloads that distinguish script, sk
 #### Scenario: Script step payload
 - **WHEN** the next step uses `executor=script`
 - **THEN** the payload includes `script_command` and `prompt`
-- **AND** may include literal `inputs` when step inputs are defined
 
 #### Scenario: Skill step payload
 - **WHEN** the next step uses `executor=skill`
 - **THEN** the payload includes `skillName` and `prompt`
 - **AND** does not include context file maps in the step payload
-- **AND** may include literal `inputs` when step inputs are defined
 
 #### Scenario: Human step payload
 - **WHEN** the next step uses `executor=human`
 - **THEN** the payload includes `human` review metadata and `prompt`
 - **AND** does not include `script_command` or `skillName`
-- **AND** may include literal `inputs` when step inputs are defined
 
 #### Scenario: Runtime fields are not expression-expanded
 - **WHEN** step runtime fields contain `${...}` substrings
@@ -108,3 +106,8 @@ The system MUST compute progress fields without counting skipped outcomes.
 - **WHEN** `superspec change status <change-name>` is computed for a change
 - **THEN** `progress.done` counts only steps in `SUCCESS`
 - **AND** `progress.failed` counts steps in `FAILED`
+
+#### Scenario: Terminal failed workflow has no remaining work
+- **WHEN** `superspec change status <change-name>` is computed after a fail-fast terminal failure
+- **THEN** `progress.remaining` is `0`
+- **AND** no step remains in `PENDING`, `READY`, or `RUNNING`

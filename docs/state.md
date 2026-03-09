@@ -1,13 +1,16 @@
 # SuperSpec State Snapshot
 
-`superspec/changes/<change>/execution/state.json` 使用以下结构：
+`superspec/changes/<change>/execution/state.json` 是当前 change 的执行快照。
+
+当前结构如下：
 
 ```json
 {
   "meta": {
-    "schemaVersion": "https://superspec.dev/schemas/workflow-v1.json",
     "workflowId": "<workflow-id>",
-    "workflowDescription": "<workflow-description|null>"
+    "version": "<workflow-version|optional>",
+    "description": "<workflow-description|optional>",
+    "metadata": {}
   },
   "runtime": {
     "changeName": "<change-name>",
@@ -22,8 +25,42 @@
 
 ## 字段约束
 
-- `meta` 只保存 workflow 身份信息，不包含 `workflowVersion`、`createdAt`、`updatedAt`。
-- `meta.schemaVersion` 来自 `workflow.schema.json` 的 `$id`（当前为 `https://superspec.dev/schemas/workflow-v1.json`）。
+- `meta` 只包含 workflow 顶层除 `steps` 外的所有字段。
+- 对 workflow 顶层必填字段，只要 workflow 合法就一定会出现在 `meta`。
+- 对 workflow 顶层可选字段，只有在 workflow 中显式写出时才会出现在 `meta`。
+- `meta` 不包含运行期字段，例如 `createdAt`、`updatedAt`、`finishedAt`。
 - `runtime.updatedAt` 在每次协议写入（`next/complete/fail`）时刷新。
 - `runtime.steps[*]` 的执行状态只允许：`PENDING`、`READY`、`RUNNING`、`SUCCESS`、`FAILED`。
 - `runtime.steps[*]` 不包含 `output`、`error` 字段。
+- 在 fail-fast 失败终态下，所有剩余未终结步骤都会被收敛为 `FAILED`，因此终态快照中不应再出现 `PENDING`、`READY` 或 `RUNNING`。
+
+## `meta` 映射规则
+
+如果 workflow 文件是：
+
+```json
+{
+  "workflowId": "SDD",
+  "version": "1.0.0",
+  "description": "Default spec-driven development workflow",
+  "metadata": {
+    "channel": "default"
+  },
+  "steps": []
+}
+```
+
+那么 `state.json.meta` 会是：
+
+```json
+{
+  "workflowId": "SDD",
+  "version": "1.0.0",
+  "description": "Default spec-driven development workflow",
+  "metadata": {
+    "channel": "default"
+  }
+}
+```
+
+也就是说，当前实现不会对 workflow 顶层字段做重命名，也不会额外注入 `schemaVersion`。

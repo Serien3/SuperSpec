@@ -118,9 +118,23 @@ superspec git commit <change> --message "<commit message>"
 
 ## Change Commands
 
+### `superspec change list`
+
+列出所有未归档 change。
+
+```bash
+superspec change list
+```
+
+**Behavior:**
+| 行为 | 说明 |
+| ---- | ---- |
+| 列出未归档 change | 返回 `superspec/changes/` 下除 `archive/` 外的所有目录名。 |
+| 空结果处理 | 若目录不存在或没有未归档 change，则输出 `No changes found.` |
+
 ### `superspec change advance`
 
-统一入口：列出 change、推进现有 change，或创建并推进新 change。
+推进现有 change，或创建并推进新 change。
 
 ```bash
 superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--owner <owner>] [--json]
@@ -129,7 +143,6 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 **Modes:**
 | 模式 | 用法 | 说明 |
 | ---- | ---- | ---- |
-| 列表模式 | `superspec change advance` | 列出当前 changes。 |
 | 推进模式 | `superspec change advance <change>` | 拉取下一个可执行 step。 |
 | 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，初始化 `superspec/changes/<name>/execution/state.json` 与 `events.log` 并立即执行一次 next pull。 |
 
@@ -141,6 +154,8 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 | `--json`  | JSON 输出。 | `false` |
 
 > 不允许同时提供 `<change>` 和 `--new`。
+>
+> 兼容性说明：当前实现仍保留 `superspec change advance` 无参数时列出 changes 的旧行为，但显式列表命令应优先使用 `superspec change list`。
 
 ### `superspec change status`
 

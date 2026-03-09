@@ -35,7 +35,7 @@ class IntegrationTest(unittest.TestCase):
             change_name,
             [
                 {"id": "a1", "description": "openspec.proposal", "executor": "script", "script": "echo one"},
-                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "skill", "skill": "openspec-continue-change", "inputs": {"prompt": "draft specs"}},
+                {"id": "a2", "description": "openspec.specs", "dependsOn": ["a1"], "executor": "skill", "skill": "openspec-continue-change"},
                 {"id": "a3", "description": "openspec.design", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
             ],
         )
@@ -206,6 +206,7 @@ class IntegrationTest(unittest.TestCase):
         by_id = {step["id"]: step for step in after_fail["steps"]}
         self.assertEqual(by_id["a1"]["status"], "FAILED")
         self.assertEqual(by_id["a2"]["status"], "FAILED")
+        self.assertEqual(by_id["b1"]["status"], "FAILED")
         self.assertNotIn("error", by_id["a2"])
         self.assertEqual(after_fail["status"], "failed")
 
@@ -215,8 +216,8 @@ class IntegrationTest(unittest.TestCase):
         terminal = status_snapshot(plan, str(change_dir))
         self.assertEqual(terminal["status"], "failed")
         self.assertEqual(terminal["progress"]["done"], 0)
-        self.assertEqual(terminal["progress"]["failed"], 2)
-        self.assertEqual(terminal["progress"]["remaining"], 1)
+        self.assertEqual(terminal["progress"]["failed"], 3)
+        self.assertEqual(terminal["progress"]["remaining"], 0)
 
     def test_dependency_failure_propagates_and_never_emits_skipped(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -241,11 +242,12 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(by_id["a1"]["status"], "FAILED")
         self.assertEqual(by_id["a2"]["status"], "FAILED")
         self.assertEqual(by_id["a3"]["status"], "FAILED")
+        self.assertEqual(by_id["b1"]["status"], "FAILED")
         self.assertNotIn("error", by_id["a2"])
         self.assertNotIn("error", by_id["a3"])
         self.assertEqual(after_fail["progress"]["done"], 0)
-        self.assertEqual(after_fail["progress"]["failed"], 3)
-        self.assertEqual(after_fail["progress"]["remaining"], 1)
+        self.assertEqual(after_fail["progress"]["failed"], 4)
+        self.assertEqual(after_fail["progress"]["remaining"], 0)
         self.assertTrue(all(step["status"] != "SKIPPED" for step in after_fail["steps"]))
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
@@ -254,8 +256,8 @@ class IntegrationTest(unittest.TestCase):
         terminal = status_snapshot(plan, str(change_dir))
         self.assertEqual(terminal["status"], "failed")
         self.assertEqual(terminal["progress"]["done"], 0)
-        self.assertEqual(terminal["progress"]["failed"], 3)
-        self.assertEqual(terminal["progress"]["remaining"], 1)
+        self.assertEqual(terminal["progress"]["failed"], 4)
+        self.assertEqual(terminal["progress"]["remaining"], 0)
         self.assertTrue(all(step["status"] != "SKIPPED" for step in terminal["steps"]))
 
     def test_validate_rejects_missing_explicit_executor_even_with_skill_payload(self):
@@ -449,61 +451,6 @@ class IntegrationTest(unittest.TestCase):
         nxt = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["script_command"], "echo ${state.commit_by_superspec_last.commit_hash}")
-
-    def test_next_keeps_inputs_literal_without_runtime_resolution(self):
-        root, change_name, change_dir = self.setup_temp_change()
-        plan = self.build_plan(
-            root,
-            change_name,
-            [
-                {
-                    "id": "a1",
-                    "description": "openspec.specs",
-                    "executor": "skill",
-                    "skill": "openspec-continue-change",
-                    "inputs": {
-                        "change": "${context.changeName}",
-                        "items": ["${context.changeDir}", "${variables.seed}"],
-                        "nested": {"summary": "seed=${variables.seed}"},
-                    },
-                }
-            ],
-        )
-        plan["variables"] = {"seed": "from-vars"}
-        validate_runtime_seed(plan)
-
-        nxt = next_step(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(
-            nxt["step"]["inputs"],
-            {
-                "change": "${context.changeName}",
-                "items": ["${context.changeDir}", "${variables.seed}"],
-                "nested": {"summary": "seed=${variables.seed}"},
-            },
-        )
-
-    def test_next_does_not_treat_inputs_prompt_as_prompt_override(self):
-        root, _, change_dir = self.setup_temp_change()
-        plan = self.build_plan(
-            root,
-            "demo-change",
-            [
-                {
-                    "id": "a1",
-                    "description": "openspec.specs",
-                    "executor": "skill",
-                    "skill": "openspec-continue-change",
-                    "inputs": {"prompt": "input-only"},
-                }
-            ],
-        )
-        validate_runtime_seed(plan)
-
-        nxt = next_step(plan, str(change_dir), owner="agent-a")
-        self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["step"]["prompt"], "Invoke skill openspec-continue-change for step a1")
-        self.assertEqual(nxt["step"]["inputs"]["prompt"], "input-only")
 
     def test_human_executor_blocks_until_completion_and_emits_human_payload(self):
         root, change_name, change_dir = self.setup_temp_change()

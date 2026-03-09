@@ -1,15 +1,18 @@
 # change-advance-entrypoint Specification
 
 ## Purpose
-Define the unified `superspec change advance` entrypoint behavior for listing, creating, and advancing changes.
+Define the `superspec change` command entrypoints for listing, creating, and advancing changes.
 ## Requirements
-### Requirement: Unified change advance command modes
-The CLI SHALL provide a unified `superspec change advance` command that supports list mode, existing-change advance mode, and create-and-advance mode.
+### Requirement: Explicit change listing command
+The CLI SHALL provide `superspec change list` to return all unarchived changes.
 
-#### Scenario: List mode without arguments
-- **WHEN** a user runs `superspec change advance` with no positional change name and no `--new`
+#### Scenario: List unarchived changes
+- **WHEN** a user runs `superspec change list`
 - **THEN** the command lists change directories under `superspec/changes`
 - **AND** the output excludes non-change directories such as `archive`
+
+### Requirement: Change advance command modes
+The CLI SHALL provide `superspec change advance` for existing-change advance mode and create-and-advance mode.
 
 #### Scenario: Advance existing change by name
 - **WHEN** a user runs `superspec change advance <change-name>`
@@ -34,3 +37,11 @@ The CLI SHALL reject ambiguous `change advance` argument combinations with struc
 - **WHEN** a user provides `--new` without a `<workflow-type>/<change-name>` shape
 - **THEN** the command fails with an invalid selector error
 - **AND** the error includes remediation guidance for expected format
+
+### Requirement: Backward-compatible list alias
+The CLI MAY keep `superspec change advance` without arguments as a compatibility alias for `superspec change list`.
+
+#### Scenario: Advance without args falls back to list behavior
+- **WHEN** a user runs `superspec change advance` with no positional change name and no `--new`
+- **THEN** the command returns the same change listing semantics as `superspec change list`
+- **AND** the output excludes non-change directories such as `archive`

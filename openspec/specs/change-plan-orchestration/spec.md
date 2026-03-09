@@ -49,8 +49,7 @@ The system MUST persist workflow schema identity metadata in the state snapshot.
 
 #### Scenario: Snapshot records workflow schema identity
 - **WHEN** a new change snapshot is initialized
-- **THEN** `execution/state.json.meta.schemaVersion` records the workflow schema identity
-- **AND** `execution/state.json.meta.workflowId` and `meta.workflowDescription` record workflow identity and description
+- **THEN** `execution/state.json.meta` includes all workflow top-level fields except `steps`
 - **AND** runtime execution state remains in `execution/state.json.runtime`
 
 ### Requirement: Step dependency ordering
@@ -108,7 +107,8 @@ The system MUST persist execution state to allow interrupted runs to resume safe
 
 #### Scenario: Resume after failed step
 - **WHEN** a prior run failed after completing a subset of steps
-- **THEN** a resumed agent can continue by fetching the next runnable step via protocol commands
+- **THEN** a resumed agent observes terminal workflow state through protocol commands
+- **AND** no additional runnable step is allocated automatically after the failure
 - **AND** previously successful steps are not re-executed unless explicitly requested
 
 ### Requirement: Per-step execution logs
@@ -125,6 +125,7 @@ The system MUST apply terminal fail-fast behavior when any step failure is repor
 #### Scenario: Any reported failure halts workflow
 - **WHEN** a running step is reported failed through the protocol
 - **THEN** the workflow transitions to terminal `failed`
+- **AND** all remaining non-terminal steps are terminalized under the same failed run
 - **AND** no continuation policy is applied for additional autonomous steps
 
 ### Requirement: Retry fields have no runtime semantics

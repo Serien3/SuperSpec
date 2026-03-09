@@ -11,7 +11,7 @@ The system MUST support workflow-based runtime baseline generation when creating
 - **WHEN** a user runs `superspec change advance --new <schema>/<change-name>`
 - **THEN** the system resolves the selected workflow definition and writes a change-scoped `execution/state.json` with runtime step baseline
 - **AND** binds `runtime.changeName` to the requested `<change-name>`
-- **AND** writes workflow metadata in `state.json.meta` (`schemaVersion`, `workflowId`, `workflowDescription`)
+- **AND** writes all workflow top-level fields except `steps` into `state.json.meta`
 
 ### Requirement: Init-time generated runtime validation
 The system MUST validate generated runtime structure during snapshot generation before persisting `execution/state.json`.

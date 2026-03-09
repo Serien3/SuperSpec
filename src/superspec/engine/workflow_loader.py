@@ -429,11 +429,7 @@ def _workflow_runtime_blueprint_payload(workflow: dict, change_name: str):
     if normalized_actions:
         payload["steps"] = normalized_actions
 
-    payload["workflow"] = {
-        "id": workflow["workflowId"],
-        "version": workflow["version"],
-        "description": workflow.get("description"),
-    }
+    payload["workflow"] = {key: value for key, value in workflow.items() if key != "steps"}
     return payload
 
 

@@ -21,7 +21,7 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
 ### Step 1: Resolve the target change.
    - List existing changes first:
      ```bash
-     superspec change advance
+     superspec change list
      ```
    - Reuse existing change when the target name already exists in the command output.
    - Create when absent:
@@ -29,6 +29,7 @@ If `change_name` is missing, derive a kebab-case name (e.g., "add user authentic
      superspec change advance --new "<plan_schema>/<change_name>" --owner "<owner>" --json
      ```
    - New selector format is required: `<workflow-type>/<change-name>` (for example `SDD/add-user-auth`).
+   - Compatibility note: `superspec change advance` without args may still list changes in older flows, but prefer `change list`.
 
 ### Step 2: Run protocol loop until terminal.
    - Pull next step for existing change:

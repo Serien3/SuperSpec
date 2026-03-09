@@ -10,7 +10,7 @@ from superspec.engine.git_ops import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import resolve_change_dir, state_path_for_change, validate_change_name
 from superspec.engine.state_store import initialize_execution_snapshot
-from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source, workflow_schema_version
+from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
@@ -52,7 +52,6 @@ def _write_execution_snapshot(repo_root: Path, change_name: str, schema: str | N
     initialize_execution_snapshot(
         str(change_dir),
         runtime_blueprint,
-        workflow_schema_version=workflow_schema_version(),
     )
     return state_path_for_change(str(repo_root), change_name), selected_schema
 
@@ -295,6 +294,10 @@ def command_change_advance(repo_root: Path, args):
     _print_change_list(repo_root)
 
 
+def command_change_list(repo_root: Path, args):
+    _print_change_list(repo_root)
+
+
 def command_change_step_complete(repo_root: Path, args):
     run_protocol_action_from_cli(
         repo_root,
@@ -354,6 +357,7 @@ def build_parser():
 
     change = sub.add_parser("change")
     change_sub = change.add_subparsers(dest="sub")
+    change_sub.add_parser("list")
     change_advance = change_sub.add_parser("advance")
     change_advance.add_argument("change", nargs="?")
     change_advance.add_argument("--new")
@@ -444,6 +448,9 @@ def main():
             return
         if args.group == "change" and args.sub == "advance":
             command_change_advance(repo_root, args)
+            return
+        if args.group == "change" and args.sub == "list":
+            command_change_list(repo_root, args)
             return
         if args.group == "change" and args.sub == "status":
             command_change_status(repo_root, args)

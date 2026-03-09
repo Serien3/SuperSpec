@@ -49,13 +49,11 @@
     "script": {
       "executor": "script",
       "script_command": "string",
-      "inputs": "object (optional)",
       "prompt": "string"
     },
     "skill": {
       "executor": "skill",
       "skillName": "string",
-      "inputs": "object (optional)",
       "prompt": "string"
     },
     "human": {
@@ -63,13 +61,11 @@
       "human": {
         "instruction": "string"
       },
-      "inputs": "object (optional)",
       "prompt": "string"
     },
     "runtimeExpressionNotes": [
       "Runtime payload generation treats ${...} strings as literal values",
-      "When step.prompt is set, payload.prompt uses step.prompt for all executors",
-      "inputs remains input-definition data and is not used as prompt override source"
+      "When step.prompt is set, payload.prompt uses step.prompt for all executors"
     ]
   },
   "removed": [

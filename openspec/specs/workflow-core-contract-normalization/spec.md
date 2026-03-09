@@ -5,7 +5,7 @@ Define the minimal workflow core contract and separate execution-critical fields
 ## Requirements
 
 ### Requirement: Workflow defines explicit core field contract
-The workflow template SHALL define a minimal core contract with required top-level fields `workflowId`, `version`, and `steps`, and each step SHALL require `id`, `description`, and `executor`.
+The workflow template SHALL define a minimal core contract with required top-level fields `workflowId` and `steps`, optional top-level field `version`, and each step SHALL require `id`, `description`, and `executor`.
 
 #### Scenario: Missing core step executor is rejected
 - **WHEN** a workflow step omits `executor`

@@ -49,14 +49,6 @@ def state_path_for_change(repo_root: str, change_name: str) -> Path:
     return resolve_change_dir(repo_root, change_name) / "execution" / "state.json"
 
 
-def resolve_change_dir_from_definition_context(repo_root: str | Path, change_dir: str) -> Path:
-    if not isinstance(change_dir, str) or not change_dir.strip():
-        raise ProtocolError("Invalid change directory: expected a non-empty string.", code="invalid_path")
-    repo = Path(repo_root).resolve()
-    target = (repo / change_dir).resolve()
-    return _ensure_path_under_root(target, changes_root(repo), field="context.changeDir")
-
-
 def load_state_snapshot_from_change(repo_root: str, change_name: str):
     state_path = state_path_for_change(repo_root, change_name)
     if not state_path.exists():

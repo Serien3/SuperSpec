@@ -60,7 +60,7 @@ def _initial_runtime_state(runtime_blueprint: dict):
             "startedAt": None,
             "finishedAt": None,
         }
-        for field in ("executor", "skill", "script", "prompt", "inputs"):
+        for field in ("executor", "skill", "script", "prompt"):
             if field in step:
                 runtime_action[field] = step[field]
         if "human" in step:
@@ -76,15 +76,12 @@ def _initial_runtime_state(runtime_blueprint: dict):
     }
 
 
-def initialize_execution_snapshot(change_dir: str, runtime_blueprint: dict, workflow_schema_version: str | None = None):
+def initialize_execution_snapshot(change_dir: str, runtime_blueprint: dict):
     layout = ensure_execution_layout(change_dir)
     workflow_meta = runtime_blueprint.get("workflow") or {}
+    snapshot_meta = dict(workflow_meta) if isinstance(workflow_meta, dict) else {}
     snapshot = {
-        "meta": {
-            "schemaVersion": workflow_schema_version or "workflow.schema/unknown",
-            "workflowId": workflow_meta.get("id"),
-            "workflowDescription": workflow_meta.get("description"),
-        },
+        "meta": snapshot_meta,
         "runtime": _initial_runtime_state(runtime_blueprint),
     }
     write_json(layout["state"], snapshot)

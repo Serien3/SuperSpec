@@ -61,18 +61,10 @@ def _build_step_payload(step: dict):
             f"Invalid step '{step['id']}': prompt must be a string.",
             code="invalid_step_payload",
         )
-    rendered_inputs = step.get("inputs")
-    if rendered_inputs is not None and not isinstance(rendered_inputs, dict):
-        raise ProtocolError(
-            f"Invalid step '{step['id']}': inputs must be an object.",
-            code="invalid_step_payload",
-        )
     payload = {
         "stepId": step["id"],
         "executor": executor,
     }
-    if rendered_inputs is not None:
-        payload["inputs"] = rendered_inputs
 
     if executor == "script":
         command = step.get("script")
@@ -194,6 +186,26 @@ def _propagate_dependency_failures(change_dir: str, state: dict):
             return
 
 
+def _fail_remaining_steps(change_dir: str, state: dict, failed_by_step_id: str):
+    for step_state in state["steps"]:
+        if step_state["status"] not in {"PENDING", "READY", "RUNNING"}:
+            continue
+        if step_state["id"] == failed_by_step_id:
+            continue
+
+        step_state["status"] = "FAILED"
+        step_state["finishedAt"] = _now_iso()
+        append_event(
+            change_dir,
+            {
+                "event": "step.failed",
+                "stepId": step_state["id"],
+                "reason": "workflow_failed",
+                "failedBy": failed_by_step_id,
+            },
+        )
+
+
 def _terminalize_if_done(change_dir: str, state: dict):
     remaining = [s for s in state["steps"] if s["status"] in {"PENDING", "READY", "RUNNING"}]
     if not remaining:
@@ -301,6 +313,7 @@ def fail_step(runtime_seed: dict | None, change_dir: str, step_id: str):
 
     append_event(change_dir, {"event": "step.failed", "stepId": step_id, "reason": "reported_failure"})
     _propagate_dependency_failures(change_dir, state)
+    _fail_remaining_steps(change_dir, state, step_id)
     _refresh_ready_steps(state)
     _terminalize_if_done(change_dir, state)
     _persist(change_dir, state)

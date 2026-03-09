@@ -10,6 +10,7 @@ from unittest.mock import patch
 from superspec.cli import (
     build_parser,
     command_change_advance,
+    command_change_list,
     command_change_step_complete,
     command_change_step_fail,
 )
@@ -53,6 +54,26 @@ class ChangeNewCommandTest(unittest.TestCase):
 
         self.assertEqual(stdout.getvalue().splitlines(), ["add-test", "legacy"])
 
+    def test_change_list_parser_form(self):
+        parser = build_parser()
+
+        args = parser.parse_args(["change", "list"])
+        self.assertEqual(args.group, "change")
+        self.assertEqual(args.sub, "list")
+
+    def test_command_change_list_prints_unarchived_changes_only(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        changes_root = root / "superspec" / "changes"
+        (changes_root / "archive").mkdir(parents=True, exist_ok=True)
+        (changes_root / "add-test").mkdir(parents=True, exist_ok=True)
+        (changes_root / "legacy").mkdir(parents=True, exist_ok=True)
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            command_change_list(root, SimpleNamespace())
+
+        self.assertEqual(stdout.getvalue().splitlines(), ["add-test", "legacy"])
+
     def test_command_change_advance_existing_maps_to_next(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         args = SimpleNamespace(change="demo", new=None, owner="agent", json=True)
@@ -90,8 +111,6 @@ class ChangeNewCommandTest(unittest.TestCase):
         parser = build_parser()
         with self.assertRaises(SystemExit):
             parser.parse_args(["change", "new", "demo-change"])
-        with self.assertRaises(SystemExit):
-            parser.parse_args(["change", "list"])
         with self.assertRaises(SystemExit):
             parser.parse_args(["plan", "init", "demo-change", "--schema", "SDD"])
         with self.assertRaises(SystemExit):

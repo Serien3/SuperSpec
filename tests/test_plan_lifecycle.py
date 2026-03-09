@@ -53,8 +53,9 @@ class PlanLifecycleTest(unittest.TestCase):
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
-        self.assertEqual(snapshot["meta"]["workflowDescription"], "Default spec-driven development workflow")
-        self.assertNotIn("workflowVersion", snapshot["meta"])
+        self.assertEqual(snapshot["meta"]["description"], "Default spec-driven development workflow")
+        self.assertIn("version", snapshot["meta"])
+        self.assertNotIn("schemaVersion", snapshot["meta"])
         self.assertNotIn("createdAt", snapshot["meta"])
         self.assertNotIn("updatedAt", snapshot["meta"])
 
@@ -69,7 +70,7 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertTrue(plan_path.exists())
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
-        self.assertEqual(snapshot["meta"]["workflowDescription"], "Default spec-driven development workflow")
+        self.assertEqual(snapshot["meta"]["description"], "Default spec-driven development workflow")
         self.assertNotIn("definition", snapshot)
 
     def test_plan_init_supports_explicit_schema_selection(self):
@@ -99,7 +100,37 @@ class PlanLifecycleTest(unittest.TestCase):
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "custom-flow")
-        self.assertEqual(snapshot["meta"]["workflowDescription"], "Custom workflow description")
+        self.assertEqual(snapshot["meta"]["version"], "1.0.0")
+        self.assertEqual(snapshot["meta"]["description"], "Custom workflow description")
+        self.assertEqual(snapshot["meta"]["metadata"], {"channel": "test"})
+
+    def test_plan_init_supports_workflow_without_version(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        custom = {
+            "workflowId": "no-version-flow",
+            "description": "Workflow without explicit version",
+            "steps": [
+                {
+                    "id": "x1",
+                    "description": "openspec.apply",
+                    "executor": "skill",
+                    "skill": "openspec-apply-change",
+                }
+            ],
+        }
+        custom_path = root / "superspec" / "schemas" / "workflows" / "no-version-flow.workflow.json"
+        custom_path.write_text(json.dumps(custom, indent=2), encoding="utf-8")
+
+        self._init_plan(root, "demo-change", "no-version-flow")
+
+        snapshot = self._load_snapshot(root, "demo-change")
+        self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
+        self.assertEqual(snapshot["meta"]["workflowId"], "no-version-flow")
+        self.assertEqual(snapshot["meta"]["description"], "Workflow without explicit version")
+        self.assertNotIn("version", snapshot["meta"])
+        self.assertNotIn("metadata", snapshot["meta"])
 
     def test_plan_init_rejects_legacy_plan_overlay_field(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -222,7 +253,7 @@ class PlanLifecycleTest(unittest.TestCase):
             json.dumps(
                 {
                     "workflowId": "broken",
-                    # Missing required version and steps.
+                    # Missing required steps.
                 },
                 indent=2,
             ),

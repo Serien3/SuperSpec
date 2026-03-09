@@ -315,26 +315,6 @@ def command_change_step_fail(repo_root: Path, args):
     print(f"Step {args.step_id} marked failed.")
 
 
-def command_plan_approve(repo_root: Path, args):
-    run_protocol_action_from_cli(
-        repo_root,
-        args.change,
-        "complete",
-        step_id=args.step_id,
-    )
-    print(f"Step {args.step_id} approved.")
-
-
-def command_plan_reject(repo_root: Path, args):
-    run_protocol_action_from_cli(
-        repo_root,
-        args.change,
-        "fail",
-        step_id=args.step_id,
-    )
-    print(f"Step {args.step_id} rejected.")
-
-
 def command_change_status(repo_root: Path, args):
     payload = run_protocol_action_from_cli(
         repo_root,
@@ -396,17 +376,6 @@ def build_parser():
     change_step_fail = change_sub.add_parser("stepFail")
     change_step_fail.add_argument("change")
     change_step_fail.add_argument("step_id")
-
-    plan = sub.add_parser("plan")
-    plan_sub = plan.add_subparsers(dest="sub")
-
-    plan_approve = plan_sub.add_parser("approve")
-    plan_approve.add_argument("change")
-    plan_approve.add_argument("step_id")
-
-    plan_reject = plan_sub.add_parser("reject")
-    plan_reject.add_argument("change")
-    plan_reject.add_argument("step_id")
 
     validate = sub.add_parser("validate")
     validate.add_argument("--schema")
@@ -496,12 +465,6 @@ def main():
             return
         if args.group == "git" and args.sub == "commit":
             command_git_commit(repo_root, args)
-            return
-        if args.group == "plan" and args.sub == "approve":
-            command_plan_approve(repo_root, args)
-            return
-        if args.group == "plan" and args.sub == "reject":
-            command_plan_reject(repo_root, args)
             return
         parser.print_help()
         raise SystemExit(1)

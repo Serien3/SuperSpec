@@ -196,33 +196,3 @@ superspec change stepFail <change> <step_id>
 | ------------- | ---------------------- | -------- |
 | `<change>`    | `change`名称           | Required |
 | `<step_id>` | 要失败的 step 标识。 | Required |
-
-## Plan Commands
-
-### `superspec plan approve`
-
-人类审批通过快捷命令（内部映射为 `complete`）。
-
-```bash
-superspec plan approve <change> <step_id>
-```
-
-**Arguments:**
-| Argument      | description            | default  |
-| ------------- | ---------------------- | -------- |
-| `<change>`    | `change`名称           | Required |
-| `<step_id>` | 要审批的 step 标识。 | Required |
-
-### `superspec plan reject`
-
-人类审批拒绝快捷命令（内部映射为 `fail`）。
-
-```bash
-superspec plan reject <change> <step_id>
-```
-
-**Arguments:**
-| Argument      | description            | default  |
-| ------------- | ---------------------- | -------- |
-| `<change>`    | `change`名称           | Required |
-| `<step_id>` | 要拒绝的 step 标识。 | Required |

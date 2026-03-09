@@ -81,11 +81,11 @@ Note:
      - Present `step.human.instruction` and wait for human decision.
      - If human approves, run
        ```bash
-       superspec plan approve "<change_name>" "<stepId>"
+       superspec change stepComplete "<change_name>" "<stepId>"
        ```
      - If human rejects, run
        ```bash
-       superspec plan reject "<change_name>" "<stepId>"
+       superspec change stepFail "<change_name>" "<stepId>"
        ```
 
 ### Step 5: Produce terminal result and feedback.

@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
 
-from superspec.engine.change_loader import (
+from superspec.engine.changes.paths import (
     load_execution_snapshot_for_change,
     resolve_change_dir,
 )
+from superspec.engine.execution.actions import complete_step, fail_step, next_step
+from superspec.engine.execution.status import status_snapshot
 from superspec.engine.errors import ProtocolError
-from superspec.engine.protocol import complete_step, fail_step, next_step, status_snapshot
 
 
 def run_protocol_action_from_cli(repo_root: Path, change_name: str, command: str, **kwargs):

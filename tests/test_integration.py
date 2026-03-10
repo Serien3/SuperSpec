@@ -2,9 +2,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from superspec.engine.execution.actions import complete_step, fail_step, next_step
+from superspec.engine.execution.status import status_snapshot
+from superspec.engine.execution.validation import validate_runtime_seed
 from superspec.engine.errors import ProtocolError, ValidationError
-from superspec.engine.protocol import complete_step, fail_step, next_step, status_snapshot
-from superspec.engine.runtime_validator import validate_runtime_seed
 
 
 class IntegrationTest(unittest.TestCase):

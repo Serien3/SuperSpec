@@ -5,12 +5,12 @@ from importlib import metadata
 from pathlib import Path
 
 from superspec import __version__
-from superspec.engine.change_loader import resolve_change_dir, state_path_for_change, validate_change_name
+from superspec.engine.changes.paths import resolve_change_dir, state_path_for_change, validate_change_name
 from superspec.engine.errors import ProtocolError
-from superspec.engine.git_ops import commit_for_change
+from superspec.engine.scm.git_commit import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
-from superspec.engine.state_store import initialize_execution_snapshot
-from superspec.engine.workflow_loader import build_runtime_blueprint_from_workflow, validate_workflow_source
+from superspec.engine.storage.execution_snapshot import initialize_execution_snapshot
+from superspec.engine.workflows.service import build_runtime_blueprint_from_workflow, validate_workflow_source
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 

@@ -21,7 +21,7 @@ class CliInitCommandTest(unittest.TestCase):
         self.assertEqual(sorted(item.name for item in changes_root.iterdir()), ["archive"])
         self.assertEqual(list(archive_dir.iterdir()), [])
         self.assertEqual(list(specs_root.iterdir()), [])
-        self.assertTrue((root / ".codex" / "skills" / "superspec-run-change-to-done" / "SKILL.md").exists())
+        self.assertTrue((root / ".codex" / "skills" / "superspec-finish-a-change" / "SKILL.md").exists())
         self.assertTrue((root / "agents" / "code-reviewer.toml").exists())
         self.assertTrue((root / ".codex" / "config.toml").exists())
 
@@ -33,7 +33,7 @@ class CliInitCommandTest(unittest.TestCase):
 
         args = SimpleNamespace(agent="codex")
         command_init(root, args)
-        self.assertTrue((root / ".codex" / "skills" / "superspec-run-change-to-done" / "SKILL.md").exists())
+        self.assertTrue((root / ".codex" / "skills" / "superspec-finish-a-change" / "SKILL.md").exists())
         self.assertFalse((root / ".codex" / "skills" / "project-only" / "SKILL.md").exists())
         self.assertTrue((root / "agents" / "code-reviewer.toml").exists())
         self.assertTrue((root / ".codex" / "config.toml").exists())

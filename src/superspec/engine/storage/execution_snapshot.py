@@ -1,58 +1,19 @@
-import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 from superspec.engine.errors import ProtocolError
+from superspec.engine.storage.execution_files import ensure_execution_layout
+from superspec.engine.storage.json_files import read_json, write_json
 
 
-def _now_iso():
+def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
-def execution_dir(change_dir: str) -> Path:
-    return Path(change_dir) / "execution"
-
-
-def ensure_execution_layout(change_dir: str):
-    base = execution_dir(change_dir)
-    base.mkdir(parents=True, exist_ok=True)
-    return {
-        "dir": base,
-        "state": base / "state.json",
-        "events": base / "events.log",
-    }
-
-
-def write_json(path: Path, payload: dict):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-
-def read_json(path: Path, default=None):
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise ProtocolError(
-            f"Invalid JSON in state file: {path}.",
-            code="invalid_json",
-            details={"path": str(path)},
-        ) from exc
-
-
-def append_event(change_dir: str, event: dict):
-    layout = ensure_execution_layout(change_dir)
-    event_line = {"ts": _now_iso(), **event}
-    with layout["events"].open("a", encoding="utf-8") as f:
-        f.write(json.dumps(event_line, ensure_ascii=True) + "\n")
-
-
-def _initial_runtime_state(runtime_blueprint: dict):
-    now = _now_iso()
-    runtime_actions = []
+def initial_runtime_state(runtime_blueprint: dict):
+    now = now_iso()
+    runtime_steps = []
     for step in runtime_blueprint["steps"]:
-        runtime_action = {
+        runtime_step = {
             "id": step["id"],
             "description": step["description"],
             "status": "PENDING",
@@ -62,17 +23,17 @@ def _initial_runtime_state(runtime_blueprint: dict):
         }
         for field in ("executor", "skill", "script", "prompt"):
             if field in step:
-                runtime_action[field] = step[field]
+                runtime_step[field] = step[field]
         if "option" in step:
-            runtime_action["option"] = step["option"]
-        runtime_actions.append(runtime_action)
+            runtime_step["option"] = step["option"]
+        runtime_steps.append(runtime_step)
 
     return {
         "changeName": runtime_blueprint["changeName"],
         "status": "running",
         "startedAt": now,
         "updatedAt": now,
-        "steps": runtime_actions,
+        "steps": runtime_steps,
     }
 
 
@@ -82,10 +43,9 @@ def initialize_execution_snapshot(change_dir: str, runtime_blueprint: dict):
     snapshot_meta = dict(workflow_meta) if isinstance(workflow_meta, dict) else {}
     snapshot = {
         "meta": snapshot_meta,
-        "runtime": _initial_runtime_state(runtime_blueprint),
+        "runtime": initial_runtime_state(runtime_blueprint),
     }
     write_json(layout["state"], snapshot)
-    append_event(change_dir, {"event": "state.initialized", "changeName": runtime_blueprint["changeName"]})
     return snapshot
 
 
@@ -107,7 +67,7 @@ def write_execution_state(change_dir: str, payload: dict):
             "Execution state file not found or unreadable.",
             code="missing_file",
             details={"path": str(layout["state"])},
-    )
+        )
     snapshot["runtime"] = payload
     write_json(layout["state"], snapshot)
 
@@ -121,7 +81,7 @@ def read_execution_state(change_dir: str):
         raise ProtocolError(
             f"Invalid execution state file: {layout['state']}.",
             code="invalid_json",
-            details={"path": str(layout["state"])},
+            details={"path": str(layout['state'])},
         )
     runtime = snapshot.get("runtime")
     if runtime is None:
@@ -130,6 +90,6 @@ def read_execution_state(change_dir: str):
         raise ProtocolError(
             f"Invalid runtime section in state file: {layout['state']}.",
             code="invalid_json",
-            details={"path": str(layout["state"])},
+            details={"path": str(layout['state'])},
         )
     return runtime

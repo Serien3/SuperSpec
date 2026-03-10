@@ -4,12 +4,14 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from superspec.engine.change_loader import resolve_change_dir
+from superspec.engine.changes.paths import resolve_change_dir
 from superspec.engine.errors import ProtocolError
-from superspec.engine.state_store import append_event, execution_dir, read_execution_state, write_execution_state
+from superspec.engine.storage.events import append_event
+from superspec.engine.storage.execution_files import execution_dir
+from superspec.engine.storage.execution_snapshot import read_execution_state, write_execution_state
 
 
-def _run_git(repo_root: Path, args: list[str]) -> str:
+def run_git(repo_root: Path, args: list[str]) -> str:
     proc = subprocess.run(
         ["git", "-C", str(repo_root), *args],
         text=True,
@@ -51,8 +53,8 @@ def commit_for_change(repo_root: Path, change_name: str, message: str) -> dict:
             details={"change": change_name, "status": state.get("status")},
         )
 
-    _run_git(repo_root, ["commit", "-m", normalized_message])
-    commit_hash = _run_git(repo_root, ["rev-parse", "HEAD"])
+    run_git(repo_root, ["commit", "-m", normalized_message])
+    commit_hash = run_git(repo_root, ["rev-parse", "HEAD"])
 
     commit_record = {
         "commit_hash": commit_hash,

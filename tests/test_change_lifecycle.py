@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from superspec.cli import _bootstrap_execution_snapshot, command_validate
-from superspec.engine.change_loader import resolve_change_dir
+from superspec.engine.changes.paths import resolve_change_dir
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli
 

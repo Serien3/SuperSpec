@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from superspec.engine.errors import ProtocolError
-from superspec.engine.git_ops import commit_for_change
+from superspec.engine.scm.git_commit import commit_for_change
 
 
 class GitCommitTest(unittest.TestCase):

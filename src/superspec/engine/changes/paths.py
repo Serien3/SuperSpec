@@ -2,13 +2,13 @@ import json
 import re
 from pathlib import Path
 
-from .errors import ProtocolError
+from superspec.engine.errors import ProtocolError
 
 
-_CHANGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+CHANGE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
-def _ensure_path_under_root(path: Path, root: Path, *, field: str):
+def ensure_path_under_root(path: Path, root: Path, *, field: str):
     resolved_path = path.resolve()
     resolved_root = root.resolve()
     if not resolved_path.is_relative_to(resolved_root):
@@ -21,7 +21,7 @@ def _ensure_path_under_root(path: Path, root: Path, *, field: str):
 
 
 def validate_change_name(change_name: str):
-    if not isinstance(change_name, str) or not _CHANGE_NAME_PATTERN.fullmatch(change_name):
+    if not isinstance(change_name, str) or not CHANGE_NAME_PATTERN.fullmatch(change_name):
         raise ProtocolError(
             "Invalid change name. Use letters, numbers, dot, underscore, hyphen; first character must be alphanumeric.",
             code="invalid_change_name",
@@ -42,7 +42,7 @@ def changes_root(repo_root: str | Path) -> Path:
 def resolve_change_dir(repo_root: str, change_name: str) -> Path:
     validate_change_name(change_name)
     root = changes_root(repo_root)
-    return _ensure_path_under_root(root / change_name, root, field="change")
+    return ensure_path_under_root(root / change_name, root, field="change")
 
 
 def state_path_for_change(repo_root: str, change_name: str) -> Path:

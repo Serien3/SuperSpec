@@ -79,7 +79,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         custom = {
             "workflowId": "custom-flow",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "description": "Custom workflow description",
             "metadata": {"channel": "test"},
             "steps": [
@@ -100,7 +100,7 @@ class PlanLifecycleTest(unittest.TestCase):
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "custom-flow")
-        self.assertEqual(snapshot["meta"]["version"], "1.0.0")
+        self.assertEqual(snapshot["meta"]["version"], "1.1.0")
         self.assertEqual(snapshot["meta"]["description"], "Custom workflow description")
         self.assertEqual(snapshot["meta"]["metadata"], {"channel": "test"})
 
@@ -138,7 +138,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         custom = {
             "workflowId": "legacy-plan",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -170,7 +170,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         custom = {
             "workflowId": "unknown-field",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -212,7 +212,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         custom = {
             "workflowId": "with-removed-customization",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "title": "Workflow title",
             "goal": "Workflow goal",
             "variables": {
@@ -325,7 +325,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         custom = {
             "workflowId": "quick-apply",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -353,7 +353,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         workflow = {
             "workflowId": "by-file",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -383,7 +383,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         broken = {
             "workflowId": "broken",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -413,7 +413,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         broken = {
             "workflowId": "broken-defaults",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "defaults": {
                 "executor": "skill",
                 "unknown": True,
@@ -437,7 +437,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         broken = {
             "workflowId": "executor-mismatch",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -458,7 +458,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         broken = {
             "workflowId": "missing-explicit-executor",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -484,7 +484,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         broken = {
             "workflowId": "mixed-executor-payloads",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -512,7 +512,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         workflow = {
             "workflowId": "human-exec",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -533,7 +533,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         workflow = {
             "workflowId": "human-exec-no-payload",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -553,7 +553,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         workflow = {
             "workflowId": "step-prompt",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -575,7 +575,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         workflow = {
             "workflowId": "removed-step-fields",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",
@@ -599,7 +599,7 @@ class PlanLifecycleTest(unittest.TestCase):
 
         workflow = {
             "workflowId": "human-partial",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "steps": [
                 {
                     "id": "x1",

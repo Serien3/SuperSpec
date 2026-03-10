@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the protocol-driven, agent-executed step flow for SuperSpec v1.0.0, including pull-based step retrieval, serial reporting, and executor-specific payload contracts.
+Define the protocol-driven, agent-executed step flow for SuperSpec v1.1.0, including pull-based step retrieval, serial reporting, and executor-specific payload contracts.
 ## Requirements
 ### Requirement: Next-step retrieval command
 The system MUST provide a command to retrieve exactly one executable step for a change in structured JSON form.

@@ -42,7 +42,7 @@
 ```json
 {
   "workflowId": "spec-dev",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Default spec-dev workflow",
   "metadata": {
     "channel": "default"
@@ -56,7 +56,7 @@
 ```json
 {
   "workflowId": "spec-dev",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Default spec-dev workflow",
   "metadata": {
     "channel": "default"

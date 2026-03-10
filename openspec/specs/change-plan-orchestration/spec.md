@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the change-scoped plan orchestration behavior for SuperSpec v1.0.0, including plan validation, protocol-driven step execution, and execution state tracking.
+Define the change-scoped plan orchestration behavior for SuperSpec v1.1.0, including plan validation, protocol-driven step execution, and execution state tracking.
 ## Requirements
 ### Requirement: Change-scoped runtime snapshot
 The system MUST support a change-scoped runtime snapshot in `superspec/changes/<change-name>/execution/state.json` as the authoritative execution state for that change.

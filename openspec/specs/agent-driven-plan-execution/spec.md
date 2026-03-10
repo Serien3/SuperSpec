@@ -52,7 +52,8 @@ The system MUST return normalized execution payloads that distinguish script, sk
 
 #### Scenario: Human step payload
 - **WHEN** the next step uses `executor=human`
-- **THEN** the payload includes `human` review metadata and `prompt`
+- **THEN** the payload includes `prompt`
+- **AND** may include `option` review metadata when configured on the step
 - **AND** does not include `script_command` or `skillName`
 
 #### Scenario: Runtime fields are not expression-expanded

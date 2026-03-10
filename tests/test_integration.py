@@ -45,7 +45,9 @@ class IntegrationTest(unittest.TestCase):
         while True:
             nxt = next_step(plan, str(change_dir), owner="tester")
             if nxt["state"] == "done":
+                self.assertEqual(nxt["change"], change_name)
                 break
+            self.assertEqual(nxt["change"], change_name)
             self.assertEqual(nxt["state"], "ready")
             step_id = nxt["step"]["stepId"]
             complete_step(plan, str(change_dir), step_id)
@@ -180,6 +182,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(status_after_fail["status"], "failed")
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "done")
         terminal = status_snapshot(plan, str(change_dir))
         self.assertEqual(terminal["status"], "failed")
@@ -211,6 +214,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(after_fail["status"], "failed")
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "done")
 
         terminal = status_snapshot(plan, str(change_dir))
@@ -251,6 +255,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(all(step["status"] != "SKIPPED" for step in after_fail["steps"]))
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "done")
 
         terminal = status_snapshot(plan, str(change_dir))
@@ -330,6 +335,7 @@ class IntegrationTest(unittest.TestCase):
         validate_runtime_seed(plan)
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["script_command"], "echo ${variables.missingVar}")
 
@@ -351,6 +357,7 @@ class IntegrationTest(unittest.TestCase):
         validate_runtime_seed(plan)
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["script_command"], "${variables.command}")
 
@@ -364,7 +371,7 @@ class IntegrationTest(unittest.TestCase):
                     "id": "a1",
                     "description": "runtime.human.type.mismatch",
                     "executor": "human",
-                    "human": {
+                    "option": {
                         "approveLabel": "${variables.approve}",
                         "rejectLabel": "${variables.reject}",
                     },
@@ -375,9 +382,10 @@ class IntegrationTest(unittest.TestCase):
         validate_runtime_seed(plan)
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "ready")
-        self.assertEqual(nxt["step"]["human"]["approveLabel"], "${variables.approve}")
-        self.assertEqual(nxt["step"]["human"]["rejectLabel"], "${variables.reject}")
+        self.assertEqual(nxt["step"]["option"]["approveLabel"], "${variables.approve}")
+        self.assertEqual(nxt["step"]["option"]["rejectLabel"], "${variables.reject}")
 
     def test_next_ignores_unresolved_expressions_outside_runtime_fields(self):
         root, change_name, change_dir = self.setup_temp_change()
@@ -397,6 +405,7 @@ class IntegrationTest(unittest.TestCase):
         validate_runtime_seed(plan)
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["stepId"], "a1")
         self.assertEqual(nxt["step"]["script_command"], "echo one")
@@ -424,6 +433,7 @@ class IntegrationTest(unittest.TestCase):
         complete_step(plan, str(change_dir), "a1")
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["prompt"], "Write specs for ${context.changeName}; seed=${steps.a1.outputs.summary}")
 
@@ -451,6 +461,7 @@ class IntegrationTest(unittest.TestCase):
         complete_step(plan, str(change_dir), "a1")
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["script_command"], "echo ${state.commit_by_superspec_last.commit_hash}")
 
@@ -464,7 +475,7 @@ class IntegrationTest(unittest.TestCase):
                     "id": "a1",
                     "description": "human.review",
                     "executor": "human",
-                    "human": {
+                    "option": {
                         "approveLabel": "Approve",
                         "rejectLabel": "Reject",
                     },
@@ -476,14 +487,16 @@ class IntegrationTest(unittest.TestCase):
         validate_runtime_seed(plan)
 
         first = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["change"], change_name)
         self.assertEqual(first["state"], "ready")
         self.assertEqual(first["step"]["executor"], "human")
         self.assertEqual(first["step"]["stepId"], "a1")
-        self.assertEqual(first["step"]["human"]["approveLabel"], "Approve")
-        self.assertEqual(first["step"]["human"]["rejectLabel"], "Reject")
+        self.assertEqual(first["step"]["option"]["approveLabel"], "Approve")
+        self.assertEqual(first["step"]["option"]["rejectLabel"], "Reject")
         self.assertEqual(first["step"]["prompt"], "Review generated code and decide whether to continue")
 
         resumed = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(resumed["change"], change_name)
         self.assertEqual(resumed["state"], "ready")
         self.assertEqual(resumed["step"]["stepId"], "a1")
 
@@ -492,7 +505,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(by_id["a1"]["status"], "SUCCESS")
         self.assertEqual(by_id["a2"]["status"], "READY")
 
-    def test_validate_rejects_human_executor_without_labels(self):
+    def test_human_executor_can_run_without_human_payload(self):
         root, change_name, _ = self.setup_temp_change()
         plan = self.build_plan(
             root,
@@ -502,7 +515,31 @@ class IntegrationTest(unittest.TestCase):
                     "id": "a1",
                     "description": "human.review",
                     "executor": "human",
-                    "human": {},
+                }
+            ],
+        )
+
+        validate_runtime_seed(plan)
+
+        first = next_step(plan, str(root / "superspec" / "changes" / change_name), owner="agent-a")
+        self.assertEqual(first["change"], change_name)
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["step"]["executor"], "human")
+        self.assertEqual(first["step"]["stepId"], "a1")
+        self.assertEqual(first["step"]["prompt"], "Wait for human review on step a1")
+        self.assertNotIn("option", first["step"])
+
+    def test_validate_rejects_partial_human_executor_payload(self):
+        root, change_name, _ = self.setup_temp_change()
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {
+                    "id": "a1",
+                    "description": "human.review",
+                    "executor": "human",
+                    "option": {"approveLabel": "Approve"},
                 }
             ],
         )

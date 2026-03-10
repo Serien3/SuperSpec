@@ -78,19 +78,20 @@ def _build_step_payload(step: dict):
         return payload
 
     if executor == "human":
-        human = step.get("human")
-        if (
-            not isinstance(human, dict)
-            or not isinstance(human.get("approveLabel"), str)
-            or not human.get("approveLabel")
-            or not isinstance(human.get("rejectLabel"), str)
-            or not human.get("rejectLabel")
+        option = step.get("option")
+        if option is not None and (
+            not isinstance(option, dict)
+            or not isinstance(option.get("approveLabel"), str)
+            or not option.get("approveLabel")
+            or not isinstance(option.get("rejectLabel"), str)
+            or not option.get("rejectLabel")
         ):
             raise ProtocolError(
-                f"Invalid step '{step['id']}': human executor requires non-empty approve/reject labels.",
+                f"Invalid step '{step['id']}': option payload requires non-empty approve/reject labels when provided.",
                 code="invalid_step_payload",
             )
-        payload["human"] = human
+        if isinstance(option, dict):
+            payload["option"] = option
         payload["prompt"] = rendered_prompt or f"Wait for human review on step {step['id']}"
         return payload
 
@@ -224,10 +225,12 @@ def _terminalize_if_done(change_dir: str, state: dict):
 def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
     state = ensure_protocol_state(runtime_seed, change_dir)
     _refresh_ready_steps(state)
+    change_name = state.get("changeName")
 
     if state["status"] in {"success", "failed"}:
         _persist(change_dir, state)
         return {
+            "change": change_name,
             "state": "done",
             "step": None,
         }
@@ -238,6 +241,7 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
         payload = _build_step_payload(step_state)
         _persist(change_dir, state)
         return {
+            "change": change_name,
             "state": "ready",
             "step": payload,
         }
@@ -260,6 +264,7 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
         )
         _persist(change_dir, state)
         return {
+            "change": change_name,
             "state": "ready",
             "step": payload,
         }
@@ -268,11 +273,13 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
     _persist(change_dir, state)
     if state["status"] in {"success", "failed"}:
         return {
+            "change": change_name,
             "state": "done",
             "step": None,
         }
 
     return {
+        "change": change_name,
         "state": "blocked",
         "step": None,
     }
@@ -330,7 +337,7 @@ def _contracts_payload():
     return {
         "next": {
             "states": ["ready", "blocked", "done"],
-            "fields": ["state", "step"],
+            "fields": ["change", "state", "step"],
             "errors": ["invalid_step_payload"],
         },
         "stepComplete": {
@@ -354,7 +361,7 @@ def _contracts_payload():
         "stepPayload": {
             "script": ["stepId", "executor", "script_command", "prompt"],
             "skill": ["stepId", "executor", "skillName", "prompt"],
-            "human": ["stepId", "executor", "human", "prompt"],
+            "human": ["stepId", "executor", "prompt", "option(optional)"],
         },
     }
 

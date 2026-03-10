@@ -74,17 +74,17 @@ The system MUST support `skill`, `script`, and `human` executors using a shared 
 
 #### Scenario: Skill executor step
 - **WHEN** an step declares `executor: skill`
-- **THEN** the execution protocol returns a skill step payload containing `skillName` and `prompt`
+- **THEN** the execution protocol returns a next-step payload containing `change`, `skillName`, and `prompt`
 - **AND** completion only transitions state without storing an step output payload
 
 #### Scenario: Script executor step
 - **WHEN** an step declares `executor: script`
-- **THEN** the execution protocol returns a script step payload containing `script_command` and `prompt`
+- **THEN** the execution protocol returns a next-step payload containing `change`, `script_command`, and `prompt`
 - **AND** completion only transitions state without storing an step output payload
 
 #### Scenario: Human executor step
 - **WHEN** an step declares `executor: human`
-- **THEN** the execution protocol returns a human step payload containing `human` review metadata and `prompt`
+- **THEN** the execution protocol returns a next-step payload containing `change`, optional `option` review metadata, and `prompt`
 - **AND** completion only transitions state without storing an step output payload
 
 #### Scenario: No implicit executor inference

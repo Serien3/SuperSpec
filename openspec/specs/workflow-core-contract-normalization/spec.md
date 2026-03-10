@@ -20,13 +20,13 @@ The system SHALL require exactly one executor payload that matches `steps[].exec
 - **THEN** validation fails for the step payload contract
 - **AND** diagnostics identify the invalid mixed executor payload
 
-#### Scenario: Human executor without approve/reject labels is rejected
-- **WHEN** an step sets `executor: "human"` and omits `human.approveLabel` or `human.rejectLabel`
+#### Scenario: Partial human review labels are rejected
+- **WHEN** an step sets `executor: "human"` and provides `option` but omits `option.approveLabel` or `option.rejectLabel`
 - **THEN** validation fails for the missing human review label field
 - **AND** command exits non-zero
 
 ### Requirement: Workflow optional fields are explicitly bounded
-The workflow template SHALL allow only explicit optional fields: top-level `description` and `metadata`; and step-level `dependsOn`, `prompt`, plus executor-matching payload fields `skill` or `script` or `human`.
+The workflow template SHALL allow only explicit optional fields: top-level `description` and `metadata`; and step-level `dependsOn`, `prompt`, plus executor-matching payload fields `skill` or `script` or `option`.
 
 #### Scenario: Removed optional step fields are rejected
 - **WHEN** an step includes unsupported optional fields outside the bounded set

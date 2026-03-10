@@ -1,0 +1,59 @@
+{
+  "workflowId": "spec-dev",
+  "version": "1.0.0",
+  "description": "Default spec-dev workflow",
+  "steps": [
+    {
+      "id": "a1",
+      "description": "proposal",
+      "executor": "skill",
+      "skill": "writing-proposal"
+    },
+    {
+      "id": "a2",
+      "description": "human-review-proposal",
+      "executor": "human",
+      "prompt": "Waiting for humans to review the proposal and give feedback.Ask the human if they approve(\"approveLabel\") this proposal. If human rejects(\"rejectLabel\") the proposal and makes new requests, modify the proposal until the user agrees.",
+      "option": {
+        "approveLabel": "approve and continue",
+        "rejectLabel": "Reject and modify proposal"
+      }
+    },
+    {
+      "id": "a3",
+      "description": "specs",
+      "dependsOn": [
+        "a2"
+      ],
+      "executor": "skill",
+      "skill": "writing-specs"
+    },
+    {
+      "id": "a4",
+      "description": "design",
+      "dependsOn": [
+        "a3"
+      ],
+      "executor": "skill",
+      "skill": "writing-design"
+    },
+    {
+      "id": "a5",
+      "description": "tasks",
+      "dependsOn": [
+        "a4"
+      ],
+      "executor": "skill",
+      "skill": "writing-tasks"
+    },
+    {
+      "id": "a6",
+      "description": "execute-change",
+      "dependsOn": [
+        "a5"
+      ],
+      "executor": "skill",
+      "skill": "executing-change"
+    }
+  ]
+}

@@ -31,13 +31,13 @@ class ChangeNewCommandTest(unittest.TestCase):
         self.assertEqual(args.change, "demo-change")
         self.assertIsNone(args.new)
 
-        args = parser.parse_args(["change", "advance", "--new", "SDD/demo-change", "--json"])
-        self.assertEqual(args.new, "SDD/demo-change")
+        args = parser.parse_args(["change", "advance", "--new", "spec-dev/demo-change", "--json"])
+        self.assertEqual(args.new, "spec-dev/demo-change")
         self.assertTrue(args.json)
 
     def test_command_change_advance_rejects_mixed_selector_and_change(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        args = SimpleNamespace(change="demo-change", new="SDD/other", owner="agent", json=False)
+        args = SimpleNamespace(change="demo-change", new="spec-dev/other", owner="agent", json=False)
 
         with self.assertRaises(ProtocolError):
             command_change_advance(root, args)
@@ -79,17 +79,18 @@ class ChangeNewCommandTest(unittest.TestCase):
         args = SimpleNamespace(change="demo", new=None, owner="agent", json=True)
 
         with patch("superspec.cli.run_protocol_action_from_cli") as mock_run:
-            mock_run.return_value = {"state": "blocked", "step": None}
+            mock_run.return_value = {"change": "demo", "state": "blocked", "step": None}
             stdout = StringIO()
             with redirect_stdout(stdout):
                 command_change_advance(root, args)
 
         mock_run.assert_called_once_with(root, "demo", "next", owner="agent")
+        self.assertIn('"change": "demo"', stdout.getvalue())
         self.assertIn('"state": "blocked"', stdout.getvalue())
 
     def test_command_change_advance_new_creates_change_and_bootstraps_state_snapshot(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        args = SimpleNamespace(change=None, new="SDD/add-test-feature", owner="agent", json=True)
+        args = SimpleNamespace(change=None, new="spec-dev/add-test-feature", owner="agent", json=True)
 
         stdout = StringIO()
         with redirect_stdout(stdout):
@@ -98,11 +99,12 @@ class ChangeNewCommandTest(unittest.TestCase):
         state_path = root / "superspec" / "changes" / "add-test-feature" / "execution" / "state.json"
         self.assertTrue(state_path.exists())
         payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["change"], "add-test-feature")
         self.assertIn(payload["state"], {"ready", "blocked", "done"})
 
     def test_command_change_advance_new_rejects_malformed_selector(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
-        args = SimpleNamespace(change=None, new="SDD/add/test", owner="agent", json=False)
+        args = SimpleNamespace(change=None, new="spec-dev/add/test", owner="agent", json=False)
 
         with self.assertRaises(ProtocolError):
             command_change_advance(root, args)
@@ -112,7 +114,7 @@ class ChangeNewCommandTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse_args(["change", "new", "demo-change"])
         with self.assertRaises(SystemExit):
-            parser.parse_args(["plan", "init", "demo-change", "--schema", "SDD"])
+            parser.parse_args(["plan", "init", "demo-change", "--schema", "spec-dev"])
         with self.assertRaises(SystemExit):
             parser.parse_args(["plan", "next", "demo-change"])
         with self.assertRaises(SystemExit):

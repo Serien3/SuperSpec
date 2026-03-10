@@ -6,7 +6,7 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
-from superspec.cli import _write_execution_snapshot, command_validate
+from superspec.cli import _bootstrap_execution_snapshot, command_validate
 from superspec.engine.errors import ProtocolError
 from superspec.engine.orchestrator import run_protocol_action_from_cli
 from superspec.engine.plan_loader import resolve_change_dir
@@ -22,8 +22,8 @@ class PlanLifecycleTest(unittest.TestCase):
     def _seed_generation_assets(self, root: Path):
         repo_root = self._repo_root()
 
-        workflow_src = repo_root / "src" / "superspec" / "schemas" / "workflows" / "SDD.workflow.json"
-        workflow_dst = root / "superspec" / "schemas" / "workflows" / "SDD.workflow.json"
+        workflow_src = repo_root / "src" / "superspec" / "schemas" / "workflows" / "spec-dev.workflow.json"
+        workflow_dst = root / "superspec" / "schemas" / "workflows" / "spec-dev.workflow.json"
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
         workflow_dst.write_text(workflow_src.read_text(encoding="utf-8"), encoding="utf-8")
 
@@ -33,7 +33,7 @@ class PlanLifecycleTest(unittest.TestCase):
         schema_dst.write_text(schema_src.read_text(encoding="utf-8"), encoding="utf-8")
 
     def _init_plan(self, root: Path, change: str, schema: str | None):
-        _write_execution_snapshot(root, change, schema)
+        _bootstrap_execution_snapshot(root, change, schema)
 
     def _definition_path(self, root: Path, change: str) -> Path:
         return root / "superspec" / "changes" / change / "execution" / "state.json"
@@ -44,7 +44,7 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_plan_init_with_default_schema_writes_state_file(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
-        args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
+        args = SimpleNamespace(change="demo-change", schema="spec-dev", title=None, goal=None)
 
         self._init_plan(root, args.change, args.schema)
 
@@ -52,8 +52,8 @@ class PlanLifecycleTest(unittest.TestCase):
         self.assertTrue(plan_path.exists())
         snapshot = self._load_snapshot(root, "demo-change")
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
-        self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
-        self.assertEqual(snapshot["meta"]["description"], "Default spec-driven development workflow")
+        self.assertEqual(snapshot["meta"]["workflowId"], "spec-dev")
+        self.assertEqual(snapshot["meta"]["description"], "Default spec-dev workflow")
         self.assertIn("version", snapshot["meta"])
         self.assertNotIn("schemaVersion", snapshot["meta"])
         self.assertNotIn("createdAt", snapshot["meta"])
@@ -62,15 +62,15 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_plan_init_falls_back_to_packaged_default_workflow(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         # No local superspec/schemas/workflows assets are created.
-        args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
+        args = SimpleNamespace(change="demo-change", schema="spec-dev", title=None, goal=None)
 
         self._init_plan(root, args.change, args.schema)
 
         plan_path = self._definition_path(root, "demo-change")
         self.assertTrue(plan_path.exists())
         snapshot = self._load_snapshot(root, "demo-change")
-        self.assertEqual(snapshot["meta"]["workflowId"], "SDD")
-        self.assertEqual(snapshot["meta"]["description"], "Default spec-driven development workflow")
+        self.assertEqual(snapshot["meta"]["workflowId"], "spec-dev")
+        self.assertEqual(snapshot["meta"]["description"], "Default spec-dev workflow")
         self.assertNotIn("definition", snapshot)
 
     def test_plan_init_supports_explicit_schema_selection(self):
@@ -291,7 +291,7 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_plan_init_rejects_invalid_change_name(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
-        args = SimpleNamespace(change="../escape", schema="SDD", title=None, goal=None)
+        args = SimpleNamespace(change="../escape", schema="spec-dev", title=None, goal=None)
 
         with self.assertRaises(ProtocolError) as ctx:
             self._init_plan(root, args.change, args.schema)
@@ -301,12 +301,12 @@ class PlanLifecycleTest(unittest.TestCase):
     def test_nested_change_name_is_rejected(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         with self.assertRaises(ProtocolError):
-            _ = resolve_change_dir(str(root), "SDD/add-test")
+            _ = resolve_change_dir(str(root), "spec-dev/add-test")
 
     def test_protocol_actions_reject_runtime_changename_mismatch(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
-        init_args = SimpleNamespace(change="demo-change", schema="SDD", title=None, goal=None)
+        init_args = SimpleNamespace(change="demo-change", schema="spec-dev", title=None, goal=None)
         self._init_plan(root, init_args.change, init_args.schema)
 
         plan_path = self._definition_path(root, "demo-change")
@@ -375,7 +375,7 @@ class PlanLifecycleTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             command_validate(root, SimpleNamespace(schema=None, file=None, json=False))
         with self.assertRaises(SystemExit):
-            command_validate(root, SimpleNamespace(schema="SDD", file="custom.workflow.json", json=False))
+            command_validate(root, SimpleNamespace(schema="spec-dev", file="custom.workflow.json", json=False))
 
     def test_validate_json_output_has_error_shape(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -518,7 +518,7 @@ class PlanLifecycleTest(unittest.TestCase):
                     "id": "x1",
                     "description": "human.review",
                     "executor": "human",
-                    "human": {"approveLabel": "Approve", "rejectLabel": "Reject"},
+                    "option": {"approveLabel": "Approve", "rejectLabel": "Reject"},
                 }
             ],
         }
@@ -526,6 +526,26 @@ class PlanLifecycleTest(unittest.TestCase):
         workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
 
         command_validate(root, SimpleNamespace(schema="human-exec", file=None, json=False))
+
+    def test_validate_accepts_human_executor_without_human_payload(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        workflow = {
+            "workflowId": "human-exec-no-payload",
+            "version": "1.0.0",
+            "steps": [
+                {
+                    "id": "x1",
+                    "description": "human.review",
+                    "executor": "human",
+                }
+            ],
+        }
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "human-exec-no-payload.workflow.json"
+        workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
+
+        command_validate(root, SimpleNamespace(schema="human-exec-no-payload", file=None, json=False))
 
     def test_validate_accepts_action_prompt_field(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -573,26 +593,27 @@ class PlanLifecycleTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             command_validate(root, SimpleNamespace(schema="removed-step-fields", file=None, json=False))
 
-    def test_validate_rejects_human_executor_payload_mismatch(self):
+    def test_validate_rejects_partial_human_executor_payload(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._seed_generation_assets(root)
 
         workflow = {
-            "workflowId": "human-mismatch",
+            "workflowId": "human-partial",
             "version": "1.0.0",
             "steps": [
                 {
                     "id": "x1",
                     "description": "human.review",
                     "executor": "human",
+                    "option": {"approveLabel": "Approve"},
                 }
             ],
         }
-        workflow_path = root / "superspec" / "schemas" / "workflows" / "human-mismatch.workflow.json"
+        workflow_path = root / "superspec" / "schemas" / "workflows" / "human-partial.workflow.json"
         workflow_path.write_text(json.dumps(workflow, indent=2), encoding="utf-8")
 
         with self.assertRaises(SystemExit):
-            command_validate(root, SimpleNamespace(schema="human-mismatch", file=None, json=False))
+            command_validate(root, SimpleNamespace(schema="human-partial", file=None, json=False))
 
 
 if __name__ == "__main__":

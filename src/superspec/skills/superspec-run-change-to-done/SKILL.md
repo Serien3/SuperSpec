@@ -12,40 +12,43 @@ Drive one change from setup to terminal outcome using the SuperSpec pull protoco
 Resolve these inputs first:
 - `change_name` (recommended)
 - `owner` for `change advance` (default: `agent`)
-- `plan_schema` (workflow type for new change, default: `SDD`)
+- `plan_schema` (workflow type for new change, default: `spec-dev`)
 
 If `change_name` is missing, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
 
 ## End-to-End Workflow
 
 ### Step 1: Resolve the target change.
-   - List existing changes first:
-     ```bash
-     superspec change list
-     ```
-   - Reuse existing change when the target name already exists in the command output.
-   - Create when absent:
-     ```bash
-     superspec change advance --new "<plan_schema>/<change_name>" --owner "<owner>" --json
-     ```
-   - New selector format is required: `<workflow-type>/<change-name>` (for example `SDD/add-user-auth`).
-   - Compatibility note: `superspec change advance` without args may still list changes in older flows, but prefer `change list`.
+   - If a change name was provided: `superspec change advance <change_name> --json`
+   - If a description was provided: Infer workflow type, then `superspec change advance --new <workflow-type>/<change-name> --json`
+   - If nothing provided: `superspec change list` to list active changes, then AskUserQuestion  to ask clarifying questions
 
-### Step 2: Run protocol loop until terminal.
-   - Pull next step for existing change:
+### Step 2: Parse JSON response to get prompt
+   - `change`: The change name
+   - `state`: Current state
+   - `step`: Current workflow step
+    - `stepID`
+    - `executor`: The execution type of this step
+    - `skillName`: The skill to be invoked in this step
+    - `script_command`: The command to be executed in this step
+    - `option`: Human call feedback option
+    - `prompt`: **The prompt words for this step(You MUST follow it to complete this step.)**
+
+### Step 3: Execute the workflow step and update it
+   - You MUST follow the prompt to complete this step.
+   - Call or Use `skillName`/`script_command`/`option` according to prompt
+   - When you complete a step and confirm that the step has been fully completed,run:
      ```bash
-     superspec change advance "<change_name>" --owner "<owner>" --json
+     superspec change stepComplete "<change_name>" "<stepId>"
      ```
-  - Handle response state:
-    - `ready`: dispatch executor and report `complete` or `fail` (may be newly allocated or resumed in-flight step).
-    - `blocked`: use fixed-interval polling, then poll again.
-    - `done`: stop loop and fetch terminal status.
-   - Execution loop contract:
-     1. Call `change advance`.
-     2. If `state=ready`, **goto step4**. Execute exactly one step and report `complete` or `fail`.
-     3. Immediately call `change advance` again.
-    4. If `state=blocked`, use **blocked polling policy** and call `change advance` again.
-    5. Exit only when `state=done`.
+   - If you are unable to complete this step after trying and require human intervention, then this step is considered a failure.Run:
+     ```bash
+     superspec change stepFail "<change_name>" "<stepId>"
+
+### Step 4: After completing a step, re-run `superspec change advance <change_name> --json` to get next step
+   - The state should be "done" before all steps are completed.
+   - Continue the loop until `state == done or blocked`
+   - If blocked: Goto *Blocked Polling Policy*
 
 #### Blocked Polling Policy
 
@@ -54,57 +57,18 @@ When `change advance` returns `state=blocked`:
 2. Call `change advance` again.
 3. Track consecutive blocked cycles; if blocked exceeds 30 consecutive loops, stop and report `execution_stalled`.
 
-Note:
-- If there is an in-flight `RUNNING` step, `change advance` may return `state=ready` with that same step for session handoff/resume instead of returning `blocked`.
-
-### Step 4: Dispatch `ready` step by executor.
-   - `script` executor:
-     - Execute `step.script_command`.
-     - On success:
-       ```bash
-       superspec change stepComplete "<change_name>" "<stepId>"
-       ```
-     - On failure:
-       ```bash
-       superspec change stepFail "<change_name>" "<stepId>"
-       ```
-   - `skill` executor:
-     - Follow `step.prompt` and invoke `step.skillName`.
-     - On success:
-       ```bash
-       superspec change stepComplete "<change_name>" "<stepId>"
-       ```
-     - On failure:
-       ```bash
-       superspec change stepFail "<change_name>" "<stepId>"
-       ```
-   - `human` executor:
-     - Present `step.prompt` and the `step.human.approveLabel` / `step.human.rejectLabel` choices, then wait for human decision.
-     - If human approves, run
-       ```bash
-       superspec change stepComplete "<change_name>" "<stepId>"
-       ```
-     - If human rejects, run
-       ```bash
-       superspec change stepFail "<change_name>" "<stepId>"
-       ```
-
 ### Step 5: Produce terminal result and feedback.
    - Read terminal status:
      ```bash
      superspec change status "<change_name>" --json
      ```
-   - Read status after loop exits on `next.state=done` (terminal confirmation), not after each step.
+   - Report **Final Feedback** to human
 
-## Guardrails
+## Currently supported Workflow Types
 
-- Use the exact `step.id` returned by `next`.
-- Do not report `complete` or `fail` before real execution.
-- Do not call `status` after every success; use checkpoint/terminal reads.
-- Do not call `status --full` after every failure; keep the loop pull-driven by `next`.
-- Treat `change stepFail` as terminal failure and escalate to a human.
-- Do not terminate on first `blocked`; continue polling.
-- Stop only when `next` returns `done`.
+
+
+
 
 ## Final Feedback Template
 

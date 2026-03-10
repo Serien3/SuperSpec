@@ -63,8 +63,8 @@ def _initial_runtime_state(runtime_blueprint: dict):
         for field in ("executor", "skill", "script", "prompt"):
             if field in step:
                 runtime_action[field] = step[field]
-        if "human" in step:
-            runtime_action["human"] = step["human"]
+        if "option" in step:
+            runtime_action["option"] = step["option"]
         runtime_actions.append(runtime_action)
 
     return {

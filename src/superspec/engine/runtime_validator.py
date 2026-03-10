@@ -65,19 +65,20 @@ def validate_runtime_seed(seed):
 
         has_skill = "skill" in step
         has_script = "script" in step
-        has_human = "human" in step
+        has_option = "option" in step
 
         if executor == "skill":
             _assert(isinstance(step.get("skill"), str) and step["skill"], f"Step {aid} must set skill for skill executor")
-            _assert(not has_script and not has_human, f"Step {aid} skill executor cannot define script/human payload")
+            _assert(not has_script and not has_option, f"Step {aid} skill executor cannot define script/option payload")
         if executor == "script":
             _assert(isinstance(step.get("script"), str) and step["script"], f"Step {aid} must set script for script executor")
-            _assert(not has_skill and not has_human, f"Step {aid} script executor cannot define skill/human payload")
+            _assert(not has_skill and not has_option, f"Step {aid} script executor cannot define skill/option payload")
         if executor == "human":
-            human = step.get("human")
-            _assert(isinstance(human, dict), f"Step {aid} must set human object for human executor")
-            _assert(isinstance(human.get("approveLabel"), str) and human["approveLabel"], f"Step {aid} human executor requires human.approveLabel")
-            _assert(isinstance(human.get("rejectLabel"), str) and human["rejectLabel"], f"Step {aid} human executor requires human.rejectLabel")
+            option = step.get("option")
+            _assert(option is None or isinstance(option, dict), f"Step {aid} option payload must be an object when provided")
+            if isinstance(option, dict):
+                _assert(isinstance(option.get("approveLabel"), str) and option["approveLabel"], f"Step {aid} option payload requires option.approveLabel")
+                _assert(isinstance(option.get("rejectLabel"), str) and option["rejectLabel"], f"Step {aid} option payload requires option.rejectLabel")
             _assert(not has_skill and not has_script, f"Step {aid} human executor cannot define skill/script payload")
 
     for step in steps:

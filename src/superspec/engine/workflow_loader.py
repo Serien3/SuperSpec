@@ -38,7 +38,7 @@ def _load_json(path: Path):
 
 
 def _resolve_workflow_name(workflow: str | None):
-    return workflow or "SDD"
+    return workflow or "spec-dev"
 
 
 def _load_workflow_schema():
@@ -141,8 +141,8 @@ def _schema_errors(workflow: dict):
                 elif path.startswith("steps.") and missing_field in {"approveLabel", "rejectLabel"}:
                     code = "invalid_executor_payload"
                     path = f"{path}.{missing_field}"
-                    message = f"Step with executor 'human' must define non-empty 'human.{missing_field}'"
-                    hint = "Set human.approveLabel and human.rejectLabel to non-empty strings"
+                    message = f"Step option payload must define non-empty 'option.{missing_field}'"
+                    hint = "When steps[].option is present, set both option.approveLabel and option.rejectLabel"
         elif err.validator == "not" and path.startswith("steps."):
             code = "invalid_executor_payload"
             message = "Step defines mixed executor payload fields"
@@ -200,7 +200,7 @@ def _semantic_errors(workflow: dict):
 
         has_skill = "skill" in step
         has_script = "script" in step
-        has_human = "human" in step
+        has_option = "option" in step
 
         if executor == "skill" and not step.get("skill"):
             errors.append(
@@ -208,7 +208,7 @@ def _semantic_errors(workflow: dict):
                     "invalid_executor_payload",
                     f"steps.{idx}.skill",
                     "Step with executor 'skill' must define a non-empty 'skill' field",
-                    "Set steps[].skill and remove script/human fields",
+                    "Set steps[].skill and remove script/option fields",
                 )
             )
         if executor == "script" and not step.get("script"):
@@ -217,54 +217,54 @@ def _semantic_errors(workflow: dict):
                     "invalid_executor_payload",
                     f"steps.{idx}.script",
                     "Step with executor 'script' must define a non-empty 'script' field",
-                    "Set steps[].script and remove skill/human fields",
+                    "Set steps[].script and remove skill/option fields",
                 )
             )
         if executor == "human":
-            human = step.get("human")
-            if not isinstance(human, dict):
+            option = step.get("option")
+            if option is not None and not isinstance(option, dict):
                 errors.append(
                     _error(
                         "invalid_executor_payload",
-                        f"steps.{idx}.human",
-                        "Step with executor 'human' must define a 'human' object",
-                        "Set steps[].human as an object with non-empty approveLabel/rejectLabel",
+                        f"steps.{idx}.option",
+                        "Step option payload must be an object when provided",
+                        "Set steps[].option as an object with non-empty approveLabel/rejectLabel, or omit it",
                     )
                 )
-            elif not isinstance(human.get("approveLabel"), str) or not human.get("approveLabel"):
+            elif isinstance(option, dict) and (not isinstance(option.get("approveLabel"), str) or not option.get("approveLabel")):
                 errors.append(
                     _error(
                         "invalid_executor_payload",
-                        f"steps.{idx}.human.approveLabel",
-                        "Step with executor 'human' must define non-empty 'human.approveLabel'",
-                        "Set steps[].human.approveLabel to a non-empty string",
+                        f"steps.{idx}.option.approveLabel",
+                        "Step option payload must define non-empty 'option.approveLabel'",
+                        "Set steps[].option.approveLabel to a non-empty string",
                     )
                 )
-            elif not isinstance(human.get("rejectLabel"), str) or not human.get("rejectLabel"):
+            elif isinstance(option, dict) and (not isinstance(option.get("rejectLabel"), str) or not option.get("rejectLabel")):
                 errors.append(
                     _error(
                         "invalid_executor_payload",
-                        f"steps.{idx}.human.rejectLabel",
-                        "Step with executor 'human' must define non-empty 'human.rejectLabel'",
-                        "Set steps[].human.rejectLabel to a non-empty string",
+                        f"steps.{idx}.option.rejectLabel",
+                        "Step option payload must define non-empty 'option.rejectLabel'",
+                        "Set steps[].option.rejectLabel to a non-empty string",
                     )
                 )
 
-        if executor == "skill" and (has_script or has_human):
+        if executor == "skill" and (has_script or has_option):
             errors.append(
                 _error(
                     "invalid_executor_payload",
                     f"steps.{idx}",
-                    "Step with executor 'skill' cannot define script/human payload fields",
+                    "Step with executor 'skill' cannot define script/option payload fields",
                     "Keep only steps[].skill for skill executor",
                 )
             )
-        if executor == "script" and (has_skill or has_human):
+        if executor == "script" and (has_skill or has_option):
             errors.append(
                 _error(
                     "invalid_executor_payload",
                     f"steps.{idx}",
-                    "Step with executor 'script' cannot define skill/human payload fields",
+                    "Step with executor 'script' cannot define skill/option payload fields",
                     "Keep only steps[].script for script executor",
                 )
             )
@@ -274,7 +274,7 @@ def _semantic_errors(workflow: dict):
                     "invalid_executor_payload",
                     f"steps.{idx}",
                     "Step with executor 'human' cannot define skill/script payload fields",
-                    "Keep only steps[].human for human executor",
+                    "Keep only steps[].option for human executor",
                 )
             )
 
@@ -442,7 +442,7 @@ def _workflow_runtime_blueprint_payload(workflow: dict, change_name: str):
     return payload
 
 
-def build_plan_from_workflow(repo_root: Path, change_name: str, schema: str | None = None):
+def build_runtime_blueprint_from_workflow(repo_root: Path, change_name: str, schema: str | None = None):
     selected_workflow = _resolve_workflow_name(schema)
     workflow_doc, workflow_path = _load_workflow(repo_root, selected_workflow)
     _validate_workflow(repo_root, workflow_doc, selected_workflow)

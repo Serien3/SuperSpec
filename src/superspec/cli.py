@@ -5,12 +5,13 @@ from importlib import metadata
 from pathlib import Path
 
 from superspec import __version__
+from superspec.engine.design_gate import needs_design_doc
 from superspec.engine.errors import ProtocolError
 from superspec.engine.git_ops import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.plan_loader import resolve_change_dir, state_path_for_change, validate_change_name
 from superspec.engine.state_store import initialize_execution_snapshot
-from superspec.engine.workflow_loader import build_plan_from_workflow, validate_workflow_source
+from superspec.engine.workflow_loader import build_runtime_blueprint_from_workflow, validate_workflow_source
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
@@ -40,11 +41,11 @@ def _copy_children(source: Path, target: Path):
     return copied
 
 
-def _write_execution_snapshot(repo_root: Path, change_name: str, schema: str | None):
+def _bootstrap_execution_snapshot(repo_root: Path, change_name: str, schema: str | None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
 
-    runtime_blueprint, selected_schema, _ = build_plan_from_workflow(
+    runtime_blueprint, selected_schema, _ = build_runtime_blueprint_from_workflow(
         repo_root,
         change_name,
         schema=schema,
@@ -117,7 +118,7 @@ def _create_change_with_workflow(repo_root: Path, selector: str):
             code="change_exists",
             details={"change": change_name, "path": str(change_dir)},
         )
-    state_path, selected_schema = _write_execution_snapshot(repo_root, change_name, workflow_type)
+    state_path, selected_schema = _bootstrap_execution_snapshot(repo_root, change_name, workflow_type)
     return change_name, state_path, selected_schema
 
 
@@ -256,6 +257,10 @@ def command_git_commit(repo_root: Path, args):
         message=args.message,
     )
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def command_sdd_design(repo_root: Path, args):
+    print("True" if needs_design_doc(repo_root, args.change) else "False")
 
 
 def command_change_advance(repo_root: Path, args):
@@ -434,6 +439,14 @@ def build_parser():
     git_commit.add_argument("change", help="Target change name whose execution state will be updated.")
     git_commit.add_argument("--message", required=True, help="Commit message.")
 
+    sdd = sub.add_parser("sdd")
+    sdd_sub = sdd.add_subparsers(dest="sub")
+    sdd_design = sdd_sub.add_parser(
+        "design",
+        help="Return whether the given change should include design.md.",
+    )
+    sdd_design.add_argument("change")
+
     return parser
 
 
@@ -472,6 +485,9 @@ def main():
             return
         if args.group == "git" and args.sub == "commit":
             command_git_commit(repo_root, args)
+            return
+        if args.group == "sdd" and args.sub == "design":
+            command_sdd_design(repo_root, args)
             return
         parser.print_help()
         raise SystemExit(1)

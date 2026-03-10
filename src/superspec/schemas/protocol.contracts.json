@@ -7,6 +7,7 @@
         "owner": "string (optional)"
       },
       "response": {
+        "change": "string",
         "state": "ready | blocked | done",
         "step": "object | null"
       },
@@ -58,7 +59,7 @@
     },
     "human": {
       "executor": "human",
-      "human": {
+      "option": {
         "approveLabel": "string",
         "rejectLabel": "string"
       },

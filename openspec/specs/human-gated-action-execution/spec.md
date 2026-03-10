@@ -11,13 +11,13 @@ The system SHALL support steps with `executor=human` that pause downstream execu
 - **THEN** that step transitions to `RUNNING`
 - **AND** dependent steps remain non-runnable until the human step is reported complete or failed
 
-### Requirement: Human step payload includes review instructions
-The system SHALL return structured human-review metadata in next-step payload for `executor=human` steps.
+### Requirement: Human step payload may include review instructions
+The system SHALL support optional structured human-review metadata in next-step payload for `executor=human` steps.
 
 #### Scenario: Human step payload contract
 - **WHEN** the selected runnable step uses `executor=human`
 - **THEN** payload includes `stepId`, `executor`, and `prompt`
-- **AND** payload includes a `human` object with actionable review instructions
+- **AND** payload includes an `option` object with actionable review instructions only when workflow authors provide `steps[].option`
 
 ### Requirement: Human review outcome uses existing report commands
 The system SHALL use existing completion/failure reporting commands for human step outcomes.

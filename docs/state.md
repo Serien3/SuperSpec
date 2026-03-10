@@ -31,6 +31,7 @@
 - `meta` 不包含运行期字段，例如 `createdAt`、`updatedAt`、`finishedAt`。
 - `runtime.updatedAt` 在每次协议写入（`next/complete/fail`）时刷新。
 - `runtime.steps[*]` 的执行状态只允许：`PENDING`、`READY`、`RUNNING`、`SUCCESS`、`FAILED`。
+- `runtime.steps[*]` 会保留 step 的执行定义字段，例如 `executor`、`skill`、`script`、`prompt`、`option`。
 - `runtime.steps[*]` 不包含 `output`、`error` 字段。
 - 在 fail-fast 失败终态下，所有剩余未终结步骤都会被收敛为 `FAILED`，因此终态快照中不应再出现 `PENDING`、`READY` 或 `RUNNING`。
 
@@ -40,9 +41,9 @@
 
 ```json
 {
-  "workflowId": "SDD",
+  "workflowId": "spec-dev",
   "version": "1.0.0",
-  "description": "Default spec-driven development workflow",
+  "description": "Default spec-dev workflow",
   "metadata": {
     "channel": "default"
   },
@@ -54,9 +55,9 @@
 
 ```json
 {
-  "workflowId": "SDD",
+  "workflowId": "spec-dev",
   "version": "1.0.0",
-  "description": "Default spec-driven development workflow",
+  "description": "Default spec-dev workflow",
   "metadata": {
     "channel": "default"
   }

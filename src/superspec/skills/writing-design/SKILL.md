@@ -17,12 +17,7 @@ Save design to: superspec/<change-name>/design.md
 
 ## When to create a design.md
 
-Create only if any apply:
-
-- Cross-cutting change (multiple services/modules) or new architectural pattern
-- New external dependency or significant data model changes
-- Security, performance, or migration complexity
-- Ambiguity that benefits from technical decisions before coding
+Create `design.md` when the change needs implementation detail beyond proposal and specs, such as architecture decisions, refactors, migrations, cross-cutting behavior, or coordination across multiple components.
 
 ## When to update design.md
 

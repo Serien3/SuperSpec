@@ -10,7 +10,6 @@ Release date: 2026-03-10
 - Added `superspec init --agent codex` to initialize SuperSpec project directories and sync packaged skills, agent definitions, and config into the repository.
 - Added consolidated `superspec change` commands for listing changes, creating and advancing a change with `advance`, checking execution progress with `status`, and reporting step completion/failure with `stepComplete` and `stepFail`.
 - Added `superspec git create-worktree`, `superspec git finish-worktree`, and `superspec git commit` to cover worktree lifecycle and persist SuperSpec-managed commit metadata into execution state.
-- Added `superspec sdd design` to determine whether a change should include `design.md` based on current change content.
 
 ### Changed
 - Reworked the workflow contract from `actions` to `steps`, and aligned CLI handling, runtime snapshot structure, workflow schemas, and validation logic around the new execution model.

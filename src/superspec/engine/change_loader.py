@@ -49,7 +49,7 @@ def state_path_for_change(repo_root: str, change_name: str) -> Path:
     return resolve_change_dir(repo_root, change_name) / "execution" / "state.json"
 
 
-def load_state_snapshot_from_change(repo_root: str, change_name: str):
+def load_execution_snapshot_for_change(repo_root: str, change_name: str):
     state_path = state_path_for_change(repo_root, change_name)
     if not state_path.exists():
         raise FileNotFoundError(f"Execution snapshot not found: {state_path}")

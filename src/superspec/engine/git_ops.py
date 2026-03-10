@@ -4,8 +4,8 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
+from superspec.engine.change_loader import resolve_change_dir
 from superspec.engine.errors import ProtocolError
-from superspec.engine.plan_loader import resolve_change_dir
 from superspec.engine.state_store import append_event, execution_dir, read_execution_state, write_execution_state
 
 

@@ -466,6 +466,97 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["script_command"], "echo ${state.commit_by_superspec_last.commit_hash}")
 
+    def test_next_auto_skips_writing_design_when_change_is_simple(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        (change_dir / "proposal.md").write_text("simple change\n", encoding="utf-8")
+        specs_dir = change_dir / "specs" / "capability"
+        specs_dir.mkdir(parents=True, exist_ok=True)
+        (specs_dir / "spec.md").write_text("# spec\n", encoding="utf-8")
+
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "description": "proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "design", "dependsOn": ["a1"], "executor": "skill", "skill": "writing-design"},
+                {"id": "a3", "description": "tasks", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+            ],
+        )
+        validate_runtime_seed(plan)
+
+        first = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["state"], "ready")
+        self.assertEqual(first["step"]["stepId"], "a1")
+        complete_step(plan, str(change_dir), "a1")
+
+        nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["step"]["stepId"], "a3")
+
+        status = status_snapshot(plan, str(change_dir), debug=True, compact=False)
+        by_id = {step["id"]: step for step in status["steps"]}
+        self.assertEqual(by_id["a2"]["status"], "SUCCESS")
+        self.assertIsNotNone(by_id["a2"]["finishedAt"])
+
+    def test_next_keeps_writing_design_when_specs_markdown_count_exceeds_two(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        (change_dir / "proposal.md").write_text("simple change\n", encoding="utf-8")
+        specs_dir = change_dir / "specs" / "capability"
+        specs_dir.mkdir(parents=True, exist_ok=True)
+        (specs_dir / "spec-a.md").write_text("# spec a\n", encoding="utf-8")
+        (specs_dir / "spec-b.md").write_text("# spec b\n", encoding="utf-8")
+        (specs_dir / "spec-c.md").write_text("# spec c\n", encoding="utf-8")
+
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "description": "proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "design", "dependsOn": ["a1"], "executor": "skill", "skill": "writing-design"},
+                {"id": "a3", "description": "tasks", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+            ],
+        )
+        validate_runtime_seed(plan)
+
+        first = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["step"]["stepId"], "a1")
+        complete_step(plan, str(change_dir), "a1")
+
+        nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["step"]["stepId"], "a2")
+        self.assertEqual(nxt["step"]["skillName"], "writing-design")
+
+    def test_next_keeps_writing_design_when_proposal_mentions_architecture_keywords(self):
+        root, change_name, change_dir = self.setup_temp_change()
+        (change_dir / "proposal.md").write_text("This change includes ARCHITECTURE updates.\n", encoding="utf-8")
+        specs_dir = change_dir / "specs" / "capability"
+        specs_dir.mkdir(parents=True, exist_ok=True)
+        (specs_dir / "spec.md").write_text("# spec\n", encoding="utf-8")
+
+        plan = self.build_plan(
+            root,
+            change_name,
+            [
+                {"id": "a1", "description": "proposal", "executor": "script", "script": "echo one"},
+                {"id": "a2", "description": "design", "dependsOn": ["a1"], "executor": "skill", "skill": "writing-design"},
+                {"id": "a3", "description": "tasks", "dependsOn": ["a2"], "executor": "script", "script": "echo three"},
+            ],
+        )
+        validate_runtime_seed(plan)
+
+        first = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["step"]["stepId"], "a1")
+        complete_step(plan, str(change_dir), "a1")
+
+        nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["change"], change_name)
+        self.assertEqual(nxt["state"], "ready")
+        self.assertEqual(nxt["step"]["stepId"], "a2")
+        self.assertEqual(nxt["step"]["skillName"], "writing-design")
+
     def test_human_executor_blocks_until_completion_and_emits_human_payload(self):
         root, change_name, change_dir = self.setup_temp_change()
         plan = self.build_plan(

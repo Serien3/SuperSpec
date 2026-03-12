@@ -18,7 +18,9 @@ Guidelines:
 - Tasks should be small enough to complete in one session
 - Order tasks by dependency (what must be done first?)
 - Testing is also treated as a task, with an emphasis on unit testing and end-to-end testing.
-- Commit the task-group changes as a verifiable small step.(If change is small, you can commit after several related groups of tasks, but don't let it get too big - ideally each commit should be a logical unit that can be verified and understood on its own.)
+- **Regular submissions are also a task.**
+   - If a task group is small, you can commit after several related groups of tasks, but don't let it get too big - ideally each commit should be a logical unit that can be verified and understood on its own.
+   - You must write this task as: Run `superpspec git commit --message <task-group-summary>`
 
 Example:
 

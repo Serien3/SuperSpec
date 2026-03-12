@@ -429,9 +429,9 @@ def build_parser():
     )
     git_commit = git_sub.add_parser(
         "commit",
-        help="Run git commit and persist commit metadata to change execution state.",
+        help="Run git commit and merge committed file paths into change execution state.",
     )
-    git_commit.add_argument("change", help="Target change name whose execution state will be updated.")
+    git_commit.add_argument("change", help="Target change name whose execution state runtime.files_changed will be updated.")
     git_commit.add_argument("--message", required=True, help="Commit message.")
 
     return parser

@@ -93,7 +93,7 @@ superspec git finish-worktree [options]
 
 ### `superspec git commit`
 
-执行一次 `git commit`，并把本次提交信息写入指定 change 的运行态 `execution/state.json`。
+执行一次 `git commit`，并把本次提交涉及的文件路径合并写入指定 change 的运行态 `execution/state.json` 的 `runtime.files_changed`。
 
 ```bash
 superspec git commit <change> --message "<commit message>"
@@ -102,7 +102,7 @@ superspec git commit <change> --message "<commit message>"
 **Arguments:**
 | Argument   | description               | default  |
 | ---------- | ------------------------- | -------- |
-| `<change>` | 要写入运行态的 change 名。 | Required |
+| `<change>` | 要更新 `runtime.files_changed` 的 change 名。 | Required |
 
 **Options:**
 | option      | description | default  |
@@ -113,7 +113,8 @@ superspec git commit <change> --message "<commit message>"
 | 行为 | 说明 |
 | ---- | ---- |
 | 执行 commit | 在仓库根目录执行 `git commit -m <message>`。 |
-| 写入运行态 | 将 `state.json.runtime.commit_by_superspec_last` 更新为 `{ \"commit_hash\": \"...\", \"message\": \"...\" }`。 |
+| 写入运行态 | 读取本次 `HEAD` 提交涉及的文件，并合并写入 `state.json.runtime.files_changed`。 |
+| 合并规则 | 若 `runtime.files_changed` 已存在，则保留已有条目，只追加当前提交中不重合的文件路径。 |
 | 校验状态 | 若 `execution/state.json` 不存在，或 state 非 `running`，则命令失败。 |
 
 ## Change Commands

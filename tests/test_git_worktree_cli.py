@@ -105,10 +105,8 @@ class GitWorktreeCliTest(unittest.TestCase):
         )
         payload = {
             "change": "demo-change",
-            "commit_by_superspec_last": {
-                "commit_hash": "abc123",
-                "message": "feat: add file",
-            },
+            "commit_hash": "abc123",
+            "files_changed": ["tracked.txt", "extra.txt"],
         }
         output = StringIO()
         with patch("superspec.cli.commit_for_change", return_value=payload) as mock_commit:
@@ -121,7 +119,8 @@ class GitWorktreeCliTest(unittest.TestCase):
             message="feat: add file",
         )
         parsed = json.loads(output.getvalue())
-        self.assertEqual(parsed["commit_by_superspec_last"]["commit_hash"], "abc123")
+        self.assertEqual(parsed["commit_hash"], "abc123")
+        self.assertEqual(parsed["files_changed"], ["tracked.txt", "extra.txt"])
 
     def test_parser_accepts_git_commit_command(self):
         parser = build_parser()

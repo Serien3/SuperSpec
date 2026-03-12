@@ -13,7 +13,7 @@ Start or continue workflow on a Superspec change. Complete each step in a loop a
    - If a change name was provided: `superspec change advance <change-name> --json`
    - If a description was provided: Infer workflow type, then `superspec change advance --new <workflow-type>/<change-name> --json`
      - If `change-name` is missing, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
-   - If nothing provided: `superspec change list` to list active changes, then AskUserQuestion  to ask clarifying questions
+   - If nothing provided: `superspec change list` to list active changes, then AskUserQuestion to ask clarifying questions
 
 ### Step 2: Parse JSON response to get prompt
    - `change`: The change name
@@ -41,15 +41,8 @@ Start or continue workflow on a Superspec change. Complete each step in a loop a
 ### Step 4: After completing a step, re-run `superspec change advance <change-name> --json` to get next step
    - Continue the loop until `state == done or blocked`. One loop is one step.
    - You must strictly follow **step 2** and **step 3** to complete each step in each loop.
-   - If blocked: Goto *Blocked Polling Policy*
+   - If blocked: Wait ten seconds, then try again. If still blocked, report blocker and suggest next steps.
    - If done: Goto Step 5**
-
-#### Blocked Polling Policy
-
-When `change advance` returns `state=blocked`:
-1. Sleep 2s.
-2. Call `change advance` again.
-3. Track consecutive blocked cycles; if blocked exceeds 5 consecutive loops, stop and report `execution_stalled`.
 
 ### Step 5: Produce terminal result and feedback.
    - Read terminal status:

@@ -24,9 +24,7 @@ Dispatch **code-reviewer subagent** to catch issues before they cascade.
 
 **1. Set git SHAs:**
 ```bash
-# If BASE_SHA is provided by caller/user, use it directly.
-# If not provided, default to HEAD~1.
-BASE_SHA=${BASE_SHA:-$(git rev-parse HEAD~1)}  # or set explicitly, e.g. origin/main
+BASE_SHA=$(git rev-parse HEAD~1)  # or set explicitly, e.g. origin/main
 HEAD_SHA=$(git rev-parse HEAD)
 ```
 

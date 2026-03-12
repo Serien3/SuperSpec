@@ -1,0 +1,28 @@
+{
+    "workflowId": "bug-fix",
+    "version": "1.1.0",
+    "description": "Workflow for fixing bugs in the codebase",
+    "steps": [
+        {
+            "id": "a1",
+            "description": "Analyze Bug",
+            "executor": "human",
+            "prompt": "Analyze program bugs using the following process: Reproduce the bug -> Identify root cause -> Determine affected components -> Analyze root cause "
+        },
+        {
+            "id": "a2",
+            "description": "Fix Bug",
+            "executor": "human",
+            "prompt": "To achieve this requirement, minimize the scope of modifications."
+        },
+        {
+            "id": "a3",
+            "description": "Verify",
+            "dependsOn": [
+                "a2"
+            ],
+            "executor": "human",
+            "prompt": "Verify using the following process: Confirm bug is resolved -> Run regression tests -> Update relevant specs if behavior changed"
+        }
+    ]
+}

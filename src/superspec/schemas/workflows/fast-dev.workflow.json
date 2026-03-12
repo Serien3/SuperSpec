@@ -1,0 +1,28 @@
+{
+    "workflowId": "fast-dev",
+    "version": "1.1.0",
+    "description": "Rapid development",
+    "steps": [
+        {
+            "id": "a1",
+            "description": "Plan",
+            "executor": "human",
+            "prompt": "Consider whether a plan is needed to complete this task. If so, create a TODO list first."
+        },
+        {
+            "id": "a2",
+            "description": "Implement",
+            "executor": "human",
+            "prompt": "To achieve this requirement, minimize the scope of modifications."
+        },
+        {
+            "id": "a3",
+            "description": "Verify",
+            "dependsOn": [
+                "a2"
+            ],
+            "executor": "human",
+            "prompt": "Verify using the following process: Write test cases to test the new implementation -> If a test suite is available, perform regression testing -> Update relevant specs if behavior changed"
+        }
+    ]
+}

@@ -53,6 +53,13 @@ Start or continue workflow on a Superspec change. Complete each step in a loop a
 
 ## Currently supported Workflow Types
 
+| Type | Steps | When Used |
+| --- | --- | --- |
+| `spec-dev` | `proposal` -> `human-review-proposal` -> `specs` -> `design` -> `tasks` -> `execute-change` | Use for full spec-driven delivery of a new change. The requirements are extensive or require a formal development phase. |
+| `fast-dev` | `Plan` -> `Implement` -> `Verify` | Use for small, fast implementation tasks. No need to adhere to spec-driven development |
+| `bug-fix` | `Analyze Bug` -> `Fix Bug` -> `Verify` | Use when bugs are discovered.. |
+| `code-review` | `request-code-review` -> `report-review` -> `receive-code-review-and-fix` -> `commit a change` | Use to run review and fix feedback. |
+
 
 ## Final Feedback Template
 

@@ -26,6 +26,15 @@
             ],
             "executor": "skill",
             "skill": "receiving-code-review"
+        },
+        {
+            "id": "a4",
+            "description": "commit a change",
+            "dependsOn": [
+                "a3"
+            ],
+            "executor": "script",
+            "script": "superspec git commit --message \"Finish a review by Agent\""
         }
     ]
 }

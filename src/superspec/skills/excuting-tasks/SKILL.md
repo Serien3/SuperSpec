@@ -16,7 +16,7 @@ Implement tasks from an SuperSpec change. DRY. YAGNI. TDD. Frequent commits.
 ### Step 1: Read context files
 
 - Read context document created for developing in this change, especially `tasks.md`. 
-- If needed, recall `proposal.md`, `specs`, `design.md`.
+- If needed, recall `proposal.md`, `specs`, `design.md`((if present)).
 
 ### Step 2: Implement tasks(loop until done or blocked)
 
@@ -24,69 +24,32 @@ Implement tasks from an SuperSpec change. DRY. YAGNI. TDD. Frequent commits.
 
 ```
  For each pending task:
-   - Show which task is being worked on
+   - You must select and proceed **in order**.
    - Make the code changes required or complete the work according to the task requirements.
    - Keep changes minimal and focused
-   - Check tasks off as you complete a task
+   - You MUST check tasks off as you complete a task or a task group
      - Mark task complete in the tasks file: `- [ ]` → `- [x]`
 ```
 
-**Pause if:**
+**Skip a task or Pause if:**
 
 - Task is unclear → ask for clarification
-- Implementation reveals a design issue → suggest updating artifacts
-- Error or blocker encountered → report and wait for guidance
-- 
+- Implementation reveals a design issue → suggest updating specs or design
+- Error or blocker encountered → Try your best. If you are unable to complete this task, you can choose to skip it.
 
-### Step 3: **If paused, show status**
+### Step 3: **If skip a task or paused**
+   If skip a task:
+   - Errors Encountered
 
-   Display:
-
+   If paused, Display:
    - Tasks completed this session
    - Overall progress: "N/M tasks complete"
-   - If paused: explain why and wait for guidance
-
-**Output On Pause (Issue Encountered)**
-
- ```
-## Implementation Paused
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 4/7 tasks complete
-
-### Issue Encountered
-<description of the issue>
-
-**Options:**
-1. <option 1>
-2. <option 2>
-3. Other approach
-
-What would you like to do?
- ```
+   - Explain why and wait for guidance
 
 ### Step 4: **Complete Development**
 
 After all tasks complete and verified:
-- Report "Output On Completion"
-
-**Output On Completion**
-
-```
-## Implementation Complete
-
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 7/7 tasks complete ✓
-
-### Completed This Session
-- [x] Task 1
-- [x] Task 2
-...
-
-All tasks complete! 
-```
+- Report "All tasks complete! "
 
 **Guardrails**
 

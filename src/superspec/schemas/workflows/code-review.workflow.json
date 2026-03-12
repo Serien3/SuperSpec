@@ -16,7 +16,7 @@
                 "a1"
             ],
             "executor": "human",
-            "prompt": "Output the review report to `superspec/changes/<change_name>/report.md`."
+            "prompt": "Paste the COMPLETE raw response from the code-reviewer agent to `superspec/changes/<change_name>/report.md`."
         },
         {
             "id": "a3",

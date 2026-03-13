@@ -8,11 +8,12 @@ The system MUST provide a command to retrieve exactly one executable step for a 
 #### Scenario: Retrieve next ready step
 - **WHEN** a client requests the next step for a change with pending runnable work
 - **THEN** the system returns state `ready`
-- **AND** returns only top-level fields `state` and `step`
+- **AND** returns top-level fields `change`, `goal`, `state`, and `step`
 
 #### Scenario: No remaining steps
 - **WHEN** all steps are in terminal states according to execution policy
 - **THEN** the system returns state `done`
+- **AND** includes top-level `goal`
 - **AND** does not return an executable step payload
 
 ### Requirement: Step completion reporting

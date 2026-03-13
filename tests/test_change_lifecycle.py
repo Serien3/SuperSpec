@@ -32,8 +32,8 @@ class ChangeLifecycleTest(unittest.TestCase):
         schema_dst.parent.mkdir(parents=True, exist_ok=True)
         schema_dst.write_text(schema_src.read_text(encoding="utf-8"), encoding="utf-8")
 
-    def _init_change(self, root: Path, change: str, schema: str | None):
-        _bootstrap_execution_snapshot(root, change, schema)
+    def _init_change(self, root: Path, change: str, schema: str | None, goal: str | None = None):
+        _bootstrap_execution_snapshot(root, change, schema, goal=goal)
 
     def _state_path(self, root: Path, change: str) -> Path:
         return root / "superspec" / "changes" / change / "execution" / "state.json"
@@ -58,6 +58,16 @@ class ChangeLifecycleTest(unittest.TestCase):
         self.assertNotIn("schemaVersion", snapshot["meta"])
         self.assertNotIn("createdAt", snapshot["meta"])
         self.assertNotIn("updatedAt", snapshot["meta"])
+        self.assertNotIn("goal", snapshot["runtime"])
+
+    def test_change_init_writes_goal_into_runtime(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        self._init_change(root, "demo-change", "spec-dev", goal="Ship the first draft")
+
+        snapshot = self._load_snapshot(root, "demo-change")
+        self.assertEqual(snapshot["runtime"]["goal"], "Ship the first draft")
 
     def test_change_init_falls_back_to_packaged_default_workflow(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

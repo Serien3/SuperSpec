@@ -14,6 +14,7 @@
   },
   "runtime": {
     "changeName": "<change-name>",
+    "goal": "<one-line goal|optional>",
     "status": "running|success|failed",
     "startedAt": "<iso-8601>",
     "updatedAt": "<iso-8601>",
@@ -33,6 +34,7 @@
 - 对 workflow 顶层可选字段，只有在 workflow 中显式写出时才会出现在 `meta`。
 - `meta` 不包含运行期字段，例如 `createdAt`、`updatedAt`、`finishedAt`。
 - `runtime.updatedAt` 在每次协议写入（`next/complete/fail`）时刷新。
+- `runtime.goal` 是可选字段；当通过 `superspec change advance --new ... --goal "..."` 创建 change 时写入。
 - `runtime.files_changed` 是可选字段；当执行 `superspec git commit <change> --message ...` 时，会把该次提交涉及的仓库相对路径合并进这个数组，且不会覆盖已有不重合条目。
 - `runtime.steps[*]` 的执行状态只允许：`PENDING`、`READY`、`RUNNING`、`SUCCESS`、`FAILED`。
 - `runtime.steps[*]` 会保留 step 的执行定义字段，例如 `executor`、`skill`、`script`、`prompt`、`option`。

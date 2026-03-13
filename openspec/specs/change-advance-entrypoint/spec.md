@@ -25,6 +25,11 @@ The CLI SHALL provide `superspec change advance` for existing-change advance mod
 - **AND** the command immediately returns the first protocol pull result from that snapshot-backed state
 - **AND** the command fails atomically with a structured error if creation or initialization fails
 
+#### Scenario: Create and advance with explicit goal
+- **WHEN** a user runs `superspec change advance --new <workflow-type>/<change-name> --goal "<sentence>"`
+- **THEN** the command writes that sentence to `execution/state.json.runtime.goal`
+- **AND** the returned protocol payload includes the same `goal` value
+
 ### Requirement: Advance command argument exclusivity
 The CLI SHALL reject ambiguous `change advance` argument combinations with structured validation errors.
 
@@ -38,10 +43,10 @@ The CLI SHALL reject ambiguous `change advance` argument combinations with struc
 - **THEN** the command fails with an invalid selector error
 - **AND** the error includes remediation guidance for expected format
 
-### Requirement: Backward-compatible list alias
-The CLI MAY keep `superspec change advance` without arguments as a compatibility alias for `superspec change list`.
+### Requirement: Selector-free change advance lists active changes
+The CLI SHALL treat `superspec change advance` without selectors as a listing mode for active changes.
 
-#### Scenario: Advance without args falls back to list behavior
+#### Scenario: Advance without args lists active changes
 - **WHEN** a user runs `superspec change advance` with no positional change name and no `--new`
 - **THEN** the command returns the same change listing semantics as `superspec change list`
 - **AND** the output excludes non-change directories such as `archive`

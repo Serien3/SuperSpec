@@ -64,15 +64,16 @@ After installation, try **SuperSpec** with the following steps:
    ├── .codex/
    │   └── skills/
    │       └── ...                     # Skills installed by `superspec init` for AI execution
-   └── openspec/
-       └── changes/
-           └── <change-name>/
-               └── execution/
-                   ├── state.json      # Current execution state snapshot (meta + runtime actions/states/progress/terminal status)
-                   └── events.log      # Event log (e.g. action.started/completed/failed)
+  └── openspec/
+      └── changes/
+          └── <change-name>/
+              └── execution/
+                  ├── state.json      # Current execution state snapshot (meta + runtime goal/steps/progress/terminal status)
+                  └── events.log      # Event log (e.g. action.started/completed/failed)
    ```
    Note: The current SuperSpec workflow still relies on OpenSpec programs and skills.
 
 `execution/state.json` may also contain helper metadata written by CLI utilities, for example:
 
 - `commit_by_superspec_last`: last commit produced by `superspec git commit` with shape `{ "commit_hash": "...", "message": "..." }`.
+- `runtime.goal`: optional one-line change goal written by `superspec change advance --new ... --goal "..."`.

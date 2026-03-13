@@ -8,6 +8,7 @@
       },
       "response": {
         "change": "string",
+        "goal": "string | null",
         "state": "ready | blocked | done",
         "step": "object | null"
       },
@@ -48,17 +49,14 @@
   },
   "stepPayload": {
     "script": {
-      "executor": "script",
       "script_command": "string",
       "prompt": "string"
     },
     "skill": {
-      "executor": "skill",
       "skillName": "string",
       "prompt": "string"
     },
     "human": {
-      "executor": "human",
       "option": {
         "approveLabel": "string",
         "rejectLabel": "string"

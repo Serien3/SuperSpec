@@ -17,10 +17,10 @@ Start or continue workflow on a Superspec change. Complete each step in a loop a
 
 ### Step 2: Parse JSON response to get prompt
    - `change`: The change name
+   - `goal`: One-line change goal, if present
    - `state`: Current state
    - `step`: Current workflow step
     - `stepID`
-    - `executor`: The execution type of this step
     - `skillName`: The skill to be invoked in this step
     - `script_command`: The command to be executed in this step
     - `option`: Human call feedback option

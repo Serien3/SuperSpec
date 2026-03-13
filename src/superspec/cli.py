@@ -5,7 +5,7 @@ from importlib import metadata
 from pathlib import Path
 
 from superspec import __version__
-from superspec.engine.changes.paths import resolve_change_dir, state_path_for_change, validate_change_name
+from superspec.engine.changes.paths import resolve_change_dir, validate_change_name
 from superspec.engine.errors import ProtocolError
 from superspec.engine.scm.git_commit import commit_for_change
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
@@ -40,20 +40,31 @@ def _copy_children(source: Path, target: Path):
     return copied
 
 
-def _bootstrap_execution_snapshot(repo_root: Path, change_name: str, schema: str | None):
+def _normalize_goal(goal: str | None):
+    if goal is None:
+        return None
+    normalized = goal.strip()
+    if not normalized:
+        raise ProtocolError(
+            "Invalid --goal value: expected a non-empty sentence.",
+            code="invalid_arguments",
+        )
+    return normalized
+
+
+def _bootstrap_execution_snapshot(repo_root: Path, change_name: str, schema: str | None, goal: str | None = None):
     change_dir = resolve_change_dir(str(repo_root), change_name)
     change_dir.mkdir(parents=True, exist_ok=True)
 
-    runtime_blueprint, selected_schema, _ = build_runtime_blueprint_from_workflow(
+    runtime_blueprint, _, _ = build_runtime_blueprint_from_workflow(
         repo_root,
         change_name,
         schema=schema,
     )
-    initialize_execution_snapshot(
-        str(change_dir),
-        runtime_blueprint,
-    )
-    return state_path_for_change(str(repo_root), change_name), selected_schema
+    normalized_goal = _normalize_goal(goal)
+    if normalized_goal is not None:
+        runtime_blueprint["goal"] = normalized_goal
+    initialize_execution_snapshot(str(change_dir), runtime_blueprint)
 
 
 def _parse_new_selector(raw: str):
@@ -101,7 +112,7 @@ def _bound_workflow_id(change_dir: Path):
     return workflow_id if isinstance(workflow_id, str) and workflow_id else None
 
 
-def _create_change_with_workflow(repo_root: Path, selector: str):
+def _create_change_with_workflow(repo_root: Path, selector: str, goal: str | None = None):
     workflow_type, change_name = _parse_new_selector(selector)
     change_dir = resolve_change_dir(str(repo_root), change_name)
     if change_dir.exists():
@@ -117,8 +128,8 @@ def _create_change_with_workflow(repo_root: Path, selector: str):
             code="change_exists",
             details={"change": change_name, "path": str(change_dir)},
         )
-    state_path, selected_schema = _bootstrap_execution_snapshot(repo_root, change_name, workflow_type)
-    return change_name, state_path, selected_schema
+    _bootstrap_execution_snapshot(repo_root, change_name, workflow_type, goal=goal)
+    return change_name
 
 
 def _skills_source_dir():
@@ -265,7 +276,7 @@ def command_change_advance(repo_root: Path, args):
             code="invalid_arguments",
         )
     if args.new:
-        change_name, _, _ = _create_change_with_workflow(repo_root, args.new)
+        change_name = _create_change_with_workflow(repo_root, args.new, goal=args.goal)
         payload = run_protocol_action_from_cli(
             repo_root,
             change_name,
@@ -361,6 +372,7 @@ def build_parser():
     change_advance = change_sub.add_parser("advance")
     change_advance.add_argument("change", nargs="?")
     change_advance.add_argument("--new")
+    change_advance.add_argument("--goal")
     change_advance.add_argument("--owner", default="agent")
     change_advance.add_argument("--json", action="store_true")
     change_status = change_sub.add_parser("status")

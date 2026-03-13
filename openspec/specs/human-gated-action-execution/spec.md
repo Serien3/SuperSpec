@@ -16,7 +16,7 @@ The system SHALL support optional structured human-review metadata in next-step 
 
 #### Scenario: Human step payload contract
 - **WHEN** the selected runnable step uses `executor=human`
-- **THEN** payload includes `stepId`, `executor`, and `prompt`
+- **THEN** payload includes `stepId` and `prompt`
 - **AND** payload includes an `option` object with actionable review instructions only when workflow authors provide `steps[].option`
 
 ### Requirement: Human review outcome uses existing report commands

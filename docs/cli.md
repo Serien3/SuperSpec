@@ -135,7 +135,7 @@ superspec change list
 推进现有 change，或创建并推进新 change。
 
 ```bash
-superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--owner <owner>] [--json]
+superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--goal "<one-line goal>"] [--owner <owner>] [--json]
 ```
 
 **Modes:**
@@ -143,17 +143,26 @@ superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--own
 | ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | 推进模式   | `superspec change advance <change>`            | 拉取下一个可执行 step。                                                                                                        |
 | 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，初始化 `superspec/changes/<name>/execution/state.json` 与 `events.log` 并立即执行一次 next pull。 |
+| 列表模式   | `superspec change advance`                     | 列出所有未归档 change。                                                                                                        |
 
 **Options:**
 | option    | description                                    | default |
 | --------- | ---------------------------------------------- | ------- |
 | `--new`   | 新建选择器，格式 `workflow-type/change-name`。 | `None`  |
+| `--goal`  | 创建新 change 时写入 `runtime.goal` 的一句话目标。 | `None`  |
 | `--owner` | 执行者标识。                                   | `agent` |
 | `--json`  | JSON 输出。                                    | `false` |
 
 > 不允许同时提供 `<change>` 和 `--new`。
->
-> 兼容性说明：当前实现仍保留 `superspec change advance` 无参数时列出 changes 的旧行为，但显式列表命令应优先使用 `superspec change list`。
+
+**`--json` 返回说明：**
+- 顶层字段固定为 `change`、`goal`、`state`、`step`。
+- `goal` 来自 `execution/state.json.runtime.goal`，未设置时为 `null`。
+- `step` 总是包含 `stepId` 和 `prompt`。
+- `script` step 额外返回 `script_command`。
+- `skill` step 额外返回 `skillName`。
+- `human` step 可额外返回 `option`。
+- `step` 不再返回 `executor` 字段；执行方式由返回字段本身决定。
 
 ### `superspec change status`
 

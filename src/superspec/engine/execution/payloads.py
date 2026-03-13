@@ -20,6 +20,7 @@ def runtime_blueprint_from_seed(runtime_seed: dict):
     return {
         "changeName": change_name,
         "workflow": {},
+        "goal": runtime_seed.get("goal"),
         "steps": runtime_seed.get("steps", []),
     }
 
@@ -45,7 +46,6 @@ def build_step_payload(step: dict):
         )
     payload = {
         "stepId": step["id"],
-        "executor": executor,
     }
 
     if executor == "script":

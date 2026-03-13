@@ -14,12 +14,12 @@ The system MUST provide standardized guidance (via skill and/or AGENT.md) that i
 The agent guidance MUST define dispatch behavior by executor type and report outcomes through protocol commands.
 
 #### Scenario: Execute script step from guidance
-- **WHEN** next-step pull returns an step with `executor=script`
+- **WHEN** next-step pull returns an step containing `script_command`
 - **THEN** the guided agent executes `step.script_command`
 - **AND** reports `complete` or `fail` with the returned step identifier
 
 #### Scenario: Execute skill step from guidance
-- **WHEN** next-step pull returns an step with `executor=skill`
+- **WHEN** next-step pull returns an step containing `skillName`
 - **THEN** the guided agent invokes the skill named by `step.skillName`
 - **AND** reports `complete` or `fail` with the returned step identifier
 

@@ -67,11 +67,13 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
     state = ensure_protocol_state(runtime_seed, change_dir)
     refresh_ready_steps(state)
     change_name = state.get("changeName")
+    goal = state.get("goal")
 
     if state["status"] in {"success", "failed"}:
         persist_runtime_state(change_dir, state)
         return {
             "change": change_name,
+            "goal": goal,
             "state": "done",
             "step": None,
         }
@@ -83,6 +85,7 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
         persist_runtime_state(change_dir, state)
         return {
             "change": change_name,
+            "goal": goal,
             "state": "ready",
             "step": payload,
         }
@@ -110,6 +113,7 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
         persist_runtime_state(change_dir, state)
         return {
             "change": change_name,
+            "goal": goal,
             "state": "ready",
             "step": payload,
         }
@@ -119,12 +123,14 @@ def next_step(runtime_seed: dict | None, change_dir: str, owner: str = "agent"):
     if state["status"] in {"success", "failed"}:
         return {
             "change": change_name,
+            "goal": goal,
             "state": "done",
             "step": None,
         }
 
     return {
         "change": change_name,
+        "goal": goal,
         "state": "blocked",
         "step": None,
     }

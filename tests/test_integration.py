@@ -47,8 +47,10 @@ class IntegrationTest(unittest.TestCase):
             nxt = next_step(plan, str(change_dir), owner="tester")
             if nxt["state"] == "done":
                 self.assertEqual(nxt["change"], change_name)
+                self.assertEqual(nxt["goal"], "Test plan execution")
                 break
             self.assertEqual(nxt["change"], change_name)
+            self.assertEqual(nxt["goal"], "Test plan execution")
             self.assertEqual(nxt["state"], "ready")
             step_id = nxt["step"]["stepId"]
             complete_step(plan, str(change_dir), step_id)
@@ -124,10 +126,12 @@ class IntegrationTest(unittest.TestCase):
         validate_runtime_seed(plan)
 
         first = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(first["goal"], "Test plan execution")
         self.assertEqual(first["state"], "ready")
         self.assertEqual(first["step"]["stepId"], "a1")
 
         resumed = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(resumed["goal"], "Test plan execution")
         self.assertEqual(resumed["state"], "ready")
         self.assertEqual(resumed["step"]["stepId"], "a1")
 
@@ -137,6 +141,7 @@ class IntegrationTest(unittest.TestCase):
 
         complete_step(plan, str(change_dir), "a1")
         nxt = next_step(plan, str(change_dir), owner="agent-a")
+        self.assertEqual(nxt["goal"], "Test plan execution")
         self.assertEqual(nxt["state"], "ready")
         self.assertEqual(nxt["step"]["stepId"], "a2")
 
@@ -184,6 +189,7 @@ class IntegrationTest(unittest.TestCase):
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["change"], change_name)
+        self.assertEqual(nxt["goal"], "Test plan execution")
         self.assertEqual(nxt["state"], "done")
         terminal = status_snapshot(plan, str(change_dir))
         self.assertEqual(terminal["status"], "failed")
@@ -216,6 +222,7 @@ class IntegrationTest(unittest.TestCase):
 
         nxt = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(nxt["change"], change_name)
+        self.assertEqual(nxt["goal"], "Test plan execution")
         self.assertEqual(nxt["state"], "done")
 
         terminal = status_snapshot(plan, str(change_dir))
@@ -580,8 +587,8 @@ class IntegrationTest(unittest.TestCase):
 
         first = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(first["change"], change_name)
+        self.assertEqual(first["goal"], "Test plan execution")
         self.assertEqual(first["state"], "ready")
-        self.assertEqual(first["step"]["executor"], "human")
         self.assertEqual(first["step"]["stepId"], "a1")
         self.assertEqual(first["step"]["option"]["approveLabel"], "Approve")
         self.assertEqual(first["step"]["option"]["rejectLabel"], "Reject")
@@ -589,6 +596,7 @@ class IntegrationTest(unittest.TestCase):
 
         resumed = next_step(plan, str(change_dir), owner="agent-a")
         self.assertEqual(resumed["change"], change_name)
+        self.assertEqual(resumed["goal"], "Test plan execution")
         self.assertEqual(resumed["state"], "ready")
         self.assertEqual(resumed["step"]["stepId"], "a1")
 
@@ -615,8 +623,8 @@ class IntegrationTest(unittest.TestCase):
 
         first = next_step(plan, str(root / "superspec" / "changes" / change_name), owner="agent-a")
         self.assertEqual(first["change"], change_name)
+        self.assertEqual(first["goal"], "Test plan execution")
         self.assertEqual(first["state"], "ready")
-        self.assertEqual(first["step"]["executor"], "human")
         self.assertEqual(first["step"]["stepId"], "a1")
         self.assertEqual(first["step"]["prompt"], "Wait for human review on step a1")
         self.assertNotIn("option", first["step"])

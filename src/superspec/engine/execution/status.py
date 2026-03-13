@@ -6,7 +6,7 @@ def contracts_payload():
     return {
         "next": {
             "states": ["ready", "blocked", "done"],
-            "fields": ["change", "state", "step"],
+            "fields": ["change", "goal", "state", "step"],
             "errors": ["invalid_step_payload"],
         },
         "stepComplete": {
@@ -28,9 +28,9 @@ def contracts_payload():
             },
         },
         "stepPayload": {
-            "script": ["stepId", "executor", "script_command", "prompt"],
-            "skill": ["stepId", "executor", "skillName", "prompt"],
-            "human": ["stepId", "executor", "prompt", "option(optional)"],
+            "script": ["stepId", "script_command", "prompt"],
+            "skill": ["stepId", "skillName", "prompt"],
+            "human": ["stepId", "prompt", "option(optional)"],
         },
     }
 

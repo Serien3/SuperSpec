@@ -28,13 +28,17 @@ def initial_runtime_state(runtime_blueprint: dict):
             runtime_step["option"] = step["option"]
         runtime_steps.append(runtime_step)
 
-    return {
+    runtime = {
         "changeName": runtime_blueprint["changeName"],
         "status": "running",
         "startedAt": now,
         "updatedAt": now,
         "steps": runtime_steps,
     }
+    runtime_goal = runtime_blueprint.get("goal")
+    if runtime_goal is not None:
+        runtime["goal"] = runtime_goal
+    return runtime
 
 
 def initialize_execution_snapshot(change_dir: str, runtime_blueprint: dict):

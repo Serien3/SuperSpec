@@ -174,9 +174,9 @@ def _sync_skills_for_agent(repo_root: Path, agent: str):
     return source, target, copied
 
 
-def _sync_agents_to_repo_root(repo_root: Path):
+def _sync_agents_for_agent(repo_root: Path, agent: str):
     source = _agents_source_dir()
-    target = repo_root / "agents"
+    target = _agent_config_dir(repo_root, agent) / "agents"
     copied = _copy_children(source, target)
     return source, target, copied
 
@@ -194,7 +194,7 @@ def command_init(repo_root: Path, args):
     (repo_root / "superspec" / "specs").mkdir(parents=True, exist_ok=True)
 
     _sync_skills_for_agent(repo_root, args.agent)
-    _sync_agents_to_repo_root(repo_root)
+    _sync_agents_for_agent(repo_root, args.agent)
     _sync_config_for_agent(repo_root, args.agent)
     print(f"SuperSpec initialization succeeded (agent={args.agent}).")
 

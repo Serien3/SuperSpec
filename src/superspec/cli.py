@@ -132,6 +132,16 @@ def _create_change_with_workflow(repo_root: Path, selector: str, goal: str | Non
     return change_name
 
 
+def _agent_package_dir(agent: str):
+    package_root = Path(__file__).resolve().parent
+    if agent == "codex":
+        agent_root = package_root / "codex"
+        if agent_root.exists() and agent_root.is_dir():
+            return agent_root
+        raise RuntimeError("No packaged codex directory found.")
+    return package_root
+
+
 def _skills_source_dir():
     package_skills = Path(__file__).resolve().parent / "skills"
     if package_skills.exists() and package_skills.is_dir():
@@ -140,16 +150,23 @@ def _skills_source_dir():
     raise RuntimeError("No packaged skills directory found.")
 
 
-def _agents_source_dir():
-    package_agents = Path(__file__).resolve().parent / "agents"
+def _agents_source_dir(agent: str):
+    package_agents = _agent_package_dir(agent) / "agents"
     if package_agents.exists() and package_agents.is_dir():
         return package_agents
 
     raise RuntimeError("No packaged agents directory found.")
 
 
-def _config_source_dir():
-    package_config = Path(__file__).resolve().parent / "config"
+def _config_source_dir(agent: str):
+    package_root = _agent_package_dir(agent)
+    if agent == "codex":
+        package_config = package_root / "config.toml"
+        if package_config.exists() and package_config.is_file():
+            return package_config
+        raise RuntimeError("No packaged config.toml found for codex.")
+
+    package_config = package_root / "config"
     if package_config.exists() and package_config.is_dir():
         return package_config
 
@@ -175,16 +192,21 @@ def _sync_skills_for_agent(repo_root: Path, agent: str):
 
 
 def _sync_agents_for_agent(repo_root: Path, agent: str):
-    source = _agents_source_dir()
+    source = _agents_source_dir(agent)
     target = _agent_config_dir(repo_root, agent) / "agents"
     copied = _copy_children(source, target)
     return source, target, copied
 
 
 def _sync_config_for_agent(repo_root: Path, agent: str):
-    source = _config_source_dir()
+    source = _config_source_dir(agent)
     target = _agent_config_dir(repo_root, agent)
-    copied = _copy_children(source, target)
+    if source.is_file():
+        target.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target / source.name)
+        copied = 1
+    else:
+        copied = _copy_children(source, target)
     return source, target, copied
 
 

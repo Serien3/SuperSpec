@@ -286,9 +286,11 @@ def command_git_commit(repo_root: Path, args):
     payload = commit_for_change(
         repo_root=repo_root,
         change_name=args.change,
-        message=args.message,
+        summary=args.summary,
+        details=args.details,
+        next_steps=args.next,
     )
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    print(payload["commit_output"])
 
 
 def command_change_advance(repo_root: Path, args):
@@ -466,7 +468,9 @@ def build_parser():
         help="Run git commit and merge committed file paths into change execution state.",
     )
     git_commit.add_argument("change", help="Target change name whose execution state runtime.files_changed will be updated.")
-    git_commit.add_argument("--message", required=True, help="Commit message.")
+    git_commit.add_argument("--summary", required=True, help="Commit summary used as the git commit subject.")
+    git_commit.add_argument("--details", required=True, help="Agent-provided commit body narrative.")
+    git_commit.add_argument("--next", required=True, help="Agent-provided next step summary for session progress.")
 
     return parser
 

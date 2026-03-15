@@ -97,16 +97,33 @@ class GitWorktreeCliTest(unittest.TestCase):
         self.assertTrue(parsed.cleanup)
         self.assertEqual(parsed.strategy, "squash")
 
-    def test_command_git_commit_prints_json_payload(self):
+    def test_command_git_commit_prints_commit_output(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         args = SimpleNamespace(
             change="demo-change",
-            message="feat: add file",
+            summary="feat: add file",
+            details="Body written by the agent.",
+            next="continue progress summary",
         )
         payload = {
             "change": "demo-change",
             "commit_hash": "abc123",
+            "summary": "feat: add file",
+            "details": "Body written by the agent.",
+            "next": "continue progress summary",
+            "committed_at": "2026-03-15T10:00:00+00:00",
             "files_changed": ["tracked.txt", "extra.txt"],
+            "progress_file": str(root / "progress.md"),
+            "progress_entry": {
+                "commit_hash": "abc123",
+                "change": "demo-change",
+                "summary": "feat: add file",
+                "details": "Body written by the agent.",
+                "next": "continue progress summary",
+                "committed_at": "2026-03-15T10:00:00+00:00",
+                "files_changed": ["tracked.txt", "extra.txt"],
+            },
+            "commit_output": "[main abc123] feat: add file",
         }
         output = StringIO()
         with patch("superspec.cli.commit_for_change", return_value=payload) as mock_commit:
@@ -116,19 +133,23 @@ class GitWorktreeCliTest(unittest.TestCase):
         mock_commit.assert_called_once_with(
             repo_root=root,
             change_name="demo-change",
-            message="feat: add file",
+            summary="feat: add file",
+            details="Body written by the agent.",
+            next_steps="continue progress summary",
         )
-        parsed = json.loads(output.getvalue())
-        self.assertEqual(parsed["commit_hash"], "abc123")
-        self.assertEqual(parsed["files_changed"], ["tracked.txt", "extra.txt"])
+        self.assertEqual(output.getvalue().strip(), "[main abc123] feat: add file")
 
     def test_parser_accepts_git_commit_command(self):
         parser = build_parser()
-        parsed = parser.parse_args(["git", "commit", "demo-change", "--message", "feat: x"])
+        parsed = parser.parse_args(
+            ["git", "commit", "demo-change", "--summary", "feat: x", "--details", "body", "--next", "do y"]
+        )
         self.assertEqual(parsed.group, "git")
         self.assertEqual(parsed.sub, "commit")
         self.assertEqual(parsed.change, "demo-change")
-        self.assertEqual(parsed.message, "feat: x")
+        self.assertEqual(parsed.summary, "feat: x")
+        self.assertEqual(parsed.details, "body")
+        self.assertEqual(parsed.next, "do y")
 
     def test_parser_rejects_removed_finish_worktree_options(self):
         parser = build_parser()

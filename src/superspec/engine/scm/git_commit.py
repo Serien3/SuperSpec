@@ -6,6 +6,7 @@ from pathlib import Path
 
 from superspec.engine.changes.paths import resolve_change_dir
 from superspec.engine.errors import ProtocolError
+from superspec.engine.scm.progress_file import append_progress_entry, build_progress_entry
 from superspec.engine.storage.events import append_event
 from superspec.engine.storage.execution_files import execution_dir
 from superspec.engine.storage.execution_snapshot import read_execution_state, write_execution_state
@@ -44,6 +45,10 @@ def committed_files_for_head(repo_root: Path) -> list[str]:
     return files
 
 
+def committed_at_for_head(repo_root: Path) -> str:
+    return run_git(repo_root, ["show", "-s", "--format=%cI", "HEAD"])
+
+
 def merge_files_changed(existing: object, new_files: list[str]) -> list[str]:
     merged: list[str] = []
     seen: set[str] = set()
@@ -62,10 +67,32 @@ def merge_files_changed(existing: object, new_files: list[str]) -> list[str]:
     return merged
 
 
-def commit_for_change(repo_root: Path, change_name: str, message: str) -> dict:
-    normalized_message = message.strip()
-    if not normalized_message:
-        raise ProtocolError("Invalid commit message: expected a non-empty string.", code="invalid_payload")
+def stage_commit_inputs(repo_root: Path, change_dir: Path) -> None:
+    state_path = (execution_dir(str(change_dir)) / "state.json").relative_to(repo_root)
+    events_path = (execution_dir(str(change_dir)) / "events.log").relative_to(repo_root)
+    run_git(
+        repo_root,
+        [
+            "add",
+            "-A",
+            "--",
+            ".",
+            f":(exclude){state_path.as_posix()}",
+            f":(exclude){events_path.as_posix()}",
+        ],
+    )
+
+
+def commit_for_change(repo_root: Path, change_name: str, summary: str, details: str, next_steps: str) -> dict:
+    normalized_summary = summary.strip()
+    if not normalized_summary:
+        raise ProtocolError("Invalid commit summary: expected a non-empty string.", code="invalid_payload")
+    normalized_details = details.strip()
+    if not normalized_details:
+        raise ProtocolError("Invalid commit details: expected a non-empty string.", code="invalid_payload")
+    normalized_next = next_steps.strip()
+    if not normalized_next:
+        raise ProtocolError("Invalid next field: expected a non-empty string.", code="invalid_payload")
 
     change_dir = resolve_change_dir(str(repo_root), change_name)
     state = read_execution_state(str(change_dir))
@@ -84,18 +111,34 @@ def commit_for_change(repo_root: Path, change_name: str, message: str) -> dict:
             details={"change": change_name, "status": state.get("status")},
         )
 
-    run_git(repo_root, ["commit", "-m", normalized_message])
+    stage_commit_inputs(repo_root, change_dir)
+    commit_output = run_git(repo_root, ["commit", "-m", normalized_summary, "-m", normalized_details])
     commit_hash = run_git(repo_root, ["rev-parse", "HEAD"])
+    committed_at = committed_at_for_head(repo_root)
     committed_files = committed_files_for_head(repo_root)
     state["files_changed"] = merge_files_changed(state.get("files_changed"), committed_files)
     state["updatedAt"] = datetime.now(timezone.utc).isoformat()
     write_execution_state(str(change_dir), state)
+    progress_entry = build_progress_entry(
+        commit_hash=commit_hash,
+        change=change_name,
+        summary=normalized_summary,
+        details=normalized_details,
+        next_steps=normalized_next,
+        committed_at=committed_at,
+        files_changed=committed_files,
+    )
+    progress_path = append_progress_entry(repo_root, progress_entry)
     append_event(
         str(change_dir),
         {
             "event": "git.commit",
             "change": change_name,
             "commit_hash": commit_hash,
+            "summary": normalized_summary,
+            "details": normalized_details,
+            "next": normalized_next,
+            "committed_at": committed_at,
             "files_changed": committed_files,
         },
     )
@@ -103,5 +146,12 @@ def commit_for_change(repo_root: Path, change_name: str, message: str) -> dict:
     return {
         "change": change_name,
         "commit_hash": commit_hash,
+        "summary": normalized_summary,
+        "details": normalized_details,
+        "next": normalized_next,
+        "committed_at": committed_at,
         "files_changed": list(state["files_changed"]),
+        "progress_file": str(progress_path),
+        "progress_entry": progress_entry,
+        "commit_output": commit_output,
     }

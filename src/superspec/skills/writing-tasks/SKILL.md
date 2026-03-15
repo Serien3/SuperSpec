@@ -18,7 +18,6 @@ Guidelines:
 - Tasks should be small enough to complete in one session
 - Order tasks by dependency (what must be done first?)
 - Testing is also treated as a task, with an emphasis on unit testing and end-to-end testing.
-- **The last task must be: Run `superpspec git commit --message "Finish all tasks in <change-name>"` to commit change**
 
 Example:
 

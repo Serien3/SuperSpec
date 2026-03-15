@@ -16,7 +16,7 @@ Implement tasks from an SuperSpec change. DRY. YAGNI. TDD. Frequent commits.
 ### Step 1: Read context files
 
 - Read context document created for developing in this change, especially `tasks.md`. 
-- If needed, recall `proposal.md`, `specs`, `design.md`((if present)).
+- If needed, recall `proposal.md`, `specs`, `design.md`(if present).
 
 ### Step 2: Implement tasks(loop until done or blocked)
 

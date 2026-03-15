@@ -54,6 +54,15 @@
       ],
       "executor": "skill",
       "skill": "executing-change"
+    },
+    {
+      "id": "a7",
+      "description": "sync-specs",
+      "dependsOn": [
+        "a6"
+      ],
+      "executor": "skill",
+      "skill": "sync-specs"
     }
   ]
 }

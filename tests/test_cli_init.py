@@ -27,6 +27,8 @@ class CliInitCommandTest(unittest.TestCase):
         self.assertEqual(sorted(item.name for item in changes_root.iterdir()), ["archive"])
         self.assertEqual(list(archive_dir.iterdir()), [])
         self.assertEqual(list(specs_root.iterdir()), [])
+        self.assertEqual((root / "progress.md").read_text(encoding="utf-8"), "# progress\n")
+        self.assertEqual((root / ".gitignore").read_text(encoding="utf-8"), "superspec/**/execution/**\n")
         self.assertTrue((root / ".codex" / "skills" / "superspec-finish-a-change" / "SKILL.md").exists())
         self.assertTrue((root / ".codex" / "agents" / "code-reviewer.toml").exists())
         self.assertTrue((root / ".codex" / "config.toml").exists())
@@ -69,6 +71,45 @@ class CliInitCommandTest(unittest.TestCase):
         with patch("superspec.cli._skills_source_dir", side_effect=RuntimeError("missing")):
             with self.assertRaises(RuntimeError):
                 command_init(root, args)
+
+    def test_init_preserves_existing_progress_file(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        progress_path = root / "progress.md"
+        progress_path.write_text("# custom progress\nexisting content\n", encoding="utf-8")
+
+        args = SimpleNamespace(agent="codex")
+        command_init(root, args)
+
+        self.assertEqual(
+            progress_path.read_text(encoding="utf-8"),
+            "# custom progress\nexisting content\n",
+        )
+
+    def test_init_appends_execution_rule_to_existing_gitignore(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        gitignore_path = root / ".gitignore"
+        gitignore_path.write_text("__pycache__/\n*.pyc\n", encoding="utf-8")
+
+        args = SimpleNamespace(agent="codex")
+        command_init(root, args)
+
+        self.assertEqual(
+            gitignore_path.read_text(encoding="utf-8"),
+            "__pycache__/\n*.pyc\nsuperspec/**/execution/**\n",
+        )
+
+    def test_init_does_not_duplicate_execution_rule_in_gitignore(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        gitignore_path = root / ".gitignore"
+        gitignore_path.write_text("__pycache__/\nsuperspec/**/execution/**\n", encoding="utf-8")
+
+        args = SimpleNamespace(agent="codex")
+        command_init(root, args)
+
+        self.assertEqual(
+            gitignore_path.read_text(encoding="utf-8"),
+            "__pycache__/\nsuperspec/**/execution/**\n",
+        )
 
 
 if __name__ == "__main__":

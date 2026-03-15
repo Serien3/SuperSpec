@@ -211,10 +211,39 @@ def _sync_config_for_agent(repo_root: Path, agent: str):
     return source, target, copied
 
 
+def _ensure_progress_file(repo_root: Path):
+    progress_path = repo_root / "progress.md"
+    if progress_path.exists():
+        return
+    progress_path.write_text("# progress\n", encoding="utf-8")
+
+
+def _ensure_gitignore(repo_root: Path):
+    gitignore_path = repo_root / ".gitignore"
+    execution_rule = "superspec/**/execution/**"
+
+    if not gitignore_path.exists():
+        gitignore_path.write_text(f"{execution_rule}\n", encoding="utf-8")
+        return
+
+    existing = gitignore_path.read_text(encoding="utf-8")
+    rules = {line.strip() for line in existing.splitlines()}
+    if execution_rule in rules:
+        return
+
+    updated = existing
+    if updated and not updated.endswith("\n"):
+        updated += "\n"
+    updated += f"{execution_rule}\n"
+    gitignore_path.write_text(updated, encoding="utf-8")
+
+
 def command_init(repo_root: Path, args):
     _agent_config_dir(repo_root, args.agent)
     (repo_root / "superspec" / "changes" / "archive").mkdir(parents=True, exist_ok=True)
     (repo_root / "superspec" / "specs").mkdir(parents=True, exist_ok=True)
+    _ensure_progress_file(repo_root)
+    _ensure_gitignore(repo_root)
 
     _sync_skills_for_agent(repo_root, args.agent)
     _sync_agents_for_agent(repo_root, args.agent)

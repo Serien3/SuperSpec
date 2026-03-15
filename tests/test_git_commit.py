@@ -62,14 +62,20 @@ class GitCommitTest(unittest.TestCase):
         self.assertEqual(payload["summary"], "feat: test commit")
         self.assertEqual(payload["details"], "Agent wrote the body for this commit.")
         self.assertEqual(payload["next"], "wire finish-session script")
-        self.assertEqual(payload["files_changed"], ["tracked.txt"])
+        self.assertEqual(
+            payload["files_changed"],
+            ["superspec/changes/demo-change/execution/state.json", "tracked.txt"],
+        )
         self.assertEqual(payload["progress_file"], str(root / "progress.md"))
         self.assertEqual(payload["progress_entry"]["commit_hash"], head)
         self.assertEqual(payload["progress_entry"]["change"], "demo-change")
         self.assertEqual(payload["progress_entry"]["summary"], "feat: test commit")
         self.assertEqual(payload["progress_entry"]["details"], "Agent wrote the body for this commit.")
         self.assertEqual(payload["progress_entry"]["next"], "wire finish-session script")
-        self.assertEqual(payload["progress_entry"]["files_changed"], ["tracked.txt"])
+        self.assertEqual(
+            payload["progress_entry"]["files_changed"],
+            ["superspec/changes/demo-change/execution/state.json", "tracked.txt"],
+        )
         self.assertTrue(payload["committed_at"])
         self.assertIn("feat: test commit", payload["commit_output"])
         body = self._run(["git", "show", "-s", "--format=%B", "HEAD"], root)
@@ -77,7 +83,10 @@ class GitCommitTest(unittest.TestCase):
         self.assertIn("Agent wrote the body for this commit.", body)
 
         state = json.loads(state_path.read_text(encoding="utf-8"))
-        self.assertEqual(state["runtime"]["files_changed"], ["tracked.txt"])
+        self.assertEqual(
+            state["runtime"]["files_changed"],
+            ["superspec/changes/demo-change/execution/state.json", "tracked.txt"],
+        )
         self.assertNotIn("commit_by_superspec_last", state["runtime"])
 
         progress_path = root / "progress.md"
@@ -90,6 +99,7 @@ class GitCommitTest(unittest.TestCase):
         self.assertIn("- Summary: feat: test commit", progress)
         self.assertIn("- Details:\n<!-- superspec:details:start -->\nAgent wrote the body for this commit.\n<!-- superspec:details:end -->", progress)
         self.assertIn("- Next: wire finish-session script", progress)
+        self.assertIn("  - superspec/changes/demo-change/execution/state.json", progress)
         self.assertIn("  - tracked.txt", progress)
 
     def test_commit_for_change_appends_non_overlapping_files_changed(self):
@@ -137,10 +147,24 @@ class GitCommitTest(unittest.TestCase):
             "review progress template",
         )
 
-        self.assertEqual(payload["files_changed"], ["tracked.txt", "another.txt"])
+        self.assertEqual(
+            payload["files_changed"],
+            [
+                "tracked.txt",
+                "another.txt",
+                "superspec/changes/demo-change/execution/state.json",
+            ],
+        )
 
         state = json.loads(state_path.read_text(encoding="utf-8"))
-        self.assertEqual(state["runtime"]["files_changed"], ["tracked.txt", "another.txt"])
+        self.assertEqual(
+            state["runtime"]["files_changed"],
+            [
+                "tracked.txt",
+                "another.txt",
+                "superspec/changes/demo-change/execution/state.json",
+            ],
+        )
 
     def test_commit_for_change_appends_progress_entries_and_preserves_other_content(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -212,6 +236,7 @@ class GitCommitTest(unittest.TestCase):
         self.assertIn("Second body block.", progress)
         self.assertIn("- Next: draft finish-session", progress)
         self.assertIn("- Next: connect summary script", progress)
+        self.assertIn("  - superspec/changes/demo-change/execution/state.json", progress)
         self.assertIn("  - tracked.txt", progress)
         self.assertIn("  - another.txt", progress)
 
@@ -319,6 +344,57 @@ class GitCommitTest(unittest.TestCase):
             "<!-- superspec:details:start -->\nLine one of the body.\nLine two keeps context.\nLine three records follow-up.\n<!-- superspec:details:end -->",
             progress,
         )
+
+    def test_commit_for_change_allows_blank_details_and_omits_details_block(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._run(["git", "init"], root)
+        self._run(["git", "config", "user.name", "SuperSpec Test"], root)
+        self._run(["git", "config", "user.email", "test@example.com"], root)
+
+        tracked = root / "tracked.txt"
+        tracked.write_text("one\n", encoding="utf-8")
+        self._run(["git", "add", "tracked.txt"], root)
+        self._run(["git", "commit", "-m", "chore: init"], root)
+
+        change_dir = root / "superspec" / "changes" / "demo-change"
+        state_path = change_dir / "execution" / "state.json"
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(
+            json.dumps(
+                {
+                    "meta": {
+                        "schemaVersion": "https://superspec.dev/schemas/workflow-v1.json",
+                        "changeName": "demo-change",
+                    },
+                    "runtime": {
+                        "changeName": "demo-change",
+                        "status": "running",
+                        "steps": [],
+                    },
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        tracked.write_text("one\ntwo\n", encoding="utf-8")
+
+        payload = commit_for_change(
+            root,
+            "demo-change",
+            "feat: summary only",
+            " \n",
+            "continue with docs",
+        )
+
+        self.assertEqual(payload["details"], "")
+        body = self._run(["git", "show", "-s", "--format=%B", "HEAD"], root)
+        self.assertEqual(body, "feat: summary only")
+
+        progress = (root / "progress.md").read_text(encoding="utf-8")
+        self.assertNotIn("- Details:", progress)
+        self.assertNotIn("<!-- superspec:details:start -->", progress)
+        self.assertNotIn("<!-- superspec:details:end -->", progress)
 
     def test_commit_for_change_requires_running_state(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

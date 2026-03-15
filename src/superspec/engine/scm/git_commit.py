@@ -68,28 +68,14 @@ def merge_files_changed(existing: object, new_files: list[str]) -> list[str]:
 
 
 def stage_commit_inputs(repo_root: Path, change_dir: Path) -> None:
-    state_path = (execution_dir(str(change_dir)) / "state.json").relative_to(repo_root)
-    events_path = (execution_dir(str(change_dir)) / "events.log").relative_to(repo_root)
-    run_git(
-        repo_root,
-        [
-            "add",
-            "-A",
-            "--",
-            ".",
-            f":(exclude){state_path.as_posix()}",
-            f":(exclude){events_path.as_posix()}",
-        ],
-    )
+    run_git(repo_root, ["add", "-A"])
 
 
-def commit_for_change(repo_root: Path, change_name: str, summary: str, details: str, next_steps: str) -> dict:
+def commit_for_change(repo_root: Path, change_name: str, summary: str, details: str | None, next_steps: str) -> dict:
     normalized_summary = summary.strip()
     if not normalized_summary:
         raise ProtocolError("Invalid commit summary: expected a non-empty string.", code="invalid_payload")
-    normalized_details = details.strip()
-    if not normalized_details:
-        raise ProtocolError("Invalid commit details: expected a non-empty string.", code="invalid_payload")
+    normalized_details = (details or "").strip()
     normalized_next = next_steps.strip()
     if not normalized_next:
         raise ProtocolError("Invalid next field: expected a non-empty string.", code="invalid_payload")
@@ -112,7 +98,10 @@ def commit_for_change(repo_root: Path, change_name: str, summary: str, details: 
         )
 
     stage_commit_inputs(repo_root, change_dir)
-    commit_output = run_git(repo_root, ["commit", "-m", normalized_summary, "-m", normalized_details])
+    commit_args = ["commit", "-m", normalized_summary]
+    if normalized_details:
+        commit_args.extend(["-m", normalized_details])
+    commit_output = run_git(repo_root, commit_args)
     commit_hash = run_git(repo_root, ["rev-parse", "HEAD"])
     committed_at = committed_at_for_head(repo_root)
     committed_files = committed_files_for_head(repo_root)

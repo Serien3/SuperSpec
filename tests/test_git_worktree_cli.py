@@ -7,7 +7,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from superspec.cli import build_parser, command_git_commit, command_git_worktree_create, command_git_worktree_finish
+from superspec.cli import (
+    build_parser,
+    command_git_commit,
+    command_git_worktree_create,
+    command_git_worktree_finish,
+    command_progress,
+)
 
 
 class GitWorktreeCliTest(unittest.TestCase):
@@ -141,15 +147,37 @@ class GitWorktreeCliTest(unittest.TestCase):
 
     def test_parser_accepts_git_commit_command(self):
         parser = build_parser()
-        parsed = parser.parse_args(
-            ["git", "commit", "demo-change", "--summary", "feat: x", "--details", "body", "--next", "do y"]
-        )
+        parsed = parser.parse_args(["git", "commit", "demo-change", "--summary", "feat: x", "--next", "do y"])
         self.assertEqual(parsed.group, "git")
         self.assertEqual(parsed.sub, "commit")
         self.assertEqual(parsed.change, "demo-change")
         self.assertEqual(parsed.summary, "feat: x")
-        self.assertEqual(parsed.details, "body")
+        self.assertEqual(parsed.details, "")
         self.assertEqual(parsed.next, "do y")
+
+    def test_command_progress_prints_generated_summary(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace()
+        payload = {
+            "progress_file": str(root / "progress.md"),
+            "finished_at": "2026-03-15T10:00:00+00:00",
+            "session_date": "2026-03-15",
+            "session_number": 1,
+            "entries": [],
+            "summary": "## 2026-03-15 Session 1",
+        }
+        output = StringIO()
+        with patch("superspec.cli.summarize_current_session", return_value=payload) as mock_progress:
+            with redirect_stdout(output):
+                command_progress(root, args)
+
+        mock_progress.assert_called_once_with(repo_root=root)
+        self.assertEqual(output.getvalue().strip(), "## 2026-03-15 Session 1")
+
+    def test_parser_accepts_progress_command(self):
+        parser = build_parser()
+        parsed = parser.parse_args(["progress"])
+        self.assertEqual(parsed.group, "progress")
 
     def test_parser_rejects_removed_finish_worktree_options(self):
         parser = build_parser()
@@ -158,7 +186,7 @@ class GitWorktreeCliTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             parser.parse_args(["git", "finish-worktree", "--squash-message", "old"])
         with self.assertRaises(SystemExit):
-            parser.parse_args(["git", "commit", "demo-change"])
+            parser.parse_args(["git", "commit", "demo-change", "--summary", "feat: x"])
 
 
 if __name__ == "__main__":

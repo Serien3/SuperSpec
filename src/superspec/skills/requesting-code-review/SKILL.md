@@ -13,7 +13,7 @@ Dispatch **code-reviewer subagent** to catch issues before they cascade.
 
 **Mandatory:**
 - Humans demand code review
-- A complex change is completed
+- A complex **spec-dev** change is completed
 
 **Optional but valuable:**
 - When stuck (fresh perspective)

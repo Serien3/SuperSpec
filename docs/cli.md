@@ -17,10 +17,6 @@ Initialize SuperSpec support files in the current repository.
 superspec init --agent codex
 ```
 
-**Arguments**
-
-None.
-
 **Options**
 
 | Option    | Description                             | Default  |
@@ -41,10 +37,6 @@ Validate a workflow file or a packaged workflow schema.
 superspec validate [--schema <workflow-id> | --file <path>] [--json]
 ```
 
-**Arguments**
-
-None.
-
 **Options**
 
 | Option     | Description                                                           | Default |
@@ -64,10 +56,6 @@ Summarize all current-session commit entries in the root `progress.md` into a co
 ```bash
 superspec progress
 ```
-
-**Arguments**
-
-None.
 
 **Options**
 
@@ -92,10 +80,6 @@ List all active changes.
 superspec change list
 ```
 
-**Arguments**
-
-None.
-
 **Options**
 
 None.
@@ -118,8 +102,8 @@ Modes:
 
 **Arguments**
 
-| Argument | Description | Default |
-| --- | --- | --- |
+| Argument   | Description                      | Default  |
+| ---------- | -------------------------------- | -------- |
 | `<change>` | Existing change name to advance. | Optional |
 
 **Options**
@@ -145,8 +129,8 @@ superspec change status <change> [--json] [--debug] [--full] [--step-limit <n>]
 
 **Arguments**
 
-| Argument | Description | Default |
-| --- | --- | --- |
+| Argument   | Description             | Default  |
+| ---------- | ----------------------- | -------- |
 | `<change>` | Change name to inspect. | Required |
 
 **Options**
@@ -168,14 +152,10 @@ superspec change stepComplete <change> <step_id>
 
 **Arguments**
 
-| Argument | Description | Default |
-| --- | --- | --- |
-| `<change>` | Change name to update. | Required |
+| Argument    | Description                          | Default  |
+| ----------- | ------------------------------------ | -------- |
+| `<change>`  | Change name to update.               | Required |
 | `<step_id>` | Step identifier to mark as complete. | Required |
-
-**Options**
-
-None.
 
 ### `superspec change stepFail`
 
@@ -187,15 +167,10 @@ superspec change stepFail <change> <step_id>
 
 **Arguments**
 
-| Argument | Description | Default |
-| --- | --- | --- |
-| `<change>` | Change name to update. | Required |
+| Argument    | Description                        | Default  |
+| ----------- | ---------------------------------- | -------- |
+| `<change>`  | Change name to update.             | Required |
 | `<step_id>` | Step identifier to mark as failed. | Required |
-
-**Options**
-
-None.
-
 
 ## Git Commands
 
@@ -206,10 +181,6 @@ Create a git worktree and print a JSON description of the created state.
 ```bash
 superspec git create-worktree --slug <slug> [--base <ref>] [--branch <name>] [--path <path>]
 ```
-
-**Arguments**
-
-None.
 
 **Options**
 
@@ -227,10 +198,6 @@ Preview or execute merge/cleanup operations for a managed worktree.
 ```bash
 superspec git finish-worktree [--slug <slug>] [--yes] [--merge] [--cleanup] [--strategy merge|squash] [--commit-message "<msg>"]
 ```
-
-**Arguments**
-
-None.
 
 **Options**
 
@@ -253,17 +220,17 @@ superspec git commit <change> --summary "<subject>" [--details "<body>"] --next 
 
 **Arguments**
 
-| Argument | Description | Default |
-| --- | --- | --- |
+| Argument   | Description                                            | Default  |
+| ---------- | ------------------------------------------------------ | -------- |
 | `<change>` | Target change whose execution runtime will be updated. | Required |
 
 **Options**
 
-| Option | Description | Default |
-| --- | --- | --- |
-| `--summary` | Commit subject line. | Required |
-| `--details` | Optional commit body narrative. Blank details are omitted from Git body and `progress.md`. | `""` |
-| `--next` | Next-step note written into session progress. | Required |
+| Option      | Description                                                                                | Default  |
+| ----------- | ------------------------------------------------------------------------------------------ | -------- |
+| `--summary` | Commit subject line.                                                                       | Required |
+| `--details` | Optional commit body narrative. Blank details are omitted from Git body and `progress.md`. | `""`     |
+| `--next`    | Next-step note written into session progress.                                              | Required |
 
 Behavior:
 - Runs `git add -A` before committing.

@@ -47,6 +47,15 @@
       "skill": "writing-tasks"
     },
     {
+      "id": "a5.1",
+      "description": "git-commit",
+      "dependsOn": [
+        "a5"
+      ],
+      "executor": "script",
+      "script": "git add . && git commit -m 'Finish specs and prepare for excuting tasks'"
+    },
+    {
       "id": "a6",
       "description": "execute-change",
       "dependsOn": [
@@ -63,6 +72,16 @@
       ],
       "executor": "skill",
       "skill": "sync-specs"
+    },
+    {
+      "id": "a8",
+      "description": "superspec-git",
+      "dependsOn": [
+        "a7"
+      ],
+      "executor": "script",
+      "script": "suerspec git commit <change-name> --summary \"<subject>\" --details \"<body>\" --next \"<next>\"",
+      "prompt": "Fill in the parameters and execute the command. Specifically: `summary`— a one-sentence title that *must* begin with a verb and focus on the primary change introduced by this commit; `details`— 2 to 6 lines explaining what this commit accomplished, which parts were affected, and the rationale behind the changes; `next`— what is planned for the next step, or what requires attention."
     }
   ]
 }

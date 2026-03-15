@@ -13,7 +13,7 @@
             "id": "a2",
             "description": "Implement",
             "executor": "human",
-            "prompt": "To achieve this requirement, minimize the scope of modifications."
+            "prompt": "Start writing code to achieve this requirement. Minimize the scope of modifications."
         },
         {
             "id": "a3",
@@ -31,8 +31,8 @@
                 "a3"
             ],
             "executor": "script",
-            "script": "suerspec git commit <change-name> --summary \"<subject>\" --details \"<body>\" --next \"<next>\"",
-            "prompt": "Fill in the parameters and execute the command. Specifically: `summary`— a one-sentence title that *must* begin with a verb and focus on the primary change introduced by this commit; `details`— 2 to 6 lines explaining what this commit accomplished, which parts were affected, and the rationale behind the changes; `next`— what is planned for the next step, or what requires attention."
+            "script": "superspec git commit <change-name> --summary \"<subject>\" --details \"<body>\" --next \"<next>\"",
+            "prompt": "Fill in the parameters and execute the command. Specifically: `summary`- a one-sentence title that *must* begin with a verb and focus on the primary change introduced by this commit; `details`(Optional) - 2 to 6 lines explaining what this commit accomplished, which parts were affected, and the rationale behind the changes; `next`- what is planned for the next step, or what requires attention."
         }
     ]
 }

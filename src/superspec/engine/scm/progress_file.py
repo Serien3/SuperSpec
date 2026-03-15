@@ -19,6 +19,14 @@ def progress_file_path(repo_root: Path) -> Path:
     return repo_root / "progress.md"
 
 
+def normalize_progress_details(details: str | None) -> str:
+    normalized = (details or "").strip()
+    if not normalized:
+        return ""
+
+    return normalized.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n")
+
+
 def build_progress_entry(
     *,
     commit_hash: str,
@@ -33,7 +41,7 @@ def build_progress_entry(
         "commit_hash": commit_hash,
         "change": change,
         "summary": summary,
-        "details": details,
+        "details": normalize_progress_details(details),
         "next": next_steps,
         "committed_at": committed_at,
         "files_changed": list(files_changed),
@@ -127,7 +135,7 @@ def _extract_details(block: str) -> str:
             code="invalid_progress_file",
             details={},
         )
-    return block[details_start:end]
+    return normalize_progress_details(block[details_start:end])
 
 
 def _extract_files(block: str) -> list[str]:
@@ -204,7 +212,7 @@ def _dedupe_preserving_order(values: list[str]) -> list[str]:
 
 
 def _detail_lines(details: str) -> list[str]:
-    return [line.strip() for line in details.splitlines() if line.strip()]
+    return [line.strip() for line in normalize_progress_details(details).splitlines() if line.strip()]
 
 
 def next_session_number(content: str, session_date: str) -> int:

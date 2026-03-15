@@ -67,6 +67,15 @@ def merge_files_changed(existing: object, new_files: list[str]) -> list[str]:
     return merged
 
 
+def normalize_commit_details(details: str | None) -> str:
+    normalized = (details or "").strip()
+    if not normalized:
+        return ""
+
+    # Agent/tool output sometimes serializes line breaks as literal escape sequences.
+    return normalized.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n")
+
+
 def stage_commit_inputs(repo_root: Path, change_dir: Path) -> None:
     run_git(repo_root, ["add", "-A"])
 
@@ -75,7 +84,7 @@ def commit_for_change(repo_root: Path, change_name: str, summary: str, details: 
     normalized_summary = summary.strip()
     if not normalized_summary:
         raise ProtocolError("Invalid commit summary: expected a non-empty string.", code="invalid_payload")
-    normalized_details = (details or "").strip()
+    normalized_details = normalize_commit_details(details)
     normalized_next = next_steps.strip()
     if not normalized_next:
         raise ProtocolError("Invalid next field: expected a non-empty string.", code="invalid_payload")

@@ -123,6 +123,48 @@ class ProgressSummaryTest(unittest.TestCase):
         self.assertEqual(entries[0]["details"], "")
         self.assertEqual(entries[0]["files_changed"], ["src/superspec/cli.py"])
 
+    def test_summarize_current_session_decodes_escaped_newlines_in_details(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        progress_path = root / "progress.md"
+        entry = build_progress_entry(
+            commit_hash="abc123",
+            change="demo-change",
+            summary="feat: add parser",
+            details="Implemented parser.\\nCovered edge cases.\\nAdded tests.",
+            next_steps="ship session summary",
+            committed_at="2026-03-15T09:00:00+00:00",
+            files_changed=["src/superspec/cli.py"],
+        )
+        progress_path.write_text(
+            "\n".join(
+                [
+                    "# Progress",
+                    "",
+                    "## Current Session",
+                    CURRENT_SESSION_START,
+                    "",
+                    render_progress_entry(entry),
+                    "",
+                    CURRENT_SESSION_END,
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        payload = summarize_current_session(root, finished_at="2026-03-15T11:30:00+00:00")
+
+        self.assertEqual(
+            payload["entries"][0]["details"],
+            "Implemented parser.\nCovered edge cases.\nAdded tests.",
+        )
+        progress = progress_path.read_text(encoding="utf-8")
+        self.assertIn(
+            "### Done\n- feat: add parser\n\t- Implemented parser.\n\t- Covered edge cases.\n\t- Added tests.",
+            progress,
+        )
+        self.assertNotIn("\\n", progress)
+
 
 if __name__ == "__main__":
     unittest.main()

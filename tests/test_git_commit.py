@@ -345,6 +345,61 @@ class GitCommitTest(unittest.TestCase):
             progress,
         )
 
+    def test_commit_for_change_decodes_escaped_newlines_in_details(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._run(["git", "init"], root)
+        self._run(["git", "config", "user.name", "SuperSpec Test"], root)
+        self._run(["git", "config", "user.email", "test@example.com"], root)
+
+        tracked = root / "tracked.txt"
+        tracked.write_text("one\n", encoding="utf-8")
+        self._run(["git", "add", "tracked.txt"], root)
+        self._run(["git", "commit", "-m", "chore: init"], root)
+
+        change_dir = root / "superspec" / "changes" / "demo-change"
+        state_path = change_dir / "execution" / "state.json"
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(
+            json.dumps(
+                {
+                    "meta": {
+                        "schemaVersion": "https://superspec.dev/schemas/workflow-v1.json",
+                        "changeName": "demo-change",
+                    },
+                    "runtime": {
+                        "changeName": "demo-change",
+                        "status": "running",
+                        "steps": [],
+                    },
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        tracked.write_text("one\ntwo\n", encoding="utf-8")
+        escaped_details = "Line one of the body.\\nLine two keeps context.\\nLine three records follow-up."
+
+        payload = commit_for_change(
+            root,
+            "demo-change",
+            "feat: escaped details",
+            escaped_details,
+            "prepare session closeout",
+        )
+
+        expected_details = "Line one of the body.\nLine two keeps context.\nLine three records follow-up."
+        self.assertEqual(payload["details"], expected_details)
+
+        body = self._run(["git", "show", "-s", "--format=%B", "HEAD"], root)
+        self.assertIn("feat: escaped details", body)
+        self.assertIn(expected_details, body)
+        self.assertNotIn("\\n", body)
+
+        progress = (root / "progress.md").read_text(encoding="utf-8")
+        self.assertIn(expected_details, progress)
+        self.assertNotIn("\\n", progress)
+
     def test_commit_for_change_allows_blank_details_and_omits_details_block(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
         self._run(["git", "init"], root)

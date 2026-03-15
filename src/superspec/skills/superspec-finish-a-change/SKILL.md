@@ -11,9 +11,9 @@ Start or continue workflow on a Superspec change. Complete each step in a loop a
 
 ### Step 1: Resolve the target change.
    - If a change name was provided: `superspec change advance <change-name> --json`
-   - If a description was provided: Infer workflow type, then `superspec change advance --new <workflow-type>/<change-name> --json`
+   - If a description was provided: Infer workflow type, then `superspec change advance --new <workflow-type>/<change-name> --goal "<one-line-to-summary-goal>" --json`
      - If `change-name` is missing, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
-   - If nothing provided: `superspec change list` to list active changes, then AskUserQuestion to ask clarifying questions
+   - If nothing provided: `superspec change list` to list active changes, then **AskUserQuestion** to ask clarifying questions
 
 ### Step 2: Parse JSON response to get prompt
    - `change`: The change name
@@ -60,6 +60,10 @@ Start or continue workflow on a Superspec change. Complete each step in a loop a
 | `bug-fix` | `Analyze Bug` -> `Fix Bug` -> `Verify` | Use when bugs are discovered.. |
 | `code-review` | `request-code-review` -> `report-review` -> `receive-code-review-and-fix` -> `commit a change` | Use to run review and fix feedback. |
 
+## Guardrails
+
+- Never use `stepComplete` indiscriminately. You MUST ensure that you have completed all work for this stage before use it.
+- Never Read `superspec/changes/<change-name>/exexcution`
 
 ## Final Feedback Template
 

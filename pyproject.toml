@@ -25,6 +25,8 @@ superspec = [
   "schemas/*.json",
   "schemas/templates/*.json",
   "schemas/workflows/*.json",
+  "codex/config.toml",
+  "codex/agents/*.toml",
   "skills/*/SKILL.md",
   "agents/*.toml",
   "config/*.toml",

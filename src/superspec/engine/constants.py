@@ -1,1 +1,1 @@
-SUPPORTED_PROTOCOL_VERSION = "superspec.protocol/v1.1.0"
+SUPPORTED_PROTOCOL_VERSION = "superspec.protocol/v1.2.0"

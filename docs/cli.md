@@ -2,219 +2,274 @@
 
 ## Global Options
 
-**Options:**
-| option            | description                                       |
-| ----------------- | ------------------------------------------------- |
-| `-h`, `--help`    | 显示帮助信息（适用于 `superspec` 及各级子命令）。 |
-| `-v`, `--version` | 显示 SuperSpec 版本号并退出。                     |
+| Option            | Description                                  |
+| ----------------- | -------------------------------------------- |
+| `-h`, `--help`    | Show help for `superspec` or any subcommand. |
+| `-v`, `--version` | Print the SuperSpec version and exit.        |
 
 ## Core Commands
 
 ### `superspec init`
 
-初始化当前仓库的 SuperSpec 基础环境。
-
-**Behavior:**
-| 行为         | 说明                                                                           |
-| ------------ | ------------------------------------------------------------------------------ |
-| 目录初始化   | 创建 `superspec/changes/archive` 与 `superspec/specs`（已存在则复用）。        |
-| 同步技能     | 将内置 skills 同步到 `.codex/skills`。                                         |
-| 同步代理配置 | 将内置 `agents/*` 同步到仓库根目录 `agents/`，并同步内置 config 到 `.codex/`。 |
+Initialize SuperSpec support files in the current repository.
 
 ```bash
-superspec init [options]
+superspec init --agent codex
 ```
 
-**Options:**
-| option    | description                      | default  |
-| --------- | -------------------------------- | -------- |
-| `--agent` | 代理类型（当前仅支持 `codex`）。 | Required |
+**Arguments**
+
+None.
+
+**Options**
+
+| Option    | Description                             | Default  |
+| --------- | --------------------------------------- | -------- |
+| `--agent` | Agent package to install into the repo. | Required |
+
+Behavior:
+- Creates `superspec/changes/archive` and `superspec/specs` if they do not already exist.
+- Syncs packaged skills into `.codex/skills`.
+- Syncs packaged agent definitions into `.codex/agents`.
+- Syncs packaged Codex configuration into `.codex/config.toml`.
 
 ### `superspec validate`
 
-校验 workflow 文件是否符合 SuperSpec 支持的模板/字段约束。
+Validate a workflow file or a packaged workflow schema.
 
 ```bash
-superspec validate [options]
+superspec validate [--schema <workflow-id> | --file <path>] [--json]
 ```
 
-**Options:**
-| option     | description                                                             | default |
-| ---------- | ----------------------------------------------------------------------- | ------- |
-| `--schema` | workflow 名称（`superspec/schemas/workflows/<schema>.workflow.json`）。 | `None`  |
-| `--file`   | workflow 文件路径（绝对路径或相对仓库路径）。                           | `None`  |
-| `--json`   | 输出机器可读 JSON（`ok/errors/warnings`）。                             | `false` |
+**Arguments**
 
-> `--schema` 与 `--file` 必须且只能提供一个。
+None.
 
-## Git Commands
+**Options**
 
-### `superspec git create-worktree`
+| Option     | Description                                                           | Default |
+| ---------- | --------------------------------------------------------------------- | ------- |
+| `--schema` | Validate a packaged workflow from `src/superspec/schemas/workflows/`. | `None`  |
+| `--file`   | Validate a workflow file by path.                                     | `None`  |
+| `--json`   | Print machine-readable validation output.                             | `false` |
 
-创建 git worktree 并输出状态 JSON。
+Notes:
+- Provide exactly one of `--schema` or `--file`.
+- Non-JSON mode prints a human summary and exits non-zero on validation failure.
+
+### `superspec progress`
+
+Summarize all current-session commit entries in the root `progress.md` into a completed session block.
 
 ```bash
-superspec git create-worktree [options]
+superspec progress
 ```
 
-**Options:**
-| option     | description                               | default              |
-| ---------- | ----------------------------------------- | -------------------- |
-| `--slug`   | 分支命名短标识。                          | Required             |
-| `--base`   | 基线分支/引用。未提供时自动推断当前分支。 | 当前分支（自动推断） |
-| `--branch` | 显式分支名。                              | `""`                 |
-| `--path`   | worktree 路径（绝对或仓库相对）。         | `""`                 |
+**Arguments**
 
-### `superspec git finish-worktree`
+None.
 
-合并和/或清理 worktree，并输出结果 JSON。
+**Options**
 
-**Behavior:**
-| 行为         | 说明                                                                     |
-| ------------ | ------------------------------------------------------------------------ |
-| 预览执行     | 未提供 `--yes` 时仅输出计划，不执行。                                    |
-| 合并前检查   | `--merge` 执行前要求主工作区无未提交改动。                               |
-| 提交信息约束 | `--merge` 且策略为 `merge` 或 `squash` 时，`--commit-message` 不能为空。 |
-| 清理确认     | `--yes --cleanup` 且未启用 `--merge` 时，执行期会二次确认。              |
+None.
 
-```bash
-superspec git finish-worktree [options]
-```
-
-**Options:**
-| option             | description                      | default |
-| ------------------ | -------------------------------- | ------- |
-| `--slug`           | 目标 worktree slug。             | `""`    |
-| `--yes`            | 实际执行（不加则仅预览）。       | `false` |
-| `--merge`          | 执行合并流程。                   | `false` |
-| `--cleanup`        | 执行清理流程。                   | `false` |
-| `--strategy`       | 合并策略：`merge` / `squash`。   | `merge` |
-| `--commit-message` | 合并提交信息（执行合并时必填）。 | `""`    |
-
-
-### `superspec git commit`
-
-执行一次 `git commit`，并把本次提交涉及的文件路径合并写入指定 change 的运行态 `execution/state.json` 的 `runtime.files_changed`。
-
-```bash
-superspec git commit <change> --message "<commit message>"
-```
-
-**Behavior:**
-| 行为        | 说明                                                                                  |
-| ----------- | ------------------------------------------------------------------------------------- |
-| 执行 commit | 在仓库根目录执行 `git commit -m <message>`。                                          |
-| 写入运行态  | 读取本次 `HEAD` 提交涉及的文件，并合并写入 `state.json.runtime.files_changed`。       |
-| 合并规则    | 若 `runtime.files_changed` 已存在，则保留已有条目，只追加当前提交中不重合的文件路径。 |
-| 校验状态    | 若 `execution/state.json` 不存在，或 state 非 `running`，则命令失败。                 |
-
-**Arguments:**
-| Argument   | description                                   | default  |
-| ---------- | --------------------------------------------- | -------- |
-| `<change>` | 要更新 `runtime.files_changed` 的 change 名。 | Required |
-
-**Options:**
-| option      | description | default  |
-| ----------- | ----------- | -------- |
-| `--message` | commit 信息 | Required |
-
-
+Behavior:
+- Reads commit entries between `<!-- superspec:current-session:start -->` and `<!-- superspec:current-session:end -->`.
+- Generates a Markdown summary headed by `## YYYY-MM-DD Session x`.
+- Writes `Done`, `Changes`, `Files`, `Next`, and `Finish` sections into `progress.md`.
+- Keeps `Current Session` at the top of the file.
+- Inserts the newest completed session immediately below `Current Session`.
+- Clears the current-session commit ledger after a successful write.
+- Fails with a structured protocol error if the current-session block is empty.
 
 ## Change Commands
 
 ### `superspec change list`
 
-列出所有未归档 change。
+List all active changes.
 
 ```bash
 superspec change list
 ```
 
+**Arguments**
+
+None.
+
+**Options**
+
+None.
+
 ### `superspec change advance`
 
-推进现有 change，或创建并推进新 change。
+Advance an existing change, or create a new change bound to a workflow and immediately pull its next step.
 
 ```bash
 superspec change advance [<change>] [--new <workflow-type>/<change-name>] [--goal "<one-line goal>"] [--owner <owner>] [--json]
 ```
 
-**Modes:**
-| 模式       | 用法                                           | 说明                                                                                                                           |
-| ---------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 推进模式   | `superspec change advance <change>`            | 拉取下一个可执行 step。                                                                                                        |
-| 创建并推进 | `superspec change advance --new <type>/<name>` | 使用 `<type>` 选择 workflow，初始化 `superspec/changes/<name>/execution/state.json` 与 `events.log` 并立即执行一次 next pull。 |
-| 列表模式   | `superspec change advance`                     | 列出所有未归档 change。                                                                                                        |
+Modes:
+- `superspec change advance`
+  Lists active changes.
+- `superspec change advance <change>`
+  Pulls the next runnable step for an existing change.
+- `superspec change advance --new <workflow>/<change>`
+  Creates the change, initializes `execution/state.json`, and immediately executes the first `next` pull.
 
-**Options:**
-| option    | description                                    | default |
-| --------- | ---------------------------------------------- | ------- |
-| `--new`   | 新建选择器，格式 `workflow-type/change-name`。 | `None`  |
-| `--goal`  | 创建新 change 时写入 `runtime.goal` 的一句话目标。 | `None`  |
-| `--owner` | 执行者标识。                                   | `agent` |
-| `--json`  | JSON 输出。                                    | `false` |
+**Arguments**
 
-> 不允许同时提供 `<change>` 和 `--new`。
+| Argument | Description | Default |
+| --- | --- | --- |
+| `<change>` | Existing change name to advance. | Optional |
 
-**`--json` 返回说明：**
-- 顶层字段固定为 `change`、`goal`、`state`、`step`。
-- `goal` 来自 `execution/state.json.runtime.goal`，未设置时为 `null`。
-- `step` 总是包含 `stepId` 和 `prompt`。
-- `script` step 额外返回 `script_command`。
-- `skill` step 额外返回 `skillName`。
-- `human` step 可额外返回 `option`。
-- `step` 不再返回 `executor` 字段；执行方式由返回字段本身决定。
+**Options**
+
+| Option    | Description                                                                | Default |
+| --------- | -------------------------------------------------------------------------- | ------- |
+| `--new`   | Create a change bound to a workflow using `<workflow-type>/<change-name>`. | `None`  |
+| `--goal`  | Write a one-line goal into `runtime.goal` when creating a change.          | `None`  |
+| `--owner` | Owner label returned to the protocol layer.                                | `agent` |
+| `--json`  | Print JSON instead of human-readable text.                                 | `false` |
+
+Notes:
+- Do not provide both `<change>` and `--new`.
+- Compact JSON mode returns `changeName`, `status`, and `progress`.
 
 ### `superspec change status`
 
-查询执行状态、进度和 step 列表。
+Read the execution state of a change.
 
 ```bash
-superspec change status <change> [options]
+superspec change status <change> [--json] [--debug] [--full] [--step-limit <n>]
 ```
 
-**Arguments:**
-| Argument   | description  | default  |
-| ---------- | ------------ | -------- |
-| `<change>` | `change`名称 | Required |
+**Arguments**
 
-**Options:**
-| option         | description                                | default |
+| Argument | Description | Default |
+| --- | --- | --- |
+| `<change>` | Change name to inspect. | Required |
+
+**Options**
+
+| Option         | Description                                | Default |
 | -------------- | ------------------------------------------ | ------- |
-| `--json`       | JSON 输出。                                | `false` |
-| `--debug`      | 返回协议调试字段。                         | `false` |
-| `--full`       | 与 `--json` 一起使用时返回完整 step 对象。 | `false` |
-| `--step-limit` | 精简模式返回 step 摘要上限。               | `40`    |
-
-**JSON 输出规则:**
-| 条件                                  | 输出                                   |
-| ------------------------------------- | -------------------------------------- |
-| `--json` 且未开启 `--full/--debug`    | 精简对象：`changeName/status/progress` |
-| `--json` 且开启 `--full` 或 `--debug` | 完整协议 payload                       |
+| `--json`       | Print JSON output.                         | `false` |
+| `--debug`      | Include debug protocol fields.             | `false` |
+| `--full`       | With `--json`, include full step objects.  | `false` |
+| `--step-limit` | Limit step summaries in compact JSON mode. | `40`    |
 
 ### `superspec change stepComplete`
 
-将 step 标记为完成。
+Mark a step as completed.
 
 ```bash
 superspec change stepComplete <change> <step_id>
 ```
 
-**Arguments:**
-| Argument    | description          | default  |
-| ----------- | -------------------- | -------- |
-| `<change>`  | `change`名称         | Required |
-| `<step_id>` | 要完成的 step 标识。 | Required |
+**Arguments**
+
+| Argument | Description | Default |
+| --- | --- | --- |
+| `<change>` | Change name to update. | Required |
+| `<step_id>` | Step identifier to mark as complete. | Required |
+
+**Options**
+
+None.
 
 ### `superspec change stepFail`
 
-将 step 标记为失败。
+Mark a step as failed.
 
 ```bash
 superspec change stepFail <change> <step_id>
 ```
 
-**Arguments:**
-| Argument    | description          | default  |
-| ----------- | -------------------- | -------- |
-| `<change>`  | `change`名称         | Required |
-| `<step_id>` | 要失败的 step 标识。 | Required |
+**Arguments**
+
+| Argument | Description | Default |
+| --- | --- | --- |
+| `<change>` | Change name to update. | Required |
+| `<step_id>` | Step identifier to mark as failed. | Required |
+
+**Options**
+
+None.
+
+
+## Git Commands
+
+### `superspec git create-worktree`
+
+Create a git worktree and print a JSON description of the created state.
+
+```bash
+superspec git create-worktree --slug <slug> [--base <ref>] [--branch <name>] [--path <path>]
+```
+
+**Arguments**
+
+None.
+
+**Options**
+
+| Option     | Description                                              | Default        |
+| ---------- | -------------------------------------------------------- | -------------- |
+| `--slug`   | Short identifier used for branch naming and saved state. | Required       |
+| `--base`   | Base branch or ref.                                      | Current branch |
+| `--branch` | Explicit branch name to create or reuse.                 | `""`           |
+| `--path`   | Worktree path, absolute or repo-relative.                | `""`           |
+
+### `superspec git finish-worktree`
+
+Preview or execute merge/cleanup operations for a managed worktree.
+
+```bash
+superspec git finish-worktree [--slug <slug>] [--yes] [--merge] [--cleanup] [--strategy merge|squash] [--commit-message "<msg>"]
+```
+
+**Arguments**
+
+None.
+
+**Options**
+
+| Option             | Description                                       | Default |
+| ------------------ | ------------------------------------------------- | ------- |
+| `--slug`           | Target worktree slug.                             | `""`    |
+| `--yes`            | Execute the plan instead of previewing it.        | `false` |
+| `--merge`          | Merge the worktree branch into its target branch. | `false` |
+| `--cleanup`        | Remove the worktree and delete the branch safely. | `false` |
+| `--strategy`       | Merge strategy.                                   | `merge` |
+| `--commit-message` | Commit message for merge or squash flows.         | `""`    |
+
+### `superspec git commit`
+
+Create a Git commit and update SuperSpec session-progress state for a running change.
+
+```bash
+superspec git commit <change> --summary "<subject>" [--details "<body>"] --next "<next step>"
+```
+
+**Arguments**
+
+| Argument | Description | Default |
+| --- | --- | --- |
+| `<change>` | Target change whose execution runtime will be updated. | Required |
+
+**Options**
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--summary` | Commit subject line. | Required |
+| `--details` | Optional commit body narrative. Blank details are omitted from Git body and `progress.md`. | `""` |
+| `--next` | Next-step note written into session progress. | Required |
+
+Behavior:
+- Runs `git add -A` before committing.
+- Creates a Git commit whose subject comes from `--summary`.
+- Uses `--details` as the commit body only when it is non-empty.
+- Merges files from the resulting `HEAD` commit into `execution/state.json.runtime.files_changed`.
+- Appends one normalized commit entry into the root `progress.md` current-session section.
+- Includes changed runtime files such as `execution/state.json` and `execution/events.log` if they were part of the staged changes.
+- Fails if the target change has no readable `execution/state.json` runtime or is not in `running` state.

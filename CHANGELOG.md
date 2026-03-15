@@ -2,6 +2,22 @@
 
 All notable changes to SuperSpec are documented in this file.
 
+## SuperSpec - v1.2.0
+
+Release date: 2026-03-15
+
+### Added
+- Added `superspec progress` to summarize the current session ledger in `progress.md` into a dated session block with `Done`, `Changes`, `Files`, `Next`, and `Finish` sections.
+- Added persistent session-history behavior in `progress.md`, keeping `Current Session` at the top and stacking completed session summaries newest-first below it.
+- Added a new main spec for `session-progress-summary` and synced the latest session-progress requirements into the main OpenSpec specs tree.
+
+### Changed
+- Updated `superspec git commit` to use structured `--summary/--details/--next` inputs as the documented commit interface in CLI docs and workflows.
+- Made `superspec git commit --details` optional; blank details now omit the Git commit body paragraph and omit the `Details` block from `progress.md` commit entries.
+- Changed commit auto-staging so change runtime files such as `execution/state.json` and `execution/events.log` are no longer excluded when they already have local changes.
+- Refined session summary ordering so `Current Session` always stays first and the newest completed session summary is inserted directly beneath it.
+- Refreshed packaged workflow metadata and protocol/version constants for the `v1.2.0` release.
+
 ## SuperSpec - v1.1.0
 
 Release date: 2026-03-10

@@ -43,8 +43,9 @@ git clone https://github.com/Serien3/SuperSpec.git && cd SuperSpec/ && pip insta
 
 The following tools must be available in your system path :
 - Git
-- OpenSpec >= v1.1.0 (reference [OpenSpec](https://github.com/Fission-AI/OpenSpec))
-  - You can quickly download the latest version via `npm install -g @fission-ai/openspec@latest`
+- ~~OpenSpec >= v1.1.0 (reference [OpenSpec](https://github.com/Fission-AI/OpenSpec))~~
+- 🚀 SuperSpec has now internally implemented a Spec-driven development workflow and associated skills.There is no longer any need to download OpenSpec.
+
 
 ## Getting Started
 
@@ -56,24 +57,27 @@ After installation, try **SuperSpec** with the following steps:
    cd <your-project>
    superspec init --agent codex
    ```
-2. Brainstorm with the AI and tell it to run: `openspec-explore`. This starts OpenSpec's explore mode.
-3. Once requirements are clear, tell your AI to use the `superspec-agent-driven-loop` skill to implement them.
-4. Wait. During the process you'll see new files/directories created (for example `.codex/skills/`):
+2. Once requirements are clear, tell your AI to use the `superspec-finish-a-change` skill to implement them.
+3. During the process you'll see new files/directories created (for example `.codex/skills/`):
    ```text
    <your-project>/
    ├── .codex/
    │   └── skills/
    │       └── ...                     # Skills installed by `superspec init` for AI execution
-  └── openspec/
-      └── changes/
-          └── <change-name>/
-              └── execution/
-                  ├── state.json      # Current execution state snapshot (meta + runtime goal/steps/progress/terminal status)
-                  └── events.log      # Event log (e.g. action.started/completed/failed)
+   └── superspec/
+       └── changes/
+           └── <change-name>/
+               └── execution/
+                   ├── state.json      # Current execution state snapshot (meta + runtime goal/steps/progress/terminal status)
+                   └── events.log      # Event log (e.g. action.started/completed/failed)
    ```
-   Note: The current SuperSpec workflow still relies on OpenSpec programs and skills.
 
 `execution/state.json` may also contain helper metadata written by CLI utilities, for example:
 
-- `commit_by_superspec_last`: last commit produced by `superspec git commit` with shape `{ "commit_hash": "...", "message": "..." }`.
 - `runtime.goal`: optional one-line change goal written by `superspec change advance --new ... --goal "..."`.
+
+The repository root `progress.md` is also maintained by SuperSpec:
+- `superspec git commit` appends the latest structured commit record into `Current Session`.
+- `superspec progress` turns the current-session ledger into a completed `## YYYY-MM-DD Session x` summary and resets the current-session block for the next work period.
+
+For the full command reference, see [`docs/cli.md`](./docs/cli.md).

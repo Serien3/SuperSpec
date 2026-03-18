@@ -1,9 +1,4 @@
-# change-advance-entrypoint Specification
-
-## Purpose
-Define the `superspec change` command entrypoints for listing, creating, advancing, and finishing changes.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Explicit change listing command
 The CLI SHALL provide `superspec change list` to return all active changes.
@@ -19,6 +14,8 @@ The CLI SHALL provide `superspec change finish <change-name>` to retire an activ
 #### Scenario: Finish command is part of change lifecycle surface
 - **WHEN** a user runs `superspec change finish <change-name>`
 - **THEN** the command applies finish lifecycle semantics for that active change
+
+## ADDED Requirements
 
 ### Requirement: Change advance command modes
 The CLI SHALL provide `superspec change advance` for existing-change advance mode and create-and-advance mode.

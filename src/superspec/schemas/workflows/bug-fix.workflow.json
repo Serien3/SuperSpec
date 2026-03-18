@@ -2,6 +2,7 @@
     "workflowId": "bug-fix",
     "version": "1.2.0",
     "description": "Workflow for fixing bugs in the codebase",
+    "finishPolicy": "delete",
     "steps": [
         {
             "id": "a1",

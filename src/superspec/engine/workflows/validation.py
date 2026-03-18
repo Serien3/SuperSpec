@@ -11,6 +11,8 @@ from superspec.engine.workflows.definitions import (
 from superspec.engine.workflows.runtime_blueprint import workflow_runtime_blueprint_payload
 from superspec.engine.workflows.sources import load_workflow_schema
 
+COMPLETION_POLICIES = {"archive", "delete", "keep"}
+
 
 def unknown_top_level_field_error(workflow: dict, workflow_name: str):
     unknown = [key for key in workflow.keys() if key not in WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS]
@@ -73,6 +75,16 @@ def schema_errors(workflow: dict):
 
 def semantic_errors(workflow: dict):
     errors = []
+    finish_policy = workflow.get("finishPolicy")
+    if finish_policy is not None and finish_policy not in COMPLETION_POLICIES:
+        errors.append(
+            error_payload(
+                "invalid_finish_policy",
+                "finishPolicy",
+                "Workflow finishPolicy must be one of: archive, delete, keep",
+            )
+        )
+
     steps = workflow.get("steps")
     if not isinstance(steps, list):
         return errors

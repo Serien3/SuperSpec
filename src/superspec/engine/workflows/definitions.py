@@ -2,6 +2,7 @@ WORKFLOW_ALLOWED_TOP_LEVEL_FIELDS = (
     "workflowId",
     "version",
     "description",
+    "finishPolicy",
     "steps",
     "metadata",
 )
@@ -12,6 +13,7 @@ WORKFLOW_RUNTIME_CUSTOMIZATION_FIELDS = (
 
 WORKFLOW_OPTIONAL_TOP_LEVEL_FIELDS = (
     "description",
+    "finishPolicy",
     "metadata",
 )
 

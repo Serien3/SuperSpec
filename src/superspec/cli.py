@@ -5,6 +5,7 @@ from importlib import metadata
 from pathlib import Path
 
 from superspec import __version__
+from superspec.engine.changes.finish import finish_change
 from superspec.engine.changes.paths import resolve_change_dir, validate_change_name
 from superspec.engine.errors import ProtocolError
 from superspec.engine.scm.git_commit import commit_for_change
@@ -368,6 +369,25 @@ def command_change_list(repo_root: Path, args):
     _print_change_list(repo_root)
 
 
+def command_change_finish(repo_root: Path, args):
+    mode = None
+    if bool(args.archive):
+        mode = "archive"
+    elif bool(args.delete):
+        mode = "delete"
+    elif bool(args.keep):
+        mode = "keep"
+
+    payload = finish_change(repo_root, args.change, mode=mode, force=bool(args.force))
+    selected_mode = payload["selectedMode"]
+    if selected_mode == "archive":
+        print(f"Finished change '{args.change}' by archiving it to {payload['archivedTo']}.")
+    elif selected_mode == "delete":
+        print(f"Finished change '{args.change}' by deleting {payload['deletedFrom']}.")
+    else:
+        print(f"Finished change '{args.change}' with keep retention at {payload['keptAt']}.")
+
+
 def command_change_step_complete(repo_root: Path, args):
     run_protocol_action_from_cli(
         repo_root,
@@ -445,6 +465,13 @@ def build_parser():
         default=40,
         help="Compact JSON mode: max number of step summaries to include.",
     )
+    change_finish = change_sub.add_parser("finish")
+    change_finish.add_argument("change")
+    change_finish.add_argument("--force", action="store_true")
+    finish_mode = change_finish.add_mutually_exclusive_group()
+    finish_mode.add_argument("--archive", action="store_true")
+    finish_mode.add_argument("--delete", action="store_true")
+    finish_mode.add_argument("--keep", action="store_true")
     change_step_complete = change_sub.add_parser("stepComplete")
     change_step_complete.add_argument("change")
     change_step_complete.add_argument("step_id")
@@ -532,6 +559,9 @@ def main():
             return
         if args.group == "change" and args.sub == "status":
             command_change_status(repo_root, args)
+            return
+        if args.group == "change" and args.sub == "finish":
+            command_change_finish(repo_root, args)
             return
         if args.group == "change" and args.sub == "stepComplete":
             command_change_step_complete(repo_root, args)

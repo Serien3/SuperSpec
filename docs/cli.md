@@ -142,6 +142,34 @@ superspec change status <change> [--json] [--debug] [--full] [--step-limit <n>]
 | `--full`       | With `--json`, include full step objects.  | `false` |
 | `--step-limit` | Limit step summaries in compact JSON mode. | `40`    |
 
+### `superspec change finish`
+
+Finish a change using its workflow-defined `finishPolicy`, or override the retention mode explicitly.
+
+```bash
+superspec change finish <change> [--archive | --delete | --keep] [--force]
+```
+
+**Arguments**
+
+| Argument   | Description            | Default  |
+| ---------- | ---------------------- | -------- |
+| `<change>` | Change name to finish. | Required |
+
+**Options**
+
+| Option      | Description                                                                 | Default |
+| ----------- | --------------------------------------------------------------------------- | ------- |
+| `--archive` | Override the workflow default and archive the change.                       | `false` |
+| `--delete`  | Override the workflow default and delete the active change directory.       | `false` |
+| `--keep`    | Override the workflow default and keep the active change directory in place.| `false` |
+| `--force`   | Allow destructive finish actions (`archive` or `delete`) for running changes. | `false` |
+
+Notes:
+- Without an override flag, the command uses the workflow's top-level `finishPolicy`.
+- `--archive`, `--delete`, and `--keep` are mutually exclusive.
+- `--force` is only required for destructive finish actions while the change is still `running`.
+
 ### `superspec change stepComplete`
 
 Mark a step as completed.

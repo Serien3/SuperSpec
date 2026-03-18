@@ -2,6 +2,7 @@
     "workflowId": "code-review",
     "version": "1.2.0",
     "description": "Workflow for requesting and receiving code reviews as part of the spec-driven development process",
+    "finishPolicy": "delete",
     "steps": [
         {
             "id": "a1",

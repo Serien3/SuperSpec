@@ -10,6 +10,7 @@
     "workflowId": "<workflow-id>",
     "version": "<workflow-version|optional>",
     "description": "<workflow-description|optional>",
+    "finishPolicy": "archive|delete|keep|optional",
     "metadata": {}
   },
   "runtime": {
@@ -18,7 +19,6 @@
     "status": "running|success|failed",
     "startedAt": "<iso-8601>",
     "updatedAt": "<iso-8601>",
-    "finishedAt": "<iso-8601|null>",
     "files_changed": [
       "<repo-relative-path>|optional"
     ],
@@ -32,7 +32,8 @@
 - `meta` 只包含 workflow 顶层除 `steps` 外的所有字段。
 - 对 workflow 顶层必填字段，只要 workflow 合法就一定会出现在 `meta`。
 - 对 workflow 顶层可选字段，只有在 workflow 中显式写出时才会出现在 `meta`。
-- `meta` 不包含运行期字段，例如 `createdAt`、`updatedAt`、`finishedAt`。
+- `meta.finishPolicy` 是可选字段；当 workflow 显式声明时，会原样写入快照并驱动 `superspec change finish` 的默认收尾行为。
+- `meta` 不包含运行期字段，例如 `startedAt`、`updatedAt`。
 - `runtime.updatedAt` 在每次协议写入（`next/complete/fail`）时刷新。
 - `runtime.goal` 是可选字段；当通过 `superspec change advance --new ... --goal "..."` 创建 change 时写入。
 - `runtime.files_changed` 是可选字段；当执行 `superspec git commit <change> --summary ... [--details ...] --next ...` 时，会把该次提交涉及的仓库相对路径合并进这个数组，且不会覆盖已有不重合条目。
@@ -50,6 +51,7 @@
   "workflowId": "spec-dev",
   "version": "1.2.0",
   "description": "Default spec-dev workflow",
+  "finishPolicy": "archive",
   "metadata": {
     "channel": "default"
   },
@@ -64,6 +66,7 @@
   "workflowId": "spec-dev",
   "version": "1.2.0",
   "description": "Default spec-dev workflow",
+  "finishPolicy": "archive",
   "metadata": {
     "channel": "default"
   }

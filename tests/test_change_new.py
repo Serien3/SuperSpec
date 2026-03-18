@@ -10,14 +10,48 @@ from unittest.mock import patch
 from superspec.cli import (
     build_parser,
     command_change_advance,
+    command_change_finish,
     command_change_list,
     command_change_step_complete,
     command_change_step_fail,
 )
 from superspec.engine.errors import ProtocolError
+from superspec.engine.storage.json_files import write_json
 
 
 class ChangeNewCommandTest(unittest.TestCase):
+    def _write_state_snapshot(
+        self,
+        root: Path,
+        change_name: str,
+        *,
+        started_at: str = "2026-03-18T01:02:03+00:00",
+        workflow_id: str = "spec-dev",
+        status: str = "success",
+    ) -> Path:
+        change_dir = root / "superspec" / "changes" / change_name
+        execution_dir = change_dir / "execution"
+        execution_dir.mkdir(parents=True, exist_ok=True)
+        write_json(
+            execution_dir / "state.json",
+            {
+                "meta": {
+                    "workflowId": workflow_id,
+                    "finishPolicy": "archive" if workflow_id == "spec-dev" else "delete",
+                },
+                "runtime": {
+                    "changeName": change_name,
+                    "status": status,
+                    "startedAt": started_at,
+                    "updatedAt": started_at,
+                    "steps": [],
+                },
+            },
+        )
+        (execution_dir / "events.log").write_text('{"event":"state.created"}\n', encoding="utf-8")
+        (change_dir / "proposal.md").write_text("proposal\n", encoding="utf-8")
+        return change_dir
+
     def test_change_advance_parser_forms(self):
         parser = build_parser()
 
@@ -66,6 +100,22 @@ class ChangeNewCommandTest(unittest.TestCase):
         args = parser.parse_args(["change", "list"])
         self.assertEqual(args.group, "change")
         self.assertEqual(args.sub, "list")
+
+    def test_change_finish_parser_form(self):
+        parser = build_parser()
+
+        args = parser.parse_args(["change", "finish", "demo-change"])
+        self.assertEqual(args.group, "change")
+        self.assertEqual(args.sub, "finish")
+        self.assertEqual(args.change, "demo-change")
+        self.assertFalse(args.force)
+        self.assertFalse(args.archive)
+        self.assertFalse(args.delete)
+        self.assertFalse(args.keep)
+
+        args = parser.parse_args(["change", "finish", "demo-change", "--force", "--delete"])
+        self.assertTrue(args.force)
+        self.assertTrue(args.delete)
 
     def test_command_change_list_prints_unarchived_changes_only(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))
@@ -134,10 +184,101 @@ class ChangeNewCommandTest(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             command_change_advance(root, args)
 
+    def test_command_change_finish_uses_archive_default_and_removes_execution_dir(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", status="success")
+        args = SimpleNamespace(change="demo-change", force=False, archive=False, delete=False, keep=False)
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            command_change_finish(root, args)
+
+        archived_dir = root / "superspec" / "changes" / "archive" / "2026-03-18-demo-change-spec-dev"
+        self.assertFalse(change_dir.exists())
+        self.assertTrue(archived_dir.exists())
+        self.assertTrue((archived_dir / "proposal.md").exists())
+        self.assertFalse((archived_dir / "execution").exists())
+        self.assertIn(str(archived_dir), stdout.getvalue())
+
+    def test_command_change_finish_deletes_delete_default_change(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", workflow_id="bug-fix", status="success")
+        args = SimpleNamespace(change="demo-change", force=False, archive=False, delete=False, keep=False)
+
+        stdout = StringIO()
+        with redirect_stdout(stdout):
+            command_change_finish(root, args)
+
+        self.assertFalse(change_dir.exists())
+        self.assertNotIn("archive", stdout.getvalue())
+        self.assertIn("deleting", stdout.getvalue())
+
+    def test_command_change_finish_keep_override_leaves_change_in_place(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", workflow_id="bug-fix", status="success")
+        args = SimpleNamespace(change="demo-change", force=False, archive=False, delete=False, keep=True)
+
+        command_change_finish(root, args)
+
+        self.assertTrue(change_dir.exists())
+        self.assertTrue((change_dir / "execution").exists())
+
+    def test_command_change_finish_archive_override_archives_delete_default_change(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", workflow_id="bug-fix", status="success")
+        args = SimpleNamespace(change="demo-change", force=False, archive=True, delete=False, keep=False)
+
+        command_change_finish(root, args)
+
+        archived_dir = root / "superspec" / "changes" / "archive" / "2026-03-18-demo-change-bug-fix"
+        self.assertFalse(change_dir.exists())
+        self.assertTrue(archived_dir.exists())
+
+    def test_command_change_finish_rejects_missing_change(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        args = SimpleNamespace(change="missing-change", force=False, archive=False, delete=False, keep=False)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            command_change_finish(root, args)
+
+        self.assertEqual(ctx.exception.code, "change_not_found")
+
+    def test_command_change_finish_rejects_running_destructive_action_without_force(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", workflow_id="bug-fix", status="running")
+        args = SimpleNamespace(change="demo-change", force=False, archive=False, delete=False, keep=False)
+
+        with self.assertRaises(ProtocolError) as ctx:
+            command_change_finish(root, args)
+
+        self.assertEqual(ctx.exception.code, "invalid_state")
+        self.assertTrue(change_dir.exists())
+        self.assertTrue((change_dir / "execution").exists())
+
+    def test_command_change_finish_force_allows_running_delete(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", workflow_id="bug-fix", status="running")
+        args = SimpleNamespace(change="demo-change", force=True, archive=False, delete=False, keep=False)
+
+        command_change_finish(root, args)
+
+        self.assertFalse(change_dir.exists())
+
+    def test_command_change_finish_allows_keep_for_running_change_without_force(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        change_dir = self._write_state_snapshot(root, "demo-change", workflow_id="bug-fix", status="running")
+        args = SimpleNamespace(change="demo-change", force=False, archive=False, delete=False, keep=True)
+
+        command_change_finish(root, args)
+
+        self.assertTrue(change_dir.exists())
+
     def test_removed_legacy_parsers_reject_old_commands(self):
         parser = build_parser()
         with self.assertRaises(SystemExit):
             parser.parse_args(["change", "new", "demo-change"])
+        with self.assertRaises(SystemExit):
+            parser.parse_args(["change", "archive", "demo-change"])
         with self.assertRaises(SystemExit):
             parser.parse_args(["plan", "init", "demo-change", "--schema", "spec-dev"])
         with self.assertRaises(SystemExit):

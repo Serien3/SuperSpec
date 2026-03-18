@@ -54,6 +54,7 @@ class ChangeLifecycleTest(unittest.TestCase):
         self.assertEqual(snapshot["runtime"]["changeName"], "demo-change")
         self.assertEqual(snapshot["meta"]["workflowId"], "spec-dev")
         self.assertEqual(snapshot["meta"]["description"], "Default spec-dev workflow")
+        self.assertEqual(snapshot["meta"]["finishPolicy"], "archive")
         self.assertIn("version", snapshot["meta"])
         self.assertNotIn("schemaVersion", snapshot["meta"])
         self.assertNotIn("createdAt", snapshot["meta"])
@@ -487,6 +488,36 @@ class ChangeLifecycleTest(unittest.TestCase):
         payload = json.loads(stdout.getvalue())
         self.assertEqual(payload["errors"][0]["code"], "missing_required_field")
         self.assertEqual(payload["errors"][0]["path"], "steps.0.executor")
+
+    def test_validate_rejects_invalid_completion_policy(self):
+        root = Path(tempfile.mkdtemp(prefix="superspec-"))
+        self._seed_generation_assets(root)
+
+        broken = {
+            "workflowId": "invalid-policy",
+            "version": "1.2.0",
+            "metadata": {
+                "channel": "test",
+            },
+            "finishPolicy": "archive-later",
+            "steps": [
+                {
+                    "id": "x1",
+                    "description": "run",
+                    "executor": "human",
+                }
+            ],
+        }
+        broken_path = root / "superspec" / "schemas" / "workflows" / "invalid-policy.workflow.json"
+        broken_path.write_text(json.dumps(broken, indent=2), encoding="utf-8")
+
+        stdout = StringIO()
+        with self.assertRaises(SystemExit):
+            with redirect_stdout(stdout):
+                command_validate(root, SimpleNamespace(schema="invalid-policy", file=None, json=True))
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["errors"][0]["code"], "invalid_finish_policy")
+        self.assertEqual(payload["errors"][0]["path"], "finishPolicy")
 
     def test_validate_rejects_mixed_executor_payloads(self):
         root = Path(tempfile.mkdtemp(prefix="superspec-"))

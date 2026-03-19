@@ -12,40 +12,43 @@
     },
     {
       "id": "a2",
-      "description": "human-review-proposal",
-      "executor": "human",
-      "prompt": "Waiting for humans to review the proposal and give feedback.Ask the human if they approve(\"approveLabel\") this proposal. If human rejects(\"rejectLabel\") the proposal and makes new requests, modify the proposal until the user agrees.",
-      "option": {
-        "approveLabel": "approve and continue",
-        "rejectLabel": "Reject and modify proposal"
-      }
-    },
-    {
-      "id": "a3",
       "description": "specs",
       "dependsOn": [
-        "a2"
+        "a1"
       ],
       "executor": "skill",
       "skill": "writing-specs"
     },
     {
-      "id": "a4",
+      "id": "a3",
       "description": "design",
       "dependsOn": [
-        "a3"
+        "a2"
       ],
       "executor": "skill",
       "skill": "writing-design"
     },
     {
-      "id": "a5",
+      "id": "a4",
       "description": "tasks",
       "dependsOn": [
-        "a4"
+        "a3"
       ],
       "executor": "skill",
       "skill": "writing-tasks"
+    },
+    {
+      "id": "a5",
+      "description": "human-review-specs",
+      "executor": "human",
+      "dependsOn": [
+        "a4"
+      ],
+      "prompt": "Waiting for humans to review the specs and give feedback.Ask the human if they approve(\"approveLabel\") these specs. If human rejects(\"rejectLabel\") the specs and makes new requests, modify all docs in this change until the user agrees.",
+      "option": {
+        "approveLabel": "approve and continue",
+        "rejectLabel": "Reject and modify specs"
+      }
     },
     {
       "id": "a5.1",

@@ -8,7 +8,7 @@
             "id": "a1",
             "description": "Plan",
             "executor": "human",
-            "prompt": "Consider whether a plan is needed to complete this task. If so, create a TODO list first."
+            "prompt": "Consider whether a plan is needed to complete this work. If so, create a TODO list first."
         },
         {
             "id": "a2",

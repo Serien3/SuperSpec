@@ -39,7 +39,7 @@ Implement tasks from an SuperSpec change. DRY. YAGNI. TDD. Frequent commits.
 
 ### Step 3: **If skip a task or paused**
    If skip a task:
-   - Errors Encountered
+   - Write `tasks.md`
 
    If paused, Display:
    - Tasks completed this session

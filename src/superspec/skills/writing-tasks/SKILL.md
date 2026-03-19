@@ -15,7 +15,7 @@ Guidelines:
 
 - Group related tasks under ## numbered headings
 - Each task MUST be a checkbox: `- [ ] X.Y Task description`
-- Tasks should be small enough to complete in one session
+- Each task must be a verifiable minimum unit.
 - Order tasks by dependency (what must be done first?)
 - Testing is also treated as a task, with an emphasis on unit testing and end-to-end testing.
 

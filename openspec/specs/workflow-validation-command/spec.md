@@ -13,6 +13,12 @@ The `superspec validate` command MUST validate workflow template documents inten
 - **THEN** the command resolves `custom-flow.workflow.json` from supported workflow locations
 - **AND** validates that workflow document against workflow validation contract
 
+#### Scenario: Validate schema name against project-local override first
+- **WHEN** a user runs `superspec validate --schema spec-dev`
+- **AND** both a project-local workflow and a packaged built-in workflow exist for `spec-dev`
+- **THEN** the command validates the project-local workflow file
+- **AND** does not fall back to the packaged file for that invocation
+
 #### Scenario: Validate explicit workflow file path
 - **WHEN** a user runs `superspec validate --file /path/to/custom.workflow.json`
 - **THEN** the command validates the workflow at that exact path

@@ -57,14 +57,24 @@ After installation, try **SuperSpec** with the following steps:
    cd <your-project>
    superspec init --agent codex
    ```
-2. Once requirements are clear, tell your AI to use the `superspec-finish-a-change` skill to implement them.
-3. During the process you'll see new files/directories created (for example `.codex/skills/`):
+2. If you want to customize a built-in workflow, fork one into your project first:
+
+   ```bash
+   superspec workflow fork spec-dev my-spec-dev
+   ```
+
+   This creates `superspec/schemas/workflows/my-spec-dev.workflow.json`, which you can edit locally and then use with `superspec change advance --new my-spec-dev/<change-name>`.
+3. Once requirements are clear, tell your AI to use the `superspec-finish-a-change` skill to implement them.
+4. During the process you'll see new files/directories created (for example `.codex/skills/`):
    ```text
    <your-project>/
    ├── .codex/
    │   └── skills/
    │       └── ...                     # Skills installed by `superspec init` for AI execution
    └── superspec/
+       ├── schemas/
+       │   └── workflows/
+       │       └── my-spec-dev.workflow.json
        └── changes/
            └── <change-name>/
                └── execution/

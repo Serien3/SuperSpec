@@ -13,6 +13,7 @@ from superspec.engine.scm.progress_file import summarize_current_session
 from superspec.engine.orchestrator import run_protocol_action_from_cli, to_json
 from superspec.engine.storage.execution_snapshot import initialize_execution_snapshot
 from superspec.engine.workflows.service import build_runtime_blueprint_from_workflow, validate_workflow_source
+from superspec.engine.workflows.sources import fork_packaged_workflow
 from superspec.scripts.worktree_create import create_worktree_state
 from superspec.scripts.worktree_finish import finish_worktree_flow
 
@@ -290,6 +291,11 @@ def command_validate(repo_root: Path, args):
         raise SystemExit(1)
 
 
+def command_workflow_fork(repo_root: Path, args):
+    target_path = fork_packaged_workflow(repo_root, args.source, args.target)
+    print(f"Forked built-in workflow '{args.source}' to {target_path}.")
+
+
 def command_git_worktree_create(repo_root: Path, args):
     state = create_worktree_state(
         repo_root=repo_root,
@@ -484,6 +490,12 @@ def build_parser():
     validate.add_argument("--file")
     validate.add_argument("--json", action="store_true")
 
+    workflow = sub.add_parser("workflow")
+    workflow_sub = workflow.add_subparsers(dest="sub")
+    workflow_fork = workflow_sub.add_parser("fork")
+    workflow_fork.add_argument("source", help="Built-in workflow name to clone.")
+    workflow_fork.add_argument("target", help="Project-local workflow name to create.")
+
     sub.add_parser(
         "progress",
         help="Summarize current-session progress entries into a session block in progress.md.",
@@ -571,6 +583,9 @@ def main():
             return
         if args.group == "validate":
             command_validate(repo_root, args)
+            return
+        if args.group == "workflow" and args.sub == "fork":
+            command_workflow_fork(repo_root, args)
             return
         if args.group == "progress":
             command_progress(repo_root, args)

@@ -49,6 +49,29 @@ Notes:
 - Provide exactly one of `--schema` or `--file`.
 - Non-JSON mode prints a human summary and exits non-zero on validation failure.
 
+## Workflow Commands
+
+### `superspec workflow fork`
+
+Clone a built-in workflow into the current project's local workflow directory so it can be customized.
+
+```bash
+superspec workflow fork <builtin-workflow> <custom-workflow>
+```
+
+**Arguments**
+
+| Argument            | Description                                 | Default  |
+| ------------------- | ------------------------------------------- | -------- |
+| `<builtin-workflow>`| Built-in packaged workflow to copy.         | Required |
+| `<custom-workflow>` | Project-local workflow name to create.      | Required |
+
+Behavior:
+- Reads from packaged workflows in `src/superspec/schemas/workflows/`.
+- Writes to `superspec/schemas/workflows/<custom-workflow>.workflow.json` in the current repo.
+- Fails if the built-in workflow does not exist.
+- Fails if the target workflow file already exists.
+
 ### `superspec progress`
 
 Summarize all current-session commit entries in the root `progress.md` into a completed session block.

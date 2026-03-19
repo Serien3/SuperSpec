@@ -10,7 +10,7 @@ The system MUST enforce one identical workflow authoring contract across `workfl
 
 #### Scenario: Schema-valid executor contract is runtime-valid
 - **WHEN** a workflow step declares explicit `executor` and provides exactly one matching payload
-- **THEN** runtime workflow loading and plan generation accept that step without contract mismatch errors
+- **THEN** runtime workflow loading and snapshot generation accept that step without contract mismatch errors
 
 #### Scenario: Runtime rejection matches schema contract
 - **WHEN** a workflow step includes mixed executor payload fields that violate the explicit executor contract
@@ -27,7 +27,7 @@ The system MUST support only an explicitly documented, finite workflow customiza
 
 #### Scenario: Unknown customization field is rejected
 - **WHEN** a workflow includes a customization field outside the supported set
-- **THEN** workflow validation fails before plan generation
+- **THEN** workflow validation fails before snapshot generation
 - **AND** no `execution/state.json` is written
 
 #### Scenario: Unknown nested customization field is rejected

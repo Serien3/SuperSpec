@@ -1,7 +1,7 @@
 # human-gated-step-execution Specification
 
 ## Purpose
-Define how `executor=human` steps participate in the protocol-driven plan lifecycle, including payload contract and outcome reporting semantics.
+Define how `executor=human` steps participate in the protocol-driven change execution lifecycle, including payload contract and outcome reporting semantics.
 ## Requirements
 ### Requirement: Human executor can gate workflow progress
 The system SHALL support steps with `executor=human` that pause downstream execution until explicit human outcome is reported.

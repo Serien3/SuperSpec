@@ -40,7 +40,7 @@ The system MUST provide a command for clients to report step failure.
 - **AND** dependency-failure context is recorded in execution events
 
 ### Requirement: Executor-specific payload contract
-The system MUST return normalized execution payloads that distinguish script, skill, and human execution modes, and MUST reject plans whose explicit `executor` value is not one of `skill`, `script`, or `human`.
+The system MUST return normalized execution payloads that distinguish script, skill, and human execution modes, and MUST reject workflows whose explicit `executor` value is not one of `skill`, `script`, or `human`.
 
 #### Scenario: Script step payload
 - **WHEN** the next step uses `executor=script`
@@ -68,7 +68,7 @@ The protocol MUST support agent-managed execution loops that repeatedly call `ne
 #### Scenario: Iterate until done
 - **WHEN** an agent repeatedly requests `next` after each completion or failure report
 - **THEN** the protocol continues returning runnable steps while work remains
-- **AND** eventually returns `done` when the plan reaches terminal state
+- **AND** eventually returns `done` when the change reaches terminal state
 
 #### Scenario: Blocked loop behavior
 - **WHEN** `next` returns `blocked` because no step is currently runnable due to unresolved dependencies and no in-flight `RUNNING` step is available for resume

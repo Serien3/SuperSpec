@@ -1,6 +1,6 @@
 ## Purpose
 
-Define the change-scoped plan orchestration behavior for SuperSpec v1.2.0, including plan validation, protocol-driven step execution, and execution state tracking.
+Define the change-scoped workflow execution behavior for SuperSpec v1.2.0, including workflow validation, protocol-driven step execution, and execution state tracking.
 ## Requirements
 ### Requirement: Change-scoped runtime snapshot
 The system MUST support a change-scoped runtime snapshot in `superspec/changes/<change-name>/execution/state.json` as the authoritative execution state for that change.
@@ -16,32 +16,32 @@ The system MUST support a change-scoped runtime snapshot in `superspec/changes/<
 - **AND** the change is immediately executable by protocol pull commands without a separate initialization command
 
 ### Requirement: Workflow selection during change creation
-The system MUST provide a workflow schema selector for snapshot generation through unified change creation flows.
+The system MUST provide a workflow selector for snapshot generation through unified change creation flows.
 
-#### Scenario: Initialize state snapshot with required schema key in unified flow
-- **WHEN** a user runs `superspec change advance --new <schema>/<name>` with a supported schema
+#### Scenario: Initialize state snapshot with required workflow key in unified flow
+- **WHEN** a user runs `superspec change advance --new <workflow>/<name>` with a supported workflow
 - **THEN** the system writes a valid generated runtime snapshot into `execution/state.json`
 - **AND** the resulting snapshot is immediately eligible for execution
 
 #### Scenario: Reject unsupported initialization selector
-- **WHEN** a user provides an unsupported workflow schema selector in unified creation flow
+- **WHEN** a user provides an unsupported workflow selector in unified creation flow
 - **THEN** initialization fails with a selector validation error
 - **AND** no state snapshot file is created or overwritten
 
-### Requirement: Schema-aware workflow resolution
+### Requirement: Selector-aware workflow resolution
 The system MUST resolve initialization content through workflow composition and persist the resulting runtime baseline into the state snapshot.
 
-#### Scenario: Resolve generated snapshot runtime from schema key
+#### Scenario: Resolve generated snapshot runtime from workflow key
 - **WHEN** initialization runs with a supported selector
 - **THEN** the engine resolves the corresponding workflow input
 - **AND** writes the resolved runtime baseline into `execution/state.json`
 
-### Requirement: Simplified single-agent starter template
-The system MUST provide a default plan template optimized for single-agent, single-process, serial execution.
+### Requirement: Simplified single-agent built-in workflow
+The system MUST provide a default built-in workflow optimized for single-agent, single-process, serial execution.
 
-#### Scenario: Initialize simplified default plan
-- **WHEN** a user initializes a plan with the default schema
-- **THEN** the generated template expresses a serial step flow suitable for one agent
+#### Scenario: Initialize simplified default workflow
+- **WHEN** a user initializes a change with the default workflow
+- **THEN** the generated runtime expresses a serial step flow suitable for one agent
 - **AND** excludes lease-oriented or concurrency-oriented starter fields
 
 ### Requirement: Workflow schema identity persistence
@@ -89,12 +89,12 @@ The system MUST support `skill`, `script`, and `human` executors using a shared 
 
 #### Scenario: No implicit executor inference
 - **WHEN** an step omits explicit `executor`
-- **THEN** plan validation fails before protocol execution starts
+- **THEN** workflow validation fails before protocol execution starts
 - **AND** no next-step payload is generated for that invalid step
 
 #### Scenario: Reject non-inferable or ambiguous executor definition
 - **WHEN** an step defines ambiguous executor payload fields
-- **THEN** plan validation fails before protocol execution starts
+- **THEN** workflow validation fails before protocol execution starts
 - **AND** no next-step payload is generated for that invalid step
 
 #### Scenario: Runtime fields are treated as literal values
@@ -133,5 +133,5 @@ The system MUST not apply retry policy semantics from step fields during protoco
 
 #### Scenario: Ignore retry-like step metadata at runtime
 - **WHEN** step definitions include retry-like metadata fields
-- **THEN** plan validation and execution are governed by current schema and executor rules
+- **THEN** workflow validation and execution are governed by current workflow contract and executor rules
 - **AND** protocol runtime does not schedule retries based on those metadata fields

@@ -7,7 +7,7 @@ Define how SuperSpec generates change-scoped execution `state.json.runtime` step
 The system MUST generate a change-scoped execution runtime baseline from a selected workflow definition, applying only supported workflow customization fields.
 
 #### Scenario: Generate state snapshot runtime baseline with selected workflow
-- **WHEN** a user initializes a change with a valid schema key
+- **WHEN** a user initializes a change with a valid workflow key
 - **THEN** the generated `execution/state.json.runtime.steps` contains workflow-derived step execution fields (`id`, `description`, `executor`, dependencies, and executor payload fields)
 
 #### Scenario: Ignore unsupported customization by failing validation first
@@ -26,6 +26,6 @@ The system MUST apply deterministic generation rules for all supported customiza
 The system MUST protect change-scoped identity values from workflow override.
 
 #### Scenario: Keep runtime change identity from CLI selector
-- **WHEN** a workflow is selected via `superspec change advance --new <schema>/<change-name>`
+- **WHEN** a workflow is selected via `superspec change advance --new <workflow>/<change-name>`
 - **THEN** generation keeps `runtime.changeName` equal to `<change-name>`
 - **AND** writes a snapshot runtime bound to that requested change
